@@ -1,8 +1,11 @@
 import 'dart:async';
 
+import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/conversation_labels_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_labels_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
@@ -11,6 +14,7 @@ import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.d
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod/riverpod.dart';
 
@@ -558,6 +562,10 @@ void main() {
     () async {
       final repository = _FakeConversationRepository()
         ..conversationsByWorkspace = const [];
+      final labelsDatabase = AppDatabase(
+        connection: DatabaseConnection(NativeDatabase.memory()),
+      );
+      addTearDown(labelsDatabase.close);
       final container = ProviderContainer(
         overrides: [
           workspaceSessionForRouteProvider('ws1').overrideWith(
@@ -566,6 +574,9 @@ void main() {
             ),
           ),
           conversationRepositoryProvider.overrideWithValue(repository),
+          conversationLabelsRepositoryProvider.overrideWithValue(
+            ConversationLabelsRepository(labelsDatabase),
+          ),
         ],
       );
       addTearDown(container.dispose);
@@ -587,6 +598,7 @@ void main() {
 class _ConversationProviderFixture {
   _FakeConversationRepository? _repository;
   ProviderContainer? _container;
+  AppDatabase? _labelsDatabase;
 
   _FakeConversationRepository get repository =>
       _repository ?? fail('Fixture not initialized');
@@ -596,7 +608,11 @@ class _ConversationProviderFixture {
 
   void reset() {
     final repository = _FakeConversationRepository();
+    final labelsDatabase = AppDatabase(
+      connection: DatabaseConnection(NativeDatabase.memory()),
+    );
     _repository = repository;
+    _labelsDatabase = labelsDatabase;
     _container = .new(
       overrides: [
         workspaceSessionForRouteProvider('ws1').overrideWith(
@@ -610,13 +626,18 @@ class _ConversationProviderFixture {
           const WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws1')),
         ),
         conversationRepositoryProvider.overrideWithValue(repository),
+        conversationLabelsRepositoryProvider.overrideWithValue(
+          ConversationLabelsRepository(labelsDatabase),
+        ),
       ],
     );
   }
 
-  void dispose() {
+  Future<void> dispose() async {
     container.dispose();
+    await _labelsDatabase?.close();
     _repository = null;
+    _labelsDatabase = null;
     _container = null;
   }
 }

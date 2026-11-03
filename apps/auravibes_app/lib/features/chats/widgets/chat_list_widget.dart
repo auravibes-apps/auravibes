@@ -17,7 +17,8 @@ import 'package:auravibes_app/features/chats/widgets/active_sub_agent_status_wid
 import 'package:auravibes_app/features/chats/widgets/conversation_archive_export_review_dialog.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_archive_feedback.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_draft_badge.dart';
-import 'package:auravibes_app/features/chats/widgets/conversation_labels_widgets.dart';
+import 'package:auravibes_app/features/chats/widgets/conversation_label_badges.dart';
+import 'package:auravibes_app/features/chats/widgets/conversation_labels_toolbar.dart';
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
 import 'package:auravibes_app/features/chats/widgets/rename_conversation_dialog.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
@@ -679,7 +680,7 @@ extension on _ChatTileState {
 
 extension on _ChatTileState {
   Future<void> _handleAssignLabels(BuildContext context) async {
-    await showConversationLabelAssignmentDialog(
+    final _ = await showConversationLabelAssignmentDialog(
       context,
       workspaceId: widget.workspaceId,
       conversation: widget.chat,
@@ -1445,11 +1446,11 @@ class const _ChatListEmptyResults({required final _ChatListViewState state})
 
 class const _ChatListNoLabelMatchesState() extends StatelessWidget {
   @override
-  Widget build(BuildContext _) => Center(
+  Widget build(BuildContext _) => const Center(
     child: Padding(
-      padding: const EdgeInsets.all(32),
+      padding: EdgeInsets.all(32),
       child: AuraText(
-        child: const TextLocale(
+        child: TextLocale(
           LocaleKeys.chats_screens_conversation_labels_no_matches,
         ),
         textAlign: .center,
@@ -1687,7 +1688,7 @@ class const _ChatTileInfo({
       _ChatTileMetadata(chat: chat, title: title),
       if (chat.labels.isNotEmpty) ...[
         const SizedBox(height: 6),
-        conversationLabelBadges(chat.labels),
+        ConversationLabelBadges(labels: chat.labels),
       ],
     ],
     crossAxisAlignment: .start,

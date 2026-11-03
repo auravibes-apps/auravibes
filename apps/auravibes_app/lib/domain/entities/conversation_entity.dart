@@ -3,7 +3,7 @@
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import 'conversation_label_entity.dart';
+import 'package:auravibes_app/domain/entities/conversation_label_entity.dart';
 
 part 'conversation_entity.freezed.dart';
 
@@ -27,14 +27,14 @@ abstract class const ConversationEntity._() with _$ConversationEntity {
     /// Whether this conversation is pinned.
     required bool isPinned,
 
-    /// Workspace labels currently assigned to the conversation.
-    @Default([]) List<ConversationLabelEntity> labels,
-
     /// Timestamp when the conversation was created.
     required DateTime createdAt,
 
     /// Timestamp when the conversation was last updated.
     required DateTime updatedAt,
+
+    /// Workspace labels currently assigned to the conversation.
+    @Default([]) List<ConversationLabelEntity> labels,
 
     /// Server revision for optimistic cloud mutations.
     @Default(0) int revision,

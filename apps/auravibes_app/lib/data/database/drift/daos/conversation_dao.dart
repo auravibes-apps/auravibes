@@ -227,12 +227,13 @@ extension ConversationDaoReadOperations on ConversationDao {
       'c.parent_conversation_id IS NULL',
     ];
     if (normalizedSearch.isNotEmpty) {
-      predicates.add(r"c.title LIKE ? ESCAPE '\'");
+      predicates.add(r'''c.title LIKE ? ESCAPE '\' ''');
       variables.add(Variable<String>('%${_escapeLike(normalizedSearch)}%'));
     }
     if (labelIds.isNotEmpty) {
       final placeholders = List.filled(labelIds.length, '?').join(', ');
-      predicates.add('''EXISTS (
+      predicates.add('''
+EXISTS (
         SELECT 1
         FROM conversation_label_assignments AS filter_assignment
         INNER JOIN conversation_labels AS filter_label
@@ -242,7 +243,7 @@ extension ConversationDaoReadOperations on ConversationDao {
           AND filter_assignment.conversation_id = c.id
           AND filter_label.id IN ($placeholders)
       )''');
-      variables.addAll(labelIds.map((id) => Variable<String>(id)));
+      variables.addAll(labelIds.map(Variable<String>.new));
     }
     final pageLimit = limit;
     if (pageLimit != null) {

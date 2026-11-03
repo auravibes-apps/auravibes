@@ -125,6 +125,7 @@ Stream<List<ConversationEntity>> _conversationsForSession(
         limit: options.pagination.limit,
         offset: options.pagination.offset,
       );
+
   return labelsRepository.withLabels(
     workspaceId: workspaceId,
     conversations: conversations,
@@ -455,7 +456,6 @@ ConversationEntity _cloudConversationFields(
     isPinned: conversation.isPinned,
     createdAt: conversation.createdAt,
     updatedAt: conversation.updatedAt,
-    revision: conversation.revision,
     labels:
         conversation.labels
             ?.map(
@@ -469,6 +469,7 @@ ConversationEntity _cloudConversationFields(
             )
             .toList() ??
         const [],
+    revision: conversation.revision,
     modelId: conversation.modelId,
     agentId: conversation.agentId,
     reasoningConfiguration: .decode(conversation.reasoningConfigJson),

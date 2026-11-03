@@ -1,13 +1,7 @@
 class const ConversationLabelEntity({
-  required this.id,
-  required this.workspaceId,
-  required this.name,
-  required this.createdAt,
-  required this.updatedAt,
-}) {
-  final String id;
-  final String workspaceId;
-  final String name;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-}
+  required final String id,
+  required final String workspaceId,
+  required final String name,
+  required final DateTime createdAt,
+  required final DateTime updatedAt,
+});

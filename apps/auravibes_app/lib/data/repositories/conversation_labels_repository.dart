@@ -2,29 +2,12 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_dao.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/conversation_label_entity.dart';
-import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart';
 import 'package:rxdart/rxdart.dart';
 
 const _maxConversationLabelNameLength = 40;
 
-class ConversationLabelAlreadyExistsException implements Exception {
-  const ConversationLabelAlreadyExistsException();
-}
-
-class ConversationLabelWorkspaceMismatchException implements Exception {
-  const ConversationLabelWorkspaceMismatchException();
-}
-
-class ConversationLabelNameInvalidException implements Exception {
-  const ConversationLabelNameInvalidException();
-}
-
-class ConversationLabelsRepository {
-  ConversationLabelsRepository(this._database);
-
-  final AppDatabase _database;
-
+class ConversationLabelsRepository(final AppDatabase _database) {
   Stream<List<ConversationLabelEntity>> watchLabelsByWorkspace(
     String workspaceId,
   ) =>
@@ -82,20 +65,22 @@ class ConversationLabelsRepository {
                     label.normalizedName.equals(normalizedName),
               ))
               .getSingleOrNull();
-      if (existing != null)
+      if (existing != null) {
         throw const ConversationLabelAlreadyExistsException();
+      }
       final now = DateTime.now().toUtc();
       final inserted = await _database
           .into(_database.conversationLabels)
           .insertReturning(
             ConversationLabelsCompanion.insert(
+              createdAt: .new(now),
+              updatedAt: .new(now),
               workspaceId: workspaceId,
               name: normalized,
               normalizedName: normalizedName,
-              createdAt: Value(now),
-              updatedAt: Value(now),
             ),
           );
+
       return _mapLabel(inserted);
     });
   }
@@ -115,8 +100,9 @@ class ConversationLabelsRepository {
                     row.workspaceId.equals(workspaceId),
               ))
               .getSingleOrNull();
-      if (label == null)
-        throw const ConversationLabelWorkspaceMismatchException();
+      if (label == null) {
+        throw const ConversationWorkspaceMismatchException();
+      }
       final duplicate =
           await (_database.select(_database.conversationLabels)..where(
                 (row) =>
@@ -125,21 +111,23 @@ class ConversationLabelsRepository {
                     row.id.isNotIn({labelId}),
               ))
               .getSingleOrNull();
-      if (duplicate != null)
+      if (duplicate != null) {
         throw const ConversationLabelAlreadyExistsException();
+      }
       final now = DateTime.now().toUtc();
-      await (_database.update(
+      final _ = await (_database.update(
         _database.conversationLabels,
       )..where((row) => row.id.equals(labelId))).write(
         ConversationLabelsCompanion(
-          name: Value(normalized),
-          normalizedName: Value(normalizedName),
-          updatedAt: Value(now),
+          updatedAt: .new(now),
+          name: .new(normalized),
+          normalizedName: .new(normalizedName),
         ),
       );
       final updated = await (_database.select(
         _database.conversationLabels,
       )..where((row) => row.id.equals(labelId))).getSingle();
+
       return _mapLabel(updated);
     });
   }
@@ -154,12 +142,13 @@ class ConversationLabelsRepository {
                   row.id.equals(labelId) & row.workspaceId.equals(workspaceId),
             ))
             .getSingleOrNull();
-    if (label == null)
-      throw const ConversationLabelWorkspaceMismatchException();
-    await (_database.delete(
+    if (label == null) {
+      throw const ConversationWorkspaceMismatchException();
+    }
+    final _ = await (_database.delete(
       _database.conversationLabelAssignments,
     )..where((row) => row.labelId.equals(labelId))).go();
-    await (_database.delete(
+    final _ = await (_database.delete(
       _database.conversationLabels,
     )..where((row) => row.id.equals(labelId))).go();
   });
@@ -177,7 +166,7 @@ class ConversationLabelsRepository {
             ))
             .getSingleOrNull();
     if (conversation == null) {
-      throw const ConversationLabelWorkspaceMismatchException();
+      throw const ConversationWorkspaceMismatchException();
     }
     final labels = labelIds.isEmpty
         ? const <ConversationLabelsTable>[]
@@ -187,16 +176,18 @@ class ConversationLabelsRepository {
               ))
               .get();
     if (labels.length != labelIds.length) {
-      throw const ConversationLabelWorkspaceMismatchException();
+      throw const ConversationWorkspaceMismatchException();
     }
-    await (_database.delete(_database.conversationLabelAssignments)..where(
+    final _ = await (_database.delete(
+      _database.conversationLabelAssignments,
+    )..where(
           (row) =>
               row.workspaceId.equals(workspaceId) &
               row.conversationId.equals(conversationId),
         ))
         .go();
     for (final label in labels) {
-      await _database
+      final _ = await _database
           .into(_database.conversationLabelAssignments)
           .insert(
             ConversationLabelAssignmentsCompanion.insert(
@@ -256,6 +247,7 @@ ORDER BY labels.normalized_name ASC
                 ),
               );
         }
+
         return result;
       });
 
@@ -270,6 +262,9 @@ ORDER BY labels.normalized_name ASC
     createdAt: conversation.createdAt,
     updatedAt: conversation.updatedAt,
     labels: labels,
+    toolAccessMode: ConversationToolAccessModeStorage.decode(
+      conversation.toolAccessMode,
+    ),
     modelId: conversation.modelId,
     agentId: conversation.agentId,
     reasoningConfiguration: .decode(conversation.reasoningConfigJson),
@@ -280,9 +275,6 @@ ORDER BY labels.normalized_name ASC
     forkThroughMessageId: conversation.forkThroughMessageId,
     forkMaterializedAt: conversation.forkMaterializedAt,
     activeCompactionCheckpointId: conversation.activeCompactionCheckpointId,
-    toolAccessMode: ConversationToolAccessModeStorage.decode(
-      conversation.toolAccessMode,
-    ),
   );
 }
 
@@ -292,5 +284,12 @@ String _normalizeName(String name) {
       normalized.length > _maxConversationLabelNameLength) {
     throw const ConversationLabelNameInvalidException();
   }
+
   return normalized;
 }
+
+class const ConversationLabelAlreadyExistsException() implements Exception;
+
+class const ConversationWorkspaceMismatchException() implements Exception;
+
+class const ConversationLabelNameInvalidException() implements Exception;

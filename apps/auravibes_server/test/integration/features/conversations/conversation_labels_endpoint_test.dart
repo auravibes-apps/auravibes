@@ -1,4 +1,3 @@
-import 'package:auravibes_server/src/features/conversations/domain/conversation_values.dart';
 import 'package:auravibes_server/src/features/workspaces/repositories/cloud_workspace_repository.dart'
     as workspace_repo;
 import 'package:auravibes_server/src/generated/protocol.dart';

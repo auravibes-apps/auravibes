@@ -5,7 +5,8 @@ import 'package:auravibes_app/domain/entities/conversation_label_entity.dart';
 import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_labels_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_labels_repository_provider.dart';
-import 'package:auravibes_app/features/chats/widgets/conversation_labels_widgets.dart';
+import 'package:auravibes_app/features/chats/widgets/conversation_label_badges.dart';
+import 'package:auravibes_app/features/chats/widgets/conversation_labels_toolbar.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -24,21 +25,30 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
-  late AppDatabase database;
-  late ConversationLabelsRepository repository;
-  late String workspaceId;
+  AppDatabase? _database;
+  ConversationLabelsRepository? _repository;
+  String? _workspaceId;
+
+  AppDatabase get database => _database!;
+  ConversationLabelsRepository get repository => _repository!;
+  String get workspaceId => _workspaceId!;
 
   setUp(() async {
-    database = AppDatabase(
+    _database = AppDatabase(
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
-    repository = ConversationLabelsRepository(database);
-    workspaceId = (await database.workspaceDao.insertWorkspace(
+    _repository = ConversationLabelsRepository(database);
+    _workspaceId = (await database.workspaceDao.insertWorkspace(
       .insert(name: 'Workspace', type: WorkspaceType.local),
     )).id;
   });
 
-  tearDown(() => database.close());
+  tearDown(() async {
+    await database.close();
+    _database = null;
+    _repository = null;
+    _workspaceId = null;
+  });
 
   Widget buildSubject({
     required Widget child,
@@ -46,12 +56,12 @@ void main() {
     List<Object> overrides = const [],
   }) => TestableApp(
     child: Scaffold(body: child),
-    workspaceId: workspaceId,
-    startLocale: startLocale,
     overrides: [
       conversationLabelsRepositoryProvider.overrideWithValue(repository),
       ...overrides,
     ],
+    workspaceId: workspaceId,
+    startLocale: startLocale,
   );
 
   Future<void> pumpSubject(
@@ -82,7 +92,7 @@ void main() {
     final labels = [_label('urgent', 'Urgent'), _label('planning', 'Planning')];
     await pumpSubject(
       tester,
-      child: conversationLabelBadges(labels),
+      child: ConversationLabelBadges(labels: labels),
       startLocale: const Locale('es'),
     );
 
@@ -98,11 +108,11 @@ void main() {
             find.byKey(const ValueKey('conversation-labels-semantics')),
           )
           .label,
-      'Etiquetas de conversación: Urgent, Planning',
+      'Etiquetas de conversaci\u00F3n: Urgent, Planning',
     );
     expect(
       tester.widget<AuraBadge>(urgentBadge).variant,
-      AuraBadgeVariant.neutral,
+      .neutral,
     );
   });
 
@@ -159,7 +169,7 @@ void main() {
       child: ConversationLabelsToolbar(
         workspaceId: workspaceId,
         selectedLabelIds: const {},
-        onSelectedLabelIdsChanged: (_) {},
+        onSelectedLabelIdsChanged: (_) => fail('No filter change expected'),
       ),
       overrides: [
         conversationLabelsStreamProvider(
@@ -245,8 +255,8 @@ ConversationLabelEntity _label(String id, String name) =>
       id: id,
       workspaceId: 'ws',
       name: name,
-      createdAt: DateTime.utc(2026),
-      updatedAt: DateTime.utc(2026),
+      createdAt: .utc(2026),
+      updatedAt: .utc(2026),
     );
 
 Future<void> _pumpAnimation(WidgetTester tester) async {

@@ -7,27 +7,40 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  late AppDatabase database;
-  late ConversationRepository repository;
-  late ConversationLabelsRepository labelsRepository;
-  late String workspaceId;
-  late String otherWorkspaceId;
+  AppDatabase? _database;
+  ConversationRepository? _repository;
+  ConversationLabelsRepository? _labelsRepository;
+  String? _workspaceId;
+  String? _otherWorkspaceId;
+
+  AppDatabase get database => _database!;
+  ConversationRepository get repository => _repository!;
+  ConversationLabelsRepository get labelsRepository => _labelsRepository!;
+  String get workspaceId => _workspaceId!;
+  String get otherWorkspaceId => _otherWorkspaceId!;
 
   setUp(() async {
-    database = AppDatabase(
+    _database = AppDatabase(
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
-    repository = ConversationRepository(database);
-    labelsRepository = ConversationLabelsRepository(database);
-    workspaceId = (await database.workspaceDao.insertWorkspace(
+    _repository = ConversationRepository(database);
+    _labelsRepository = ConversationLabelsRepository(database);
+    _workspaceId = (await database.workspaceDao.insertWorkspace(
       .insert(name: 'Workspace A', type: WorkspaceType.local),
     )).id;
-    otherWorkspaceId = (await database.workspaceDao.insertWorkspace(
+    _otherWorkspaceId = (await database.workspaceDao.insertWorkspace(
       .insert(name: 'Workspace B', type: WorkspaceType.local),
     )).id;
   });
 
-  tearDown(() => database.close());
+  tearDown(() async {
+    await database.close();
+    _database = null;
+    _repository = null;
+    _labelsRepository = null;
+    _workspaceId = null;
+    _otherWorkspaceId = null;
+  });
 
   test(
     'labels are unique within a workspace and support rename and delete',
@@ -100,7 +113,7 @@ void main() {
         .insert(
           workspaceId: workspaceId,
           title: 'Older match',
-          updatedAt: Value(DateTime.utc(2026, 11, 1)),
+          updatedAt: Value(DateTime.utc(2026, 11)),
         ),
       );
       final unlabelled = await database.conversationDao.insertConversation(
@@ -141,7 +154,7 @@ void main() {
           conversationId: foreignConversation.id,
           labelIds: {urgent.id},
         ),
-        throwsA(isA<ConversationLabelWorkspaceMismatchException>()),
+        throwsA(isA<ConversationWorkspaceMismatchException>()),
       );
 
       final page = await labelsRepository
@@ -213,7 +226,7 @@ void main() {
         conversationId: conversation.id,
         labelIds: {secondLabel.id},
       );
-      await repository.deleteConversation(conversation.id);
+      final _ = await repository.deleteConversation(conversation.id);
       expect(await repository.getConversationById(conversation.id), isNull);
       expect(
         (await labelsRepository.watchLabelsByWorkspace(workspaceId).first)
