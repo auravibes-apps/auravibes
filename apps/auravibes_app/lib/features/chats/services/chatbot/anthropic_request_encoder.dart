@@ -153,13 +153,19 @@ Map<String, Object?> _mergedUpdateMetadata(
   Message previous,
   Message update, {
   required bool supportsToolDeltas,
-}) => AgentContextProvenance.fromMetadata(_messageMetadata(previous))
-    .withMetadata({
-      'anthropicToolChanges': [
-        ..._changes(previous, enabled: supportsToolDeltas),
-        ..._changes(update, enabled: supportsToolDeltas),
-      ].map((block) => block.toJson()).toList(),
-    });
+}) {
+  final provenance = AgentContextProvenance.fromMetadata(
+    _messageMetadata(previous),
+  );
+  final changes = [
+    ..._changes(previous, enabled: supportsToolDeltas),
+    ..._changes(update, enabled: supportsToolDeltas),
+  ];
+
+  return provenance.withMetadata({
+    'anthropicToolChanges': changes.map((block) => block.toJson()).toList(),
+  });
+}
 
 extension _AnthropicHistoryProjection on AnthropicRequestEncoder {
   _Projection _project(ModelRequest request) {
