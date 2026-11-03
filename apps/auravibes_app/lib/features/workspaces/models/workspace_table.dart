@@ -123,9 +123,15 @@ class const WorkspaceTableException({
       return LocaleKeys.workspace_items_reference_incompatible;
     }
 
-    return conflict
-        ? LocaleKeys.cloud_errors_conflict
-        : LocaleKeys.workspace_items_invalid_table;
+    if (conflict) return LocaleKeys.cloud_errors_conflict;
+
+    return switch (limitKind) {
+      .columns => 'workspace_items.limit_columns',
+      .queryPageSize => 'workspace_items.limit_query_page',
+      .summaryColumns => 'workspace_items.limit_summary_columns',
+      .recordBatch => 'workspace_items.limit_record_batch',
+      null => LocaleKeys.workspace_items_invalid_table,
+    };
   }
 
   @override

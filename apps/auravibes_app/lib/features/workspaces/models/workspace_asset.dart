@@ -41,7 +41,7 @@ class const WorkspaceAssetException(final WorkspaceAssetFailure failure)
   String get localizationKey => switch (failure) {
     .denied => LocaleKeys.cloud_errors_permission_denied,
     .conflict => LocaleKeys.cloud_errors_conflict,
-    .sizeLimitExceeded => LocaleKeys.workspace_assets_invalid,
+    .sizeLimitExceeded => 'workspace_assets.size_limit_exceeded',
     .invalid => LocaleKeys.workspace_assets_invalid,
     .referenced => LocaleKeys.workspace_assets_referenced,
     .unavailable => LocaleKeys.workspace_assets_unavailable,

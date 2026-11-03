@@ -13,6 +13,29 @@ import 'package:auravibes_app/features/workspaces/usecases/workspace_view_valida
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('maps capacity failures to their own localized copy', () {
+    expect(
+      const WorkspaceTableException(limitKind: .columns).localizationKey,
+      'workspace_items.limit_columns',
+    );
+    expect(
+      const WorkspaceTableException(limitKind: .queryPageSize).localizationKey,
+      'workspace_items.limit_query_page',
+    );
+    expect(
+      const WorkspaceTableException(limitKind: .summaryColumns).localizationKey,
+      'workspace_items.limit_summary_columns',
+    );
+    expect(
+      const WorkspaceTableException(limitKind: .recordBatch).localizationKey,
+      'workspace_items.limit_record_batch',
+    );
+    expect(
+      const WorkspaceAssetException(.sizeLimitExceeded).localizationKey,
+      'workspace_assets.size_limit_exceeded',
+    );
+  });
+
   test('classifies a table column overflow', () {
     final columns = _columns(101);
 

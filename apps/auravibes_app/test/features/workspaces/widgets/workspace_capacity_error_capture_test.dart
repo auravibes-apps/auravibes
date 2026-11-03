@@ -86,12 +86,22 @@ void main() {
     } else if (captureStage == 'after') {
       expect(
         find.text(
-          'Workspace Files must be 25 MiB or smaller. Choose a smaller file.',
+          WorkspaceAssetException(
+            WorkspaceAssetFailure.sizeLimitExceeded,
+          ).localizationKey.tr(),
         ),
         findsOneWidget,
       );
     } else {
       expect(find.byType(WorkspaceItemFailure), findsOneWidget);
+      expect(
+        find.text(
+          WorkspaceAssetException(
+            WorkspaceAssetFailure.sizeLimitExceeded,
+          ).localizationKey.tr(),
+        ),
+        findsOneWidget,
+      );
     }
     expect(file.bytesRead, isFalse);
     expect(tester.takeException(), isNull);
