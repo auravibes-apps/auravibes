@@ -60,14 +60,12 @@ void main() {
       ),
     ),
     overrides: [
-      workspaceSessionForRouteProvider(workspaceId).overrideWithValue(
-        AsyncData(
-          WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: workspaceId)),
-        ),
-      ),
       ...overrides,
     ],
     workspaceId: workspaceId,
+    workspaceSession: WorkspaceSession(
+      LocalWorkspaceRef(localWorkspaceId: workspaceId),
+    ),
     startLocale: startLocale,
   );
 
@@ -755,6 +753,9 @@ void main() {
           child: ChatListWidget(workspaceId: workspace.id),
           overrides: [
             appDatabaseProvider.overrideWithValue(database),
+            workspaceSessionForRouteProvider(workspace.id).overrideWithValue(
+              AsyncData(session),
+            ),
             conversationsStreamProvider.overrideWith(
               (ref, _) => Stream.value([conversation]),
             ),

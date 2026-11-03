@@ -5,7 +5,9 @@ import 'package:auravibes_app/features/chats/providers/conversation_providers.da
 import 'package:auravibes_app/features/chats/screens/archived_conversations_screen.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../../../helpers/test_app.dart';
 
@@ -25,6 +27,9 @@ void main() {
           workspaceId: cloudWorkspace.localWorkspaceId,
         ),
         overrides: [
+          workspaceSessionForRouteProvider(
+            cloudWorkspace.localWorkspaceId,
+          ).overrideWithValue(const AsyncData(session)),
           conversationsStreamProvider((
             workspaceId: cloudWorkspace.localWorkspaceId,
             search: '',
@@ -75,6 +80,11 @@ void main() {
           workspaceId: cloudWorkspace.localWorkspaceId,
         ),
         overrides: [
+          workspaceSessionForRouteProvider(
+            cloudWorkspace.localWorkspaceId,
+          ).overrideWithValue(
+            const AsyncData(WorkspaceSession(cloudWorkspace)),
+          ),
           conversationsStreamProvider((
             workspaceId: cloudWorkspace.localWorkspaceId,
             search: '',
