@@ -54,6 +54,7 @@ def run_case(checkout, output, label, seconds, repetition, irregular):
         record["status"] = "missing-result"
     prefix.with_suffix(".run.json").write_text(json.dumps(record, indent=2))
     print(f"Finished {name}: {record['status']}", flush=True)
+    print("VOICE_MEMORY_RESULT " + json.dumps(record), flush=True)
     return record
 
 
@@ -124,7 +125,9 @@ def main():
                     records.append(run_case(checkout, output, label, seconds, 1, True))
                     (output / "results.json").write_text(json.dumps(records, indent=2))
     finally:
-        (output / "summary.json").write_text(json.dumps(summarize(records), indent=2))
+        summary = summarize(records)
+        (output / "summary.json").write_text(json.dumps(summary, indent=2))
+        print("VOICE_MEMORY_SUMMARY " + json.dumps(summary), flush=True)
     return 0 if records and all(record["status"] == "passed" for record in records) else 1
 
 
