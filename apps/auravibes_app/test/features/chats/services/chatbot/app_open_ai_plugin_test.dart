@@ -80,13 +80,14 @@ void main() {
 
     final body = client.requests.single.json;
     final messages = body['messages'] as List<dynamic>;
+    final content =
+        (messages.single as Map<String, dynamic>)['content'] as List<dynamic>;
 
     expect(messages, hasLength(1));
     expect((messages.single as Map<String, dynamic>)['role'], 'user');
-    expect(
-      (messages.single as Map<String, dynamic>)['content'],
-      'UNTRUSTED_WIRE_SENTINEL',
-    );
+    expect(content, [
+      {'type': 'text', 'text': 'UNTRUSTED_WIRE_SENTINEL'},
+    ]);
     expect(jsonEncode(body), isNot(contains('"role":"system"')));
     expect(
       jsonEncode(body),

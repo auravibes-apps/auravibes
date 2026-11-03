@@ -233,7 +233,7 @@ void main() {
       ),
     );
     final result = encoder([initial, update])
-        .encode('claude-opus-5', .new(messages: [...prefix, user('u1')]));
+        .encode('claude-opus-5', .new(messages: prefix));
     final wireMessages = result.request.messages.map((message) {
       return (role: message.role.name, json: message.toJson());
     }).toList();
@@ -247,6 +247,11 @@ void main() {
 
     expect(imported.role, 'user');
     expect(appContext.role, 'system');
+    expect(wireMessages.map((message) => message.role), [
+      'user',
+      'user',
+      'system',
+    ]);
     expect(result.request.system?.toJson(), 'Stable prompt');
   });
 
