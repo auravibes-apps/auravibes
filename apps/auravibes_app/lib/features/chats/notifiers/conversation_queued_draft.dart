@@ -104,11 +104,7 @@ class ConversationSendQueue extends _$ConversationSendQueue {
   }
 
   void remove({required String conversationId, required String draftId}) {
-    final removal = _queuedDraftRemoval(
-      state,
-      conversationId,
-      draftId,
-    );
+    final removal = _queuedDraftRemoval(state, conversationId, draftId);
     if (removal == null) return;
 
     _setState(removal.nextState);
