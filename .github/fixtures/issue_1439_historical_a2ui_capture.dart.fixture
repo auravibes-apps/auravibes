@@ -7,7 +7,6 @@ import 'package:auravibes_app/features/chats/widgets/chat_a2ui_surface_host.dart
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:crypto/crypto.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -81,42 +80,31 @@ void main() {
     ];
 
     await tester.pumpWidget(
-      EasyLocalization(
-        supportedLocales: const [Locale('en')],
-        path: 'assets/i18n',
-        fallbackLocale: const Locale('en'),
-        startLocale: const Locale('en'),
-        useOnlyLangCode: true,
-        useFallbackTranslations: true,
-        child: AuraThemeScope(
-          theme: .light,
-          child: Builder(
-            builder: (context) => MaterialApp(
-              builder: (context, child) => AuraLegacyMaterialBridge(
-                child: child ?? const SizedBox.shrink(),
-              ),
-              locale: context.locale,
-              supportedLocales: context.supportedLocales,
-              localizationsDelegates: context.localizationDelegates,
-              theme: ThemeData(),
-              home: Scaffold(
-                body: SingleChildScrollView(
-                  child: RepaintBoundary(
-                    key: const ValueKey('issue1439-capture'),
-                    child: SizedBox(
-                      width: 1200,
-                      height: 800,
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Align(
-                          alignment: Alignment.topCenter,
-                          child: SizedBox(
-                            width: 720,
-                            child: ChatA2uiSurfaceHost.historical(
-                              messageId: 'historical-quarterly-progress',
-                              payloads: payloads,
-                            ),
-                          ),
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          builder: (context, child) => AuraLegacyMaterialBridge(
+            child: child ?? const SizedBox.shrink(),
+          ),
+          locale: const Locale('en'),
+          supportedLocales: const [Locale('en')],
+          theme: ThemeData(),
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: RepaintBoundary(
+                key: const ValueKey('issue1439-capture'),
+                child: SizedBox(
+                  width: 1200,
+                  height: 800,
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: SizedBox(
+                        width: 720,
+                        child: ChatA2uiSurfaceHost.historical(
+                          messageId: 'historical-quarterly-progress',
+                          payloads: payloads,
                         ),
                       ),
                     ),
