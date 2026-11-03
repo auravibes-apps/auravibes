@@ -192,14 +192,7 @@ class const _NewChatAvailable({
   Widget build(BuildContext context, WidgetRef ref) {
     final draftStatus = useState(false);
     final guard = useMemoized(DraftExitGuard.new);
-    final data = _watchNewChatBodyData((
-      context: context,
-      ref: ref,
-      workspaceId: workspaceId,
-      draftStatus: draftStatus,
-      draftToLoad: draftToLoad,
-      onDraftLoaded: onDraftLoaded,
-    ));
+    final data = _bodyData(context, ref, draftStatus);
     _bindNewChatGuard((
       guard: guard,
       ref: ref,
@@ -212,6 +205,19 @@ class const _NewChatAvailable({
       child: _NewChatBody(data: data),
     );
   }
+
+  _NewChatBodyData _bodyData(
+    BuildContext context,
+    WidgetRef ref,
+    ValueNotifier<bool> draftStatus,
+  ) => _watchNewChatBodyData((
+    context: context,
+    ref: ref,
+    workspaceId: workspaceId,
+    draftStatus: draftStatus,
+    draftToLoad: draftToLoad,
+    onDraftLoaded: onDraftLoaded,
+  ));
 }
 
 typedef _NewChatBodyRequest = ({
