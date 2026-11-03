@@ -27,9 +27,8 @@ void main() {
           workspaceId: cloudWorkspace.localWorkspaceId,
         ),
         overrides: [
-          workspaceSessionForRouteProvider(
-            cloudWorkspace.localWorkspaceId,
-          ).overrideWithValue(const AsyncData(session)),
+          workspaceSessionForRouteProvider(cloudWorkspace.localWorkspaceId)
+              .overrideWithValue(const AsyncData(session)),
           conversationsStreamProvider((
             workspaceId: cloudWorkspace.localWorkspaceId,
             search: '',
@@ -80,11 +79,10 @@ void main() {
           workspaceId: cloudWorkspace.localWorkspaceId,
         ),
         overrides: [
-          workspaceSessionForRouteProvider(
-            cloudWorkspace.localWorkspaceId,
-          ).overrideWithValue(
-            const AsyncData(WorkspaceSession(cloudWorkspace)),
-          ),
+          workspaceSessionForRouteProvider(cloudWorkspace.localWorkspaceId)
+              .overrideWithValue(
+                const AsyncData(WorkspaceSession(cloudWorkspace)),
+              ),
           conversationsStreamProvider((
             workspaceId: cloudWorkspace.localWorkspaceId,
             search: '',
