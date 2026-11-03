@@ -1,6 +1,8 @@
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
+import 'package:auravibes_app/features/settings/models/workspace_settings_draft_guards.dart';
 import 'package:auravibes_app/features/settings/providers/compaction_settings_provider.dart';
 import 'package:auravibes_app/features/settings/widgets/compaction_settings_section.dart';
+import 'package:auravibes_app/features/settings/widgets/scoped_verification_section.dart';
 import 'package:auravibes_app/features/settings/widgets/workspace_agent_lifecycle_hooks_section.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -24,11 +26,11 @@ class const WorkspaceSettingsScreen({
     final view = _useWorkspaceSettingsSnapshot(ref, workspaceId, guard);
 
     return DraftExitScope(
-      guard: view.guard,
+      guard: guard,
       child: _WorkspaceSettingsView(
         workspaceId: workspaceId,
         workspaceName: view.workspaceName,
-        guard: view.guard,
+        guards: view.guards,
         settings: view.settings,
         loaded: view.loaded,
       ),
@@ -37,7 +39,7 @@ class const WorkspaceSettingsScreen({
 }
 
 typedef _WorkspaceSettingsSnapshot = ({
-  DraftExitGuard guard,
+  WorkspaceSettingsDraftGuards guards,
   String workspaceName,
   AsyncValue<CompactionSettings> settings,
   bool loaded,
@@ -48,17 +50,35 @@ _WorkspaceSettingsSnapshot _useWorkspaceSettingsSnapshot(
   String workspaceId,
   DraftExitGuard guard,
 ) {
-  final owner = useMemoized(() => guard, [workspaceId]);
+  final guards = _useWorkspaceSettingsDraftGuards(guard, workspaceId);
   final settings = ref.watch(compactionSettingsProvider(workspaceId));
+
+  return (
+    guards: guards,
+    workspaceName: _workspaceSettingsName(ref, workspaceId),
+    settings: settings,
+    loaded: _useWorkspaceSettingsLoaded(settings),
+  );
+}
+
+WorkspaceSettingsDraftGuards _useWorkspaceSettingsDraftGuards(
+  DraftExitGuard guard,
+  String workspaceId,
+) {
+  final guards = useMemoized(() => WorkspaceSettingsDraftGuards(guard), [
+    guard,
+    workspaceId,
+  ]);
+  useEffect(() => guards.dispose, [guards]);
+
+  return guards;
+}
+
+bool _useWorkspaceSettingsLoaded(AsyncValue<CompactionSettings> settings) {
   final loaded = useRef(false);
   if (settings is AsyncData) loaded.value = true;
 
-  return (
-    guard: owner,
-    workspaceName: _workspaceSettingsName(ref, workspaceId),
-    settings: settings,
-    loaded: loaded.value,
-  );
+  return loaded.value;
 }
 
 String _workspaceSettingsName(WidgetRef ref, String workspaceId) {
@@ -73,7 +93,7 @@ String _workspaceSettingsName(WidgetRef ref, String workspaceId) {
 class const _WorkspaceSettingsView({
   required final String workspaceId,
   required final String workspaceName,
-  required final DraftExitGuard guard,
+  required final WorkspaceSettingsDraftGuards guards,
   required final AsyncValue<CompactionSettings> settings,
   required final bool loaded,
 }) extends StatelessWidget {
@@ -85,7 +105,7 @@ class const _WorkspaceSettingsView({
         _WorkspaceSettingsHeading(workspaceName: workspaceName),
         _WorkspaceSettingsContent(
           workspaceId: workspaceId,
-          guard: guard,
+          guards: guards,
           settings: settings,
           loaded: loaded,
         ),
@@ -110,7 +130,7 @@ class const _WorkspaceSettingsHeading({required final String workspaceName})
 
 class const _WorkspaceSettingsContent({
   required final String workspaceId,
-  required final DraftExitGuard guard,
+  required final WorkspaceSettingsDraftGuards guards,
   required final AsyncValue<CompactionSettings> settings,
   required final bool loaded,
 }) extends StatelessWidget {
@@ -119,7 +139,7 @@ class const _WorkspaceSettingsContent({
     if (loaded) {
       return _LoadedWorkspaceSettings(
         workspaceId: workspaceId,
-        guard: guard,
+        guards: guards,
         settings: settings,
       );
     }
@@ -135,7 +155,7 @@ class const _WorkspaceSettingsContent({
 
 class const _LoadedWorkspaceSettings({
   required final String workspaceId,
-  required final DraftExitGuard guard,
+  required final WorkspaceSettingsDraftGuards guards,
   required final AsyncValue<CompactionSettings> settings,
 }) extends StatelessWidget {
   @override
@@ -144,7 +164,12 @@ class const _LoadedWorkspaceSettings({
       if (settings.hasError) _SettingsLoadError(workspaceId: workspaceId),
       CompactionSettingsSection(
         workspaceId: workspaceId,
-        guard: guard,
+        guard: guards.compaction,
+        key: ValueKey((workspaceId: workspaceId, section: 'compaction')),
+      ),
+      ScopedVerificationSection(
+        workspaceId: workspaceId,
+        guard: guards.verification,
         key: ValueKey(workspaceId),
       ),
       WorkspaceAgentLifecycleHooksSection(

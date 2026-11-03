@@ -7,10 +7,204 @@ import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_manager_client.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_web_sse_client_transport.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mcp_client/mcp_client.dart' as mcp;
 
 void main() {
+  test('verification preserves negotiated HTTP protocol headers', () async {
+    final server = await _LocalMcpHttpServer.start(
+      toolResult: _verificationReceipt('completed'),
+      enforceProtocolHeader: true,
+    );
+    final manager = McpManagerService();
+    final session = await manager.openVerificationSession(
+      _verificationConnection(server.endpoint, .new()),
+    );
+    addTearDown(() async {
+      session.close();
+      await server.close();
+    });
+    final output = await session.call(
+      mcpServerId: 'server',
+      toolIdentifier: 'verify',
+      arguments: _verificationArguments('capabilities'),
+    );
+    expect(output, isNotNull);
+    expect(server.negotiatedProtocolVersion, isNotNull);
+    expect(server.toolProtocolVersions, [server.negotiatedProtocolVersion]);
+  });
+
+  test(
+    'dedicated manager connection cancels a pending start without teardown',
+    () async {
+      final started = Completer<void>();
+      final release = Completer<void>();
+      final operations = <String>[];
+      final server = await _LocalMcpHttpServer.start(
+        toolHandler: (message) async {
+          final args = _objectMap(_objectMap(message['params'])['arguments']);
+          final operation = args['operation']! as String;
+          operations.add(operation);
+          if (operation == 'start') {
+            started.complete();
+            await release.future;
+          }
+
+          return _verificationReceipt(
+            operation == 'cancel' ? 'cancelled' : 'completed',
+          );
+        },
+      );
+      final manager = McpManagerService();
+      final scope = AgentCancellationScope();
+      final session = await manager.openVerificationSession(
+        _verificationConnection(server.endpoint, scope),
+      );
+      addTearDown(() async {
+        if (!release.isCompleted) release.complete();
+        session.close();
+        await server.close();
+      });
+      expect(server.clientCapabilities, isNot(contains('elicitation')));
+      var startSettled = false;
+      Future<Object?> trackStart() async {
+        final value = await session.call(
+          mcpServerId: 'server',
+          toolIdentifier: 'verify',
+          arguments: _verificationArguments('start'),
+        );
+        startSettled = true;
+
+        return value;
+      }
+
+      final start = trackStart();
+      await started.future.timeout(const Duration(seconds: 2));
+      final cancel = await session
+          .call(
+            mcpServerId: 'server',
+            toolIdentifier: 'verify',
+            arguments: _verificationArguments('cancel'),
+          )
+          .timeout(const Duration(seconds: 2));
+      expect(operations, ['start', 'cancel']);
+      expect(startSettled, isFalse);
+      expect(cancel, isNotNull);
+      release.complete();
+      final _ = await start;
+    },
+  );
+
+  test('dedicated elicitation cannot affect an ordinary handler', () async {
+    final ordinarySeen = Completer<void>();
+    final releaseOrdinary = Completer<void>();
+    final server = await _LocalMcpHttpServer.start(
+      elicitVerification: true,
+      toolHandler: (message) async {
+        if (_objectMap(message['params'])['name'] == 'ordinary') {
+          ordinarySeen.complete();
+          await releaseOrdinary.future;
+        }
+
+        return {
+          'content': [
+            {'type': 'text', 'text': 'ordinary completed'},
+          ],
+        };
+      },
+    );
+    final manager = McpManagerService();
+    final ordinary = await manager.connectMcpWithAutoTransport(
+      _connectionRequest(server.endpoint),
+    );
+    var prompts = 0;
+    final ordinaryCall = manager.callToolString(
+      ordinary,
+      toolIdentifier: 'ordinary',
+      arguments: const {},
+      elicitation: (
+        serverName: 'Ordinary',
+        onElicitation: (_) async {
+          prompts++;
+
+          return const McpElicitationResponse(action: .cancel);
+        },
+      ),
+    );
+    await ordinarySeen.future.timeout(const Duration(seconds: 2));
+    final scope = AgentCancellationScope();
+    final session = await manager.openVerificationSession(
+      _verificationConnection(server.endpoint, scope),
+    );
+    addTearDown(() async {
+      if (!releaseOrdinary.isCompleted) releaseOrdinary.complete();
+      session.close();
+      final _ = await ordinaryCall;
+      await manager.disconnect(ordinary);
+      await server.close();
+    });
+    final start = session.call(
+      mcpServerId: 'server',
+      toolIdentifier: 'verify',
+      arguments: _verificationArguments('start'),
+    );
+    await expectLater(
+      start.timeout(const Duration(seconds: 2)),
+      throwsFormatException,
+    );
+    final response = await server.elicitationReply.future.timeout(
+      const Duration(seconds: 2),
+    );
+    expect(
+      response.containsKey('error') ||
+          _objectMap(response['result'])['action'] == 'cancel',
+      isTrue,
+    );
+    expect(prompts, 0);
+    releaseOrdinary.complete();
+    expect(await ordinaryCall, 'ordinary completed');
+  });
+  for (final failed in [false, true]) {
+    test('preserves raw metadata with isError=$failed', () async {
+      final structured = {
+        'auravibesChangedPaths': {
+          'version': 1,
+          'workspaceRoot': 'root',
+          'paths': ['lib/main.dart'],
+        },
+      };
+      final server = await _LocalMcpHttpServer.start(
+        toolResult: {
+          'content': [
+            {'type': 'text', 'text': 'edit result'},
+          ],
+          'structuredContent': structured,
+          'isError': failed,
+        },
+      );
+      final manager = McpManagerService();
+      McpManagerClient? client;
+      addTearDown(() async {
+        await manager.disconnect(client);
+        await server.close();
+      });
+      client = await manager.connectMcpWithAutoTransport(
+        _connectionRequest(server.endpoint),
+      );
+      final output = await manager.callToolOutput((
+        client: client,
+        toolIdentifier: 'edit_file',
+        arguments: const {},
+        includeAppData: false,
+        elicitation: (serverName: 'Code', onElicitation: null),
+      ));
+      expect(output.structuredContent, structured);
+      expect(output.isError, failed);
+      expect(output.appData, isEmpty);
+      expect(output.modelText, contains('edit result'));
+    });
+  }
   group('McpManagerService.connectMcpWithAutoTransport', () {
     test('uses Streamable HTTP when initialize succeeds', () async {
       final server = await _LocalMcpHttpServer.start();
@@ -511,6 +705,48 @@ void main() {
   });
 }
 
+McpVerificationConnectionRequest _verificationConnection(
+  Uri endpoint,
+  AgentCancellationScope cancellation,
+) => (
+  server: McpServerToCreate(
+    name: 'Verification',
+    url: endpoint.toString(),
+    transport: const McpTransportTypeStreamableHttp(),
+    authenticationType: const McpAuthenticationTypeNone(),
+  ),
+  serverId: 'server',
+  toolIdentifier: 'verify',
+  deadline: DateTime.now().toUtc().add(const Duration(seconds: 10)),
+  cancellation: cancellation,
+);
+
+Map<String, dynamic> _verificationArguments(String operation) => {
+  'protocol': ScopedVerificationLimits.protocol,
+  'operation': operation,
+  'operationId': 'operation',
+  'workspaceRoot': 'root',
+};
+Map<String, Object?> _verificationReceipt(String state) => {
+  'content': <Object?>[],
+  'structuredContent': {
+    'protocol': ScopedVerificationLimits.protocol,
+    'operationId': 'operation',
+    'workspaceRoot': 'root',
+    'state': state,
+    'scopeValidated': true,
+    'checks': state == 'completed'
+        ? [
+            {'id': 'check', 'exitCode': 0},
+          ]
+        : <Object?>[],
+    'output': '',
+    'outputTruncated': false,
+    'originalOutputBytes': 0,
+    if (state == 'cancelled') 'cancellationRecorded': true,
+  },
+};
+
 McpConnectionRequest _connectionRequest(
   Uri endpoint, {
   McpAuthenticationType authenticationType = const McpAuthenticationTypeNone(),
@@ -532,6 +768,9 @@ final class _LocalMcpHttpServer {
     required this.useJsonRpcError,
     required this.tools,
     required this.toolResult,
+    this.toolHandler,
+    this.elicitVerification = false,
+    this.enforceProtocolHeader = false,
   });
 
   final int streamableStatus;
@@ -539,10 +778,17 @@ final class _LocalMcpHttpServer {
   final bool useJsonRpcError;
   final List<Map<String, Object?>> tools;
   final Map<String, Object?>? toolResult;
+  final Future<Map<String, Object?>> Function(Map<String, dynamic> message)?
+  toolHandler;
+  final bool elicitVerification;
+  final bool enforceProtocolHeader;
+  final elicitationReply = Completer<Map<String, dynamic>>();
   Map<String, Object?>? clientExtensions;
   int streamablePostCount = 0;
   int sseGetCount = 0;
   Map<String, Object?>? clientCapabilities;
+  String? negotiatedProtocolVersion;
+  final toolProtocolVersions = <String?>[];
   String? streamableAuthorization;
   final streamableAuthorizationHeaders = <String?>[];
   String? sseAuthorization;
@@ -565,6 +811,10 @@ final class _LocalMcpHttpServer {
     bool useJsonRpcError = false,
     List<Map<String, Object?>> tools = const [],
     Map<String, Object?>? toolResult,
+    Future<Map<String, Object?>> Function(Map<String, dynamic> message)?
+    toolHandler,
+    bool elicitVerification = false,
+    bool enforceProtocolHeader = false,
   }) async {
     final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
     final local = _LocalMcpHttpServer(
@@ -574,6 +824,9 @@ final class _LocalMcpHttpServer {
       useJsonRpcError: useJsonRpcError,
       tools: tools,
       toolResult: toolResult,
+      toolHandler: toolHandler,
+      elicitVerification: elicitVerification,
+      enforceProtocolHeader: enforceProtocolHeader,
     );
     final _ = server.listen((request) => unawaited(local._handle(request)));
 
@@ -616,11 +869,71 @@ final class _LocalMcpHttpServer {
     streamableAuthorizationHeaders.add(streamableAuthorization);
     final message = await _readMessage(request);
     if (message['method'] == 'initialize') {
+      final version = _objectMap(message['params'])['protocolVersion'];
+      if (version is String) negotiatedProtocolVersion = version;
       clientCapabilities = _objectMap(
         _objectMap(message['params'])['capabilities'],
       );
     }
     final response = request.response..statusCode = streamableStatus;
+    if (message['method'] == 'tools/call') {
+      final version = request.headers.value('MCP-Protocol-Version');
+      toolProtocolVersions.add(version);
+      if (enforceProtocolHeader &&
+          (negotiatedProtocolVersion == null ||
+              version != negotiatedProtocolVersion)) {
+        response
+          ..statusCode = HttpStatus.badRequest
+          ..headers.contentType = .json
+          ..write(
+            jsonEncode({
+              'jsonrpc': '2.0',
+              'id': message['id'],
+              'error': {
+                'code': -32600,
+                'message': 'Missing or mismatched MCP-Protocol-Version',
+              },
+            }),
+          );
+        final _ = await response.close();
+
+        return;
+      }
+    }
+    if (message['id'] == 900 && message['method'] == null) {
+      if (!elicitationReply.isCompleted) elicitationReply.complete(message);
+      response.statusCode = HttpStatus.accepted;
+      final _ = await response.close();
+
+      return;
+    }
+    final params = _objectMap(message['params']);
+    if (elicitVerification &&
+        message['method'] == 'tools/call' &&
+        params['name'] == 'verify') {
+      response.headers.set(HttpHeaders.contentTypeHeader, 'text/event-stream');
+      // Match the fixture's legacy SSE behavior.
+      // Deliver requests while the tool awaits the client's rejection.
+      final event = {
+        'jsonrpc': '2.0',
+        'id': 900,
+        'method': 'elicitation/create',
+        'params': {
+          'mode': 'form',
+          'message': 'Unexpected verification prompt',
+          'requestedSchema': {
+            'type': 'object',
+            'properties': <String, Object?>{},
+          },
+        },
+      };
+      response
+        ..bufferOutput = false
+        ..write('event: message\ndata: ${jsonEncode(event)}\n\n');
+      final _ = await response.flush();
+
+      return;
+    }
     if (streamableStatus != HttpStatus.ok) {
       if (useJsonRpcError) {
         response.headers.contentType = .json;
@@ -679,8 +992,9 @@ final class _LocalMcpHttpServer {
         }),
       );
     } else if (message['method'] == 'tools/call') {
+      final handler = toolHandler;
       final result =
-          toolResult ??
+          (handler == null ? toolResult : await handler(message)) ??
           {
             'content': [
               {'type': 'text', 'text': 'refreshed'},
