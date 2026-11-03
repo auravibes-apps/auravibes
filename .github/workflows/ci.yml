@@ -1446,7 +1446,11 @@ jobs:
 
   issue-1509-ui-evidence:
     name: issue-1509-ui-evidence
-    if: ${{ github.event_name == 'pull_request' && github.head_ref == 'codex/issue-1509-prompt-reordering' }}
+    needs: change
+    if: >-
+      ${{ github.event_name == 'pull_request' &&
+          github.head_ref == 'codex/issue-1509-prompt-reordering' &&
+          needs.change.outputs.run_code_checks == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout PR head
