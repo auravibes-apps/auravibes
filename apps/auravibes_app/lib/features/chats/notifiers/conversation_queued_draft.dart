@@ -170,10 +170,7 @@ List<ConversationQueuedDraft>? _reorderedDrafts(
   if (indices == null) return null;
 
   final reorderedDrafts = [...drafts];
-  reorderedDrafts.insert(
-    indices.$2,
-    reorderedDrafts.removeAt(indices.$1),
-  );
+  reorderedDrafts.insert(indices.$2, reorderedDrafts.removeAt(indices.$1));
 
   return reorderedDrafts;
 }

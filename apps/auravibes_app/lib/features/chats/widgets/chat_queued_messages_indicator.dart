@@ -60,10 +60,8 @@ void Function(String draftId) _createRemoveCallback(
   ConversationSendQueue notifier,
   String conversationId,
 ) =>
-    (draftId) => notifier.remove(
-      conversationId: conversationId,
-      draftId: draftId,
-    );
+    (draftId) =>
+        notifier.remove(conversationId: conversationId, draftId: draftId);
 
 _MoveQueuedDraft _createMoveCallback(
   ConversationSendQueue notifier,
@@ -329,9 +327,7 @@ _QueuedDraftMoveMenuItem _queuedDraftMoveDownItem(
 AuraPopupMenuItem _queuedDraftMoveItem(_QueuedDraftMoveMenuItem item) =>
     AuraPopupMenuItem(
       title: Text(item.title),
-      onTap: item.canMove
-          ? () => item.onMove(item.draftId, item.offset)
-          : null,
+      onTap: item.canMove ? () => item.onMove(item.draftId, item.offset) : null,
       leading: AuraIcon(item.icon, size: .small),
       identifier: 'queued-prompt-${item.draftId}-move-${item.direction}',
     );
