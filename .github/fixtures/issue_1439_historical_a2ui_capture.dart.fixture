@@ -93,18 +93,21 @@ void main() {
             body: SingleChildScrollView(
               child: RepaintBoundary(
                 key: const ValueKey('issue1439-capture'),
-                child: SizedBox(
-                  width: 1200,
-                  height: 800,
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Align(
-                      alignment: Alignment.topCenter,
-                      child: SizedBox(
-                        width: 720,
-                        child: ChatA2uiSurfaceHost.historical(
-                          messageId: 'historical-quarterly-progress',
-                          payloads: payloads,
+                child: ColoredBox(
+                  color: Colors.white,
+                  child: SizedBox(
+                    width: 1200,
+                    height: 800,
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Align(
+                        alignment: Alignment.topCenter,
+                        child: SizedBox(
+                          width: 720,
+                          child: ChatA2uiSurfaceHost.historical(
+                            messageId: 'historical-quarterly-progress',
+                            payloads: payloads,
+                          ),
                         ),
                       ),
                     ),

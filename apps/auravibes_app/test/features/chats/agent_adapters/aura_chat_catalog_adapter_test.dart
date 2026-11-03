@@ -883,6 +883,7 @@ void main() {
       }),
     ];
 
+    await EasyLocalization.ensureInitialized();
     await tester.pumpWidget(
       EasyLocalization(
         supportedLocales: const [Locale('es')],
