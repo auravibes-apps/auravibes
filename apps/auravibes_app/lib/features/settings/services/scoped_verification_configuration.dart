@@ -98,9 +98,9 @@ ScopedVerificationToolOption? _matchingRunner(
 
 Expression<bool> _eligibleToolsWhere(
   String workspaceId,
-  ToolsTable tools,
-  ToolsGroupsTable groups,
-  McpServersTable servers,
+  $ToolsTable tools,
+  $ToolsGroupsTable groups,
+  $McpServersTable servers,
 ) =>
     _workspaceMatch(workspaceId, tools, groups, servers) &
     _enabledResources(tools, groups, servers) &
@@ -108,23 +108,23 @@ Expression<bool> _eligibleToolsWhere(
 
 Expression<bool> _workspaceMatch(
   String workspaceId,
-  ToolsTable tools,
-  ToolsGroupsTable groups,
-  McpServersTable servers,
+  $ToolsTable tools,
+  $ToolsGroupsTable groups,
+  $McpServersTable servers,
 ) =>
     tools.workspaceId.equals(workspaceId) &
     groups.workspaceId.equals(workspaceId) &
     servers.workspaceId.equals(workspaceId);
 
 Expression<bool> _enabledResources(
-  ToolsTable tools,
-  ToolsGroupsTable groups,
-  McpServersTable servers,
+  $ToolsTable tools,
+  $ToolsGroupsTable groups,
+  $McpServersTable servers,
 ) => tools.isEnabled & groups.isEnabled & servers.isEnabled;
 
 Expression<bool> _permittedResources(
-  ToolsTable tools,
-  ToolsGroupsTable groups,
+  $ToolsTable tools,
+  $ToolsGroupsTable groups,
 ) =>
     tools.permissions.isNotValue(PermissionAccess.denied.name) &
     groups.permissions.isNotValue(PermissionAccess.denied.name);
