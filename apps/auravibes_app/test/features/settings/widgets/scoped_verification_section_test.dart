@@ -266,7 +266,7 @@ void _dumpVerificationState(
   DraftExitGuard guard,
   int probes,
 ) {
-  final enabled = tester.widget<AuraCheckboxListTile>(
+  final enabled = tester.widget<Widget>(
     find.byKey(const ValueKey('verification-enable')),
   );
   final texts = tester.allWidgets
@@ -281,7 +281,7 @@ void _dumpVerificationState(
       )
       .toList();
   debugPrint(
-    'DIAG $scenario enabled=${enabled.value} dirty=${guard.isDirty} '
+    'DIAG $scenario control=$enabled dirty=${guard.isDirty} '
     'probes=$probes texts=$texts',
   );
 }
