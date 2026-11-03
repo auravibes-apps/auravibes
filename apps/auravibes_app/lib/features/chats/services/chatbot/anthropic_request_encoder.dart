@@ -385,12 +385,18 @@ _Projection _fallback(ModelRequest request) => (
 );
 
 Message _contextMessage(AgentContextMessage message) => Message(
-  role: message.role == .system && message.provenance.mayUseSystemRole
-      ? Role.system
-      : Role.user,
+  role: _contextRole(message),
   content: [TextPart(text: message.content)],
   metadata: message.provenance.withMetadata(const {}),
 );
+
+Role _contextRole(AgentContextMessage message) {
+  if (message.role != Role.system ||
+      !message.provenance.mayUseSystemRole) {
+    return Role.user;
+  }
+  return Role.system;
+}
 
 bool _hasToolChanges(AgentTranscriptContextEntry entry) =>
     entry.update.toolsAdded.isNotEmpty || entry.update.toolsRemoved.isNotEmpty;
