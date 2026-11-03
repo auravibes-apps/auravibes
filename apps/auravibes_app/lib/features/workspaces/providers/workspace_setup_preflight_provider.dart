@@ -68,9 +68,7 @@ Future<WorkspaceSetupPreflight> workspaceSetupPreflight(
           () => ref.watch(chatModelConnectionsProvider(workspaceId).future),
         )
       : const _ReadResult<List<ModelConnectionEntity>>.unavailable();
-  final selectedModelId = ref.watch(
-    newChatProvider(workspaceId).select((state) => state.modelId),
-  );
+  final selectedModelId = ref.watch(newChatProvider(workspaceId)).modelId;
   final modelRead = selectedModelId == null
       ? const _ReadResult<WorkspaceSetupModelSnapshot?>.available(null)
       : sourceAllowed
@@ -198,7 +196,7 @@ Future<_ReadResult<T>> _capture<T>(Future<T> Function() read) async {
   try {
     return _ReadResult<T>.available(await read());
   } on Object {
-    return const _ReadResult<T>.unavailable();
+    return _ReadResult<T>.unavailable();
   }
 }
 
