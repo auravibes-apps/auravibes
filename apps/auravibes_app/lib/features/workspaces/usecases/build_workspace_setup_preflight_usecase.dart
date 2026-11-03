@@ -21,14 +21,12 @@ class const BuildWorkspaceSetupPreflightUsecase() {
     required String appVersion,
     required WorkspaceSetupPreflightLabels labels,
   }) {
-    final outcomeLabel =
-        labels.outcomes[result.outcome] ?? result.outcome.name;
+    final outcomeLabel = labels.outcomes[result.outcome] ?? result.outcome.name;
     final lines = <String>[
       '${labels.overallLabel}: $outcomeLabel',
       '${labels.generatedAt}: ${generatedAt.toUtc().toIso8601String()}',
       '${labels.appVersion}: $appVersion',
-      for (final check in result.checks)
-        _checkSummary(check, labels),
+      for (final check in result.checks) _checkSummary(check, labels),
     ];
 
     return lines.join('\n');
@@ -145,8 +143,7 @@ class const BuildWorkspaceSetupPreflightUsecase() {
           : const WorkspaceSetupPreflightCheck(
               id: .providerCredentials,
               status: .warning,
-              messageKey:
-                  'workspace_setup_preflight.provider_credential_missing_optional',
+              messageKey: 'workspace_setup_preflight.provider_credential_missing_optional',
               recovery: .reviewProvider,
             );
     }

@@ -2,7 +2,6 @@ import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
 import 'package:auravibes_app/domain/entities/model_providers_type.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/models/models/model_connection_store.dart';
 import 'package:auravibes_app/features/models/providers/chat_model_connections_provider.dart';
@@ -76,9 +75,7 @@ void main() {
 
     expect(result.outcome, WorkspaceSetupPreflightOutcome.needsSetup);
     expect(
-      result
-          .check(.providerCredentials)
-          .messageKey,
+      result.check(.providerCredentials).messageKey,
       'workspace_setup_preflight.provider_not_configured',
     );
     expect(
@@ -217,9 +214,7 @@ void main() {
     expect(result.outcome, WorkspaceSetupPreflightOutcome.blocked);
     expect(model.messageKey, 'workspace_setup_preflight.model_missing');
     expect(
-      result
-          .check(.providerCredentials)
-          .messageKey,
+      result.check(.providerCredentials).messageKey,
       'workspace_setup_preflight.provider_for_model_missing',
     );
   });
@@ -239,8 +234,7 @@ class _SelectionStore implements ModelSelectionStore {
   Future<void> updateToolSamplingPolicy(
     String selectionId,
     ToolSamplingPolicy? policy,
-  ) =>
-      Future<void>.value();
+  ) => Future<void>.value();
 
   @override
   Stream<List<WorkspaceModelSelectionWithConnectionEntity>> watch(

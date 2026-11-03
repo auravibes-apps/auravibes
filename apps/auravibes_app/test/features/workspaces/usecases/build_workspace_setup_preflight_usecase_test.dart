@@ -15,22 +15,10 @@ void main() {
     );
 
     expect(result.outcome, WorkspaceSetupPreflightOutcome.needsSetup);
-    expect(
-      result.check(.providerCredentials).status,
-      .warning,
-    );
-    expect(
-      result.check(.providerCredentials).recovery,
-      .addProvider,
-    );
-    expect(
-      result.check(.selectedModel).status,
-      .warning,
-    );
-    expect(
-      result.check(.selectedModel).recovery,
-      .chooseModel,
-    );
+    expect(result.check(.providerCredentials).status, .warning);
+    expect(result.check(.providerCredentials).recovery, .addProvider);
+    expect(result.check(.selectedModel).status, .warning);
+    expect(result.check(.selectedModel).recovery, .chooseModel);
   });
 
   test('configured provider with credential but no model needs setup', () {
@@ -48,10 +36,7 @@ void main() {
     );
 
     expect(result.outcome, WorkspaceSetupPreflightOutcome.needsSetup);
-    expect(
-      result.check(.selectedModel).recovery,
-      .chooseModel,
-    );
+    expect(result.check(.selectedModel).recovery, .chooseModel);
   });
 
   test('saved model and credential are ready without optional MCP', () {
@@ -69,10 +54,7 @@ void main() {
     );
 
     expect(result.outcome, WorkspaceSetupPreflightOutcome.ready);
-    expect(
-      result.check(.mcpConnections).status,
-      .pass,
-    );
+    expect(result.check(.mcpConnections).status, .pass);
   });
 
   test('workspace storage distinguishes unavailable from missing records', () {
@@ -93,14 +75,8 @@ void main() {
       ),
     );
 
-    expect(
-      unknown.check(.storage).status,
-      .unknown,
-    );
-    expect(
-      missing.check(.storage).status,
-      .fail,
-    );
+    expect(unknown.check(.storage).status, .unknown);
+    expect(missing.check(.storage).status, .fail);
   });
 
   test('unknown optional MCP status does not block workspace readiness', () {
@@ -120,10 +96,7 @@ void main() {
     );
 
     expect(result.outcome, WorkspaceSetupPreflightOutcome.ready);
-    expect(
-      result.check(.mcpConnections).status,
-      .unknown,
-    );
+    expect(result.check(.mcpConnections).status, .unknown);
   });
 
   test('provider absence is a warning when no model requires it', () {
@@ -166,10 +139,7 @@ void main() {
       );
 
       expect(result.outcome, WorkspaceSetupPreflightOutcome.blocked);
-      expect(
-        result.check(.providerCredentials).status,
-        .fail,
-      );
+      expect(result.check(.providerCredentials).status, .fail);
     },
   );
 
@@ -199,22 +169,12 @@ void main() {
       );
 
       expect(unavailable.outcome, WorkspaceSetupPreflightOutcome.unverified);
-      expect(
-        unavailable
-            .check(.providerCredentials)
-            .status,
-        .unknown,
-      );
+      expect(unavailable.check(.providerCredentials).status, .unknown);
       expect(
         missingMetadata.outcome,
         WorkspaceSetupPreflightOutcome.unverified,
       );
-      expect(
-        missingMetadata
-            .check(.selectedModel)
-            .status,
-        .unknown,
-      );
+      expect(missingMetadata.check(.selectedModel).status, .unknown);
     },
   );
 
@@ -252,14 +212,8 @@ void main() {
     );
 
     expect(result.outcome, WorkspaceSetupPreflightOutcome.blocked);
-    expect(
-      result.check(.selectedModel).status,
-      .fail,
-    );
-    expect(
-      result.check(.selectedModel).recovery,
-      .chooseModel,
-    );
+    expect(result.check(.selectedModel).status, .fail);
+    expect(result.check(.selectedModel).recovery, .chooseModel);
   });
 
   test('saved MCP failures warn, and no saved test stays unknown', () {
@@ -284,14 +238,8 @@ void main() {
       ),
     );
 
-    expect(
-      failed.check(.mcpConnections).status,
-      .warning,
-    );
-    expect(
-      notTested.check(.mcpConnections).status,
-      .unknown,
-    );
+    expect(failed.check(.mcpConnections).status, .warning);
+    expect(notTested.check(.mcpConnections).status, .unknown);
   });
 
   test(
