@@ -259,12 +259,8 @@ class DesignShadows._() {
     blurRadius: 4,
   );
 
-  /// Glass shadow for glassmorphism effects and translucent elements.
-  static const BoxShadow glass = .new(
-    color: Color(0x5F1F2687),
-    offset: Offset(0, 8),
-    blurRadius: 32,
-  );
+  /// Neutral elevation for legacy glass surfaces.
+  static const BoxShadow glass = lg;
 }
 
 /// Spacing selector for layout gaps, padding, and sizing.

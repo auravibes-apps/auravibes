@@ -81,9 +81,6 @@ class AuraFieldWrapper extends StatefulWidget {
 
 class _AuraFieldWrapperState extends State<AuraFieldWrapper> {
   static const _disabledAlpha = 0.5;
-  static const _focusAlpha = 0.1;
-  static const _focusBlurRadius = 4.0;
-  static const _focusSpreadRadius = 2.0;
   @override
   Widget build(BuildContext context) => _AuraFieldWrapperView.fromField(
     context: context,
@@ -188,7 +185,11 @@ class _AuraFieldWrapperInputData extends StatelessWidget {
            decoration: _fieldInputDecoration(
              _fieldBorderColor(field, colors),
              _fieldBorderRadius(context),
-             _fieldBoxShadow(field, colors),
+           ),
+           foregroundDecoration: _fieldEmphasisDecoration(
+             field,
+             colors,
+             _fieldBorderRadius(context),
            ),
            child: field.child,
            duration: DesignDuration.normal,
@@ -243,26 +244,25 @@ Color _fieldBorderColor(AuraFieldWrapper field, AuraColorScheme colors) {
   };
 }
 
-List<BoxShadow>? _fieldBoxShadow(
+BoxDecoration _fieldEmphasisDecoration(
   AuraFieldWrapper field,
   AuraColorScheme colors,
+  BorderRadius borderRadius,
 ) {
-  if (!field.isEnabled || field.isReadOnly) return null;
-  if (field.state == AuraFieldState.error) {
-    return _fieldBuildBoxShadow(colors.error);
+  if (!field.isEnabled ||
+      (!field.isFocused && field.state != AuraFieldState.error)) {
+    // Keep the decoration mounted so focus changes preserve the input state.
+    return const BoxDecoration();
   }
-  if (field.isFocused) return _fieldBuildBoxShadow(colors.primary);
 
-  return null;
+  return BoxDecoration(
+    border: Border.all(
+      color: field.state == .error ? colors.error : colors.primary,
+      width: DesignBorderWidth.medium,
+    ),
+    borderRadius: borderRadius,
+  );
 }
-
-List<BoxShadow> _fieldBuildBoxShadow(Color color) => [
-  BoxShadow(
-    color: color.withValues(alpha: _AuraFieldWrapperState._focusAlpha),
-    blurRadius: _AuraFieldWrapperState._focusBlurRadius,
-    spreadRadius: _AuraFieldWrapperState._focusSpreadRadius,
-  ),
-];
 
 BorderRadius _fieldBorderRadius(BuildContext context) => BorderRadius.all(
   .circular(AuraCornerRadiusScope.resolve(context, fallback: .xl)),
@@ -276,11 +276,9 @@ BoxDecoration _fieldSurfaceDecoration(
 BoxDecoration _fieldInputDecoration(
   Color borderColor,
   BorderRadius borderRadius,
-  List<BoxShadow>? boxShadow,
 ) => BoxDecoration(
   border: Border.all(color: borderColor),
   borderRadius: borderRadius,
-  boxShadow: boxShadow,
 );
 
 /// The visual state of a [AuraFieldWrapper].

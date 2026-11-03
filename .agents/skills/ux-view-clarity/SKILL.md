@@ -1,6 +1,6 @@
 ---
 name: ux-view-clarity
-description: Use automatically before any AuraVibes UI implementation, including feature requests that create screens, forms, menus, navigation, widgets, or adaptive layouts without mentioning design. Covers visual hierarchy, typography, spacing, polish, and UI fixes. Use ux-task-audit for review-only work. Skip non-UI changes.
+description: Use automatically before any AuraVibes UI implementation, including requests to unslop or improve generic-looking UI and feature requests that create screens, forms, menus, navigation, widgets, or adaptive layouts without mentioning design. Covers visual hierarchy, typography, spacing, polish, and UI fixes. Use ux-task-audit for review-only work. Skip non-UI changes.
 ---
 
 # AuraVibes UX view clarity
@@ -23,7 +23,9 @@ Make the screen feel composed as well as functional. Give each visual choice a t
 - Use surfaces, icons, borders, and motion only when they clarify grouping, meaning, feedback, or continuity. Avoid adding decoration to fill available space.
 - Adapt the composition to available space and input methods while preserving the task, current location, and state. A wide window is not permission to expose every setting.
 
-For a new or recomposed surface, or changes to layout, typography, color, icons, surfaces, or visual polish, read [visual design rules](references/visual-design-rules.md). For a small change, read only its relevant section. For copy-only edits, the baseline and short path are enough. These rules explain the perceptual logic and the visible checks; do not replace them with an “award-winning designer” persona.
+For a new or recomposed surface, or changes to layout, typography, color, icons, surfaces, or visual polish, read [visual design rules](references/visual-design-rules.md). For a small change, read only its relevant section. For copy-only edits, use the baseline, blacklist, short path, and [interface copy rules](references/visual-design-rules.md#interface-copy-status-and-charts). These rules explain the perceptual logic and the visible checks; do not replace them with an “award-winning designer” persona.
+
+For every visible change, apply the [shared visual blacklist](references/visual-design-rules.md#assessing-generic-looking-ui) to new or modified treatments. Flag existing violations outside the requested edit separately; do not broaden a narrow edit into a redesign.
 
 ## Improve the system when needed
 

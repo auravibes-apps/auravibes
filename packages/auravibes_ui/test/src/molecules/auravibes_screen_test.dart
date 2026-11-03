@@ -44,22 +44,32 @@ void main() {
       expect(find.byType(AuraPadding), findsOneWidget);
     });
 
-    testWidgets('renders aurora variant with mesh gradient and blur', (
+    testWidgets('renders the legacy aurora variant without a glow', (
       tester,
     ) async {
-      await tester.pumpWidget(
-        AuraThemeScope(
-          theme: .light,
-          child: MaterialApp(
-            home: const AuraScreen(child: SizedBox(), variant: .aurora),
-            theme: .new(),
+      for (final theme in [AuraTheme.light, AuraTheme.dark]) {
+        await tester.pumpWidget(
+          AuraThemeScope(
+            theme: theme,
+            child: MaterialApp(
+              home: const AuraScreen(child: SizedBox(), variant: .aurora),
+              theme: .new(),
+            ),
           ),
-        ),
-      );
+        );
 
-      expect(find.byType(Scaffold), findsOneWidget);
-      expect(find.byType(Stack), findsWidgets);
-      expect(find.byType(BackdropFilter), findsOneWidget);
+        final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+        expect(scaffold.backgroundColor, theme.colors.background);
+        expect(find.byType(BackdropFilter), findsNothing);
+        expect(
+          tester.widgetList<Container>(find.byType(Container)).where((widget) {
+            final decoration = widget.decoration;
+
+            return decoration is BoxDecoration && decoration.gradient != null;
+          }),
+          isEmpty,
+        );
+      }
     });
 
     testWidgets('renders AppBar properties and body layout', (tester) async {
