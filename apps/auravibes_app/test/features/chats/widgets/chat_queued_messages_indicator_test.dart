@@ -8,7 +8,6 @@ import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
@@ -127,10 +126,7 @@ void main() {
   testWidgets('moves a queued row through its accessible actions', (
     tester,
   ) async {
-    late final ConversationQueuedDraft first;
-    late final ConversationQueuedDraft middle;
-    late final ConversationQueuedDraft last;
-    late final ConversationQueuedDraft other;
+    final enqueuedDrafts = <ConversationQueuedDraft>[];
     const attachment = MessageAttachmentToCreate(
       localPath: '/tmp/middle.pdf',
       fileName: 'middle.pdf',
@@ -157,27 +153,30 @@ void main() {
           final notifier = container.read(
             conversationSendQueueProvider.notifier,
           );
-          first = notifier.enqueue(
-            conversationId: 'conv-1',
-            draft: const ChatDraft(text: 'First'),
-          );
-          middle = notifier.enqueue(
-            conversationId: 'conv-1',
-            draft: middleContent,
-          );
-          last = notifier.enqueue(
-            conversationId: 'conv-1',
-            draft: const ChatDraft(text: 'Last'),
-          );
-          other = notifier.enqueue(
-            conversationId: 'conv-2',
-            draft: const ChatDraft(text: 'Other conversation'),
-          );
+          enqueuedDrafts.addAll([
+            notifier.enqueue(
+              conversationId: 'conv-1',
+              draft: const ChatDraft(text: 'First'),
+            ),
+            notifier.enqueue(
+              conversationId: 'conv-1',
+              draft: middleContent,
+            ),
+            notifier.enqueue(
+              conversationId: 'conv-1',
+              draft: const ChatDraft(text: 'Last'),
+            ),
+            notifier.enqueue(
+              conversationId: 'conv-2',
+              draft: const ChatDraft(text: 'Other conversation'),
+            ),
+          ]);
         },
         onEditDraft: (draft) => loadedDraft = draft,
       ),
     );
 
+    final [first, middle, last, other] = enqueuedDrafts;
     final queuedMiddle = middle;
     final rowActions = find.byKey(
       ValueKey('queued-prompt-${queuedMiddle.id}-actions'),
@@ -224,8 +223,7 @@ void main() {
   testWidgets('disables move actions at the first and last boundaries', (
     tester,
   ) async {
-    late final ConversationQueuedDraft first;
-    late final ConversationQueuedDraft last;
+    final enqueuedDrafts = <ConversationQueuedDraft>[];
     final queueSnapshots = <Map<String, List<ConversationQueuedDraft>>>[];
 
     await pumpAndInit(
@@ -242,18 +240,21 @@ void main() {
           final notifier = container.read(
             conversationSendQueueProvider.notifier,
           );
-          first = notifier.enqueue(
-            conversationId: 'conv-1',
-            draft: const ChatDraft(text: 'First'),
-          );
-          last = notifier.enqueue(
-            conversationId: 'conv-1',
-            draft: const ChatDraft(text: 'Last'),
-          );
+          enqueuedDrafts.addAll([
+            notifier.enqueue(
+              conversationId: 'conv-1',
+              draft: const ChatDraft(text: 'First'),
+            ),
+            notifier.enqueue(
+              conversationId: 'conv-1',
+              draft: const ChatDraft(text: 'Last'),
+            ),
+          ]);
         },
       ),
     );
 
+    final [first, last] = enqueuedDrafts;
     final queuedFirst = first;
     await tester.tap(
       find.byKey(ValueKey('queued-prompt-${queuedFirst.id}-actions')),
