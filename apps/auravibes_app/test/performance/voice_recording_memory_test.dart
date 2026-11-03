@@ -61,7 +61,7 @@ Future<void> _measureRecording() async {
     uri.replace(scheme: 'ws', path: '${uri.path}ws').toString(),
   );
   addTearDown(vm.dispose);
-  final isolateId = developer.Service.getIsolateID(Isolate.current);
+  final isolateId = developer.Service.getIsolateId(Isolate.current);
   if (isolateId == null) throw StateError('The worker isolate is unavailable');
   final meter = _MemoryMeter(vm, isolateId, samples);
   addTearDown(meter.stop);
