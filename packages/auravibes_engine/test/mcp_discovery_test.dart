@@ -108,18 +108,32 @@ void main() {
     expect(McpDiscoveryPolicy.displayTitle('safe\u061Ctxt'), isNull);
   });
 
-  test('drops oversized display metadata without rejecting the tool', () {
+  test('drops overlong display titles while preserving the tool', () {
     final tool = parse({
       'tools': [
         {
           'name': 'search_records',
-          'title': 't' * (McpDiscoveryPolicy.maxToolBytes + 1),
+          'title': 't' * (McpDiscoveryPolicy.maxTitleLength + 1),
         },
       ],
     }).single;
 
     expect(tool.name, 'search_records');
     expect(tool.title, isNull);
+  });
+
+  test('enforces the tool byte limit even for dropped display metadata', () {
+    expect(
+      () => parse({
+        'tools': [
+          {
+            'name': 'search_records',
+            'title': 't' * (McpDiscoveryPolicy.maxToolBytes + 1),
+          },
+        ],
+      }),
+      throwsFormatException,
+    );
   });
 
   test('validates tool count before materializing tools', () {
