@@ -276,15 +276,10 @@ class const _QueuedDraftActions({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final onEditDraft = this.onEditDraft;
-
     return Row(
       mainAxisSize: .min,
       children: [
-        if (onEditDraft != null) ...[
-          _QueuedDraftEditButton(draft: draft, onEdit: onEditDraft),
-          const AuraSizedBox(width: .xs),
-        ],
+        _QueuedDraftEditAction(draft: draft, onEditDraft: onEditDraft),
         _QueuedDraftActionsMenu(
           draftId: draft.id,
           canMoveUp: canMoveUp,
@@ -293,6 +288,25 @@ class const _QueuedDraftActions({
         ),
         const AuraSizedBox(width: .xs),
         _QueuedDraftRemoveButton(draftId: draft.id, onRemove: onRemove),
+      ],
+    );
+  }
+}
+
+class const _QueuedDraftEditAction({
+  required final ConversationQueuedDraft draft,
+  required final ValueChanged<ConversationQueuedDraft>? onEditDraft,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final onEditDraft = this.onEditDraft;
+    if (onEditDraft == null) return const SizedBox.shrink();
+
+    return Row(
+      mainAxisSize: .min,
+      children: [
+        _QueuedDraftEditButton(draft: draft, onEdit: onEditDraft),
+        const AuraSizedBox(width: .xs),
       ],
     );
   }
