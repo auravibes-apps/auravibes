@@ -39,9 +39,12 @@ class WorkspaceSetupPreflightRefresh extends _$WorkspaceSetupPreflightRefresh {
 Future<WorkspaceSetupPreflight> workspaceSetupPreflight(
   Ref ref,
   String workspaceId,
-) => _readWorkspaceScope(ref, workspaceId).then<WorkspaceSetupPreflight>(
-  (scope) => _buildPreflight(ref, workspaceId, scope),
-);
+) async {
+  final scope = await _readWorkspaceScope(ref, workspaceId);
+  final preflight = await _buildPreflight(ref, workspaceId, scope);
+
+  return preflight;
+}
 
 Future<WorkspaceSetupPreflight> _buildPreflight(
   Ref ref,
@@ -178,7 +181,7 @@ Future<_SourceReads> _readSources(
 
 Future<bool?> _readCloudStorage(Ref ref, _WorkspaceScope scope) {
   final session = _cloudStorageSession(scope);
-  if (session == null) return Future<bool?>.value(null);
+  if (session == null) return Future<bool?>.value();
 
   return _readCloudConfiguration(ref, session);
 }
@@ -198,9 +201,11 @@ Future<bool?> _readCloudConfiguration(
 Future<bool> _cloudWorkspaceConfiguration(
   Ref ref,
   WorkspaceSession session,
-) => ref
-    .watch(cloudWorkspaceConfigurationProvider(session).future)
-    .then<bool>((_) => true);
+) async {
+  await ref.watch(cloudWorkspaceConfigurationProvider(session).future);
+
+  return true;
+}
 
 Future<_ReadResult<List<ModelConnectionEntity>>> _readProviderConnections(
   Ref ref,

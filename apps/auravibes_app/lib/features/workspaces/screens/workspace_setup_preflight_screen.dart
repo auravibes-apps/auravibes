@@ -59,19 +59,17 @@ class const _PreflightContent({
 
     return ListView(
       padding: const EdgeInsets.all(16),
-      children: _preflightCards(isCloud),
+      children: [
+        _PreflightSummaryCard(
+          workspaceId: workspaceId,
+          result: result,
+          isCloud: isCloud,
+        ),
+        for (final id in WorkspaceSetupPreflightCheckId.values)
+          _PreflightCheckCard(workspaceId: workspaceId, check: result.check(id)),
+      ],
     );
   }
-
-  List<Widget> _preflightCards(bool isCloud) => [
-    _PreflightSummaryCard(
-      workspaceId: workspaceId,
-      result: result,
-      isCloud: isCloud,
-    ),
-    for (final id in WorkspaceSetupPreflightCheckId.values)
-      _PreflightCheckCard(workspaceId: workspaceId, check: result.check(id)),
-  ];
 }
 
 class const _PreflightSummaryCard({

@@ -254,7 +254,11 @@ void main() {
             ),
           ],
           selectedModelId: 'PROMPT-selection-id',
-          selectedModel: _model(modelName: 'TRANSCRIPT-model-name'),
+          selectedModel: _model(
+            selectionId: 'PROMPT-selection-id',
+            modelName: 'TRANSCRIPT-model-name',
+            providerConnectionId: 'SECRET-provider-name',
+          ),
           mcpConnections: const [
             WorkspaceSetupMcpSnapshot(
               isEnabled: true,
@@ -336,11 +340,13 @@ WorkspaceSetupPreflightSnapshot _snapshot({
 );
 
 WorkspaceSetupModelSnapshot _model({
+  String selectionId = 'selection-a',
   String? modelName = 'Model',
   bool? capabilityMetadataAvailable,
+  String providerConnectionId = 'provider-a',
 }) => WorkspaceSetupModelSnapshot(
-  selectionId: 'selection-a',
-  providerConnectionId: 'provider-a',
+  selectionId: selectionId,
+  providerConnectionId: providerConnectionId,
   modelName: modelName,
   capabilityMetadataAvailable: capabilityMetadataAvailable ?? modelName != null,
   inputModalities: const ['text'],
