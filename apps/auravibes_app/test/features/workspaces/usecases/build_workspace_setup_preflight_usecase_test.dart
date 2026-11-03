@@ -15,10 +15,10 @@ void main() {
     );
 
     expect(result.outcome, WorkspaceSetupPreflightOutcome.needsSetup);
-    expect(result.check(.providerCredentials).status, .warning);
-    expect(result.check(.providerCredentials).recovery, .addProvider);
-    expect(result.check(.selectedModel).status, .warning);
-    expect(result.check(.selectedModel).recovery, .chooseModel);
+    _expectStatus(result.check(.providerCredentials).status, .warning);
+    _expectRecovery(result.check(.providerCredentials).recovery, .addProvider);
+    _expectStatus(result.check(.selectedModel).status, .warning);
+    _expectRecovery(result.check(.selectedModel).recovery, .chooseModel);
   });
 
   test('configured provider with credential but no model needs setup', () {
@@ -36,7 +36,7 @@ void main() {
     );
 
     expect(result.outcome, WorkspaceSetupPreflightOutcome.needsSetup);
-    expect(result.check(.selectedModel).recovery, .chooseModel);
+    _expectRecovery(result.check(.selectedModel).recovery, .chooseModel);
   });
 
   test('saved model and credential are ready without optional MCP', () {
@@ -54,7 +54,7 @@ void main() {
     );
 
     expect(result.outcome, WorkspaceSetupPreflightOutcome.ready);
-    expect(result.check(.mcpConnections).status, .pass);
+    _expectStatus(result.check(.mcpConnections).status, .pass);
   });
 
   test('workspace storage distinguishes unavailable from missing records', () {
@@ -75,8 +75,8 @@ void main() {
       ),
     );
 
-    expect(unknown.check(.storage).status, .unknown);
-    expect(missing.check(.storage).status, .fail);
+    _expectStatus(unknown.check(.storage).status, .unknown);
+    _expectStatus(missing.check(.storage).status, .fail);
   });
 
   test('unknown optional MCP status does not block workspace readiness', () {
@@ -96,7 +96,7 @@ void main() {
     );
 
     expect(result.outcome, WorkspaceSetupPreflightOutcome.ready);
-    expect(result.check(.mcpConnections).status, .unknown);
+    _expectStatus(result.check(.mcpConnections).status, .unknown);
   });
 
   test('provider absence is a warning when no model requires it', () {
@@ -139,7 +139,7 @@ void main() {
       );
 
       expect(result.outcome, WorkspaceSetupPreflightOutcome.blocked);
-      expect(result.check(.providerCredentials).status, .fail);
+      _expectStatus(result.check(.providerCredentials).status, .fail);
     },
   );
 
@@ -169,12 +169,12 @@ void main() {
       );
 
       expect(unavailable.outcome, WorkspaceSetupPreflightOutcome.unverified);
-      expect(unavailable.check(.providerCredentials).status, .unknown);
+      _expectStatus(unavailable.check(.providerCredentials).status, .unknown);
       expect(
         missingMetadata.outcome,
         WorkspaceSetupPreflightOutcome.unverified,
       );
-      expect(missingMetadata.check(.selectedModel).status, .unknown);
+      _expectStatus(missingMetadata.check(.selectedModel).status, .unknown);
     },
   );
 
@@ -193,7 +193,7 @@ void main() {
     );
 
     final model = result.check(.selectedModel);
-    expect(model.status, .unknown);
+    _expectStatus(model.status, .unknown);
     expect(model.modelCapabilities, isNull);
   });
 
@@ -212,8 +212,8 @@ void main() {
     );
 
     expect(result.outcome, WorkspaceSetupPreflightOutcome.blocked);
-    expect(result.check(.selectedModel).status, .fail);
-    expect(result.check(.selectedModel).recovery, .chooseModel);
+    _expectStatus(result.check(.selectedModel).status, .fail);
+    _expectRecovery(result.check(.selectedModel).recovery, .chooseModel);
   });
 
   test('saved MCP failures warn, and no saved test stays unknown', () {
@@ -238,8 +238,8 @@ void main() {
       ),
     );
 
-    expect(failed.check(.mcpConnections).status, .warning);
-    expect(notTested.check(.mcpConnections).status, .unknown);
+    _expectStatus(failed.check(.mcpConnections).status, .warning);
+    _expectStatus(notTested.check(.mcpConnections).status, .unknown);
   });
 
   test(
@@ -299,6 +299,20 @@ void main() {
       expect(summary, isNot(contains('TRANSCRIPT')));
     },
   );
+}
+
+void _expectStatus(
+  WorkspaceSetupPreflightStatus actual,
+  WorkspaceSetupPreflightStatus expected,
+) {
+  expect(actual, expected);
+}
+
+void _expectRecovery(
+  WorkspaceSetupPreflightRecovery? actual,
+  WorkspaceSetupPreflightRecovery expected,
+) {
+  expect(actual, expected);
 }
 
 WorkspaceSetupPreflightSnapshot _snapshot({
