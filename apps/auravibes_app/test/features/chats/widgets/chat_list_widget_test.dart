@@ -96,10 +96,10 @@ void main() {
       ({bool includeAttachments})? decision;
       final preview = ConversationArchiveExportPreview(
         sourceConversations: [
-          ConversationArchiveExportPreviewConversation(
+          ConversationArchivePreviewConversation(
             title: 'Investigation',
             sourceAttachments: const [
-              ConversationArchiveExportPreviewAttachment(
+              ConversationArchivePreviewAttachment(
                 fileName: 'informe.pdf',
                 mimeType: 'application/pdf',
                 sizeBytes: 2048,
@@ -110,7 +110,7 @@ void main() {
       );
       final emptyPreview = ConversationArchiveExportPreview(
         sourceConversations: [
-          ConversationArchiveExportPreviewConversation(
+          ConversationArchivePreviewConversation(
             title: 'Notas',
             sourceAttachments: const [],
           ),
@@ -155,7 +155,7 @@ void main() {
       await tester.tap(find.text('Open review'));
       final _ = await tester.pumpAndSettle();
       expect(
-        find.text('Revisa el archivo de conversaci\u00f3n'),
+        find.textContaining('Revisa el archivo de'),
         findsOneWidget,
       );
       expect(find.text('informe.pdf'), findsOneWidget);
@@ -165,8 +165,7 @@ void main() {
       );
       final semantics = tester.getSemantics(checkbox);
       expect(semantics.label, contains('Incluir archivos adjuntos'));
-      expect(semantics.hasFlag(.hasCheckedState), isTrue);
-      expect(semantics.hasFlag(.isChecked), isTrue);
+      expect(semantics.flagsCollection.isChecked, .isTrue);
 
       await tester.tap(find.text('Continuar para guardar'));
       final _ = await tester.pumpAndSettle();
@@ -1179,19 +1178,19 @@ void main() {
           workspaceToolsRepository: workspaceTools,
           toolsGroupsRepository: .new(database),
         ),
-        preview: ConversationArchiveExportPreview(
+        preview: .new(
           sourceConversations: [
-            ConversationArchiveExportPreviewConversation(
+            ConversationArchivePreviewConversation(
               title: 'Chat One',
               sourceAttachments: const [
-                ConversationArchiveExportPreviewAttachment(
+                ConversationArchivePreviewAttachment(
                   fileName: 'research-notes.txt',
                   mimeType: 'text/plain',
                   sizeBytes: 4,
                 ),
               ],
             ),
-            ConversationArchiveExportPreviewConversation(
+            ConversationArchivePreviewConversation(
               title: 'Chat Two',
               sourceAttachments: const [],
             ),

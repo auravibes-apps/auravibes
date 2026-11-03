@@ -256,17 +256,17 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
   Future<ConversationArchiveExportPreview> _previewConversations(
     List<ConversationEntity> conversations,
   ) async {
-    final previews = <ConversationArchiveExportPreviewConversation>[];
+    final previews = <ConversationArchivePreviewConversation>[];
     for (final conversation in conversations) {
       final transcript = await messageRepository
           .getTranscriptMessagesByConversation(conversation.id);
       previews.add(
-        ConversationArchiveExportPreviewConversation(
+        ConversationArchivePreviewConversation(
           title: conversation.title,
           sourceAttachments: [
             for (final message in _archiveVisibleMessages(transcript))
               for (final attachment in message.attachments)
-                ConversationArchiveExportPreviewAttachment(
+                ConversationArchivePreviewAttachment(
                   fileName: _previewAttachmentName(attachment),
                   mimeType: attachment.mimeType,
                   sizeBytes: attachment.sizeBytes,
@@ -318,13 +318,16 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
         .getTranscriptMessagesByConversation(conversation.id);
     final agentContext = await _archiveAgentContext(conversation, transcript);
 
-    return await ConversationArchiveCodec.createConversationArchive((
-      conversation: conversation,
-      messages: _archiveVisibleMessages(transcript),
-      modelLabel: modelLabel,
-      agentContext: agentContext,
-      readAttachmentBytes: attachmentService.readAttachmentBytes,
-    ), includeAttachments: includeAttachments);
+    return await ConversationArchiveCodec.createConversationArchive(
+      (
+        conversation: conversation,
+        messages: _archiveVisibleMessages(transcript),
+        modelLabel: modelLabel,
+        agentContext: agentContext,
+        readAttachmentBytes: attachmentService.readAttachmentBytes,
+      ),
+      includeAttachments: includeAttachments,
+    );
   }
 
   Future<ConversationArchiveAgentContext> _archiveAgentContext(

@@ -7,39 +7,56 @@ import 'package:material_ui/material_ui.dart';
 const _reviewTitleKey =
     'chats_screens.chat_conversation.archive_export_review_title';
 const _reviewDescriptionKey =
-    'chats_screens.chat_conversation.archive_export_review_description';
+    'chats_screens.chat_conversation.'
+    'archive_export_review_description';
 const _reviewDestinationKey =
-    'chats_screens.chat_conversation.archive_export_review_destination';
+    'chats_screens.chat_conversation.'
+    'archive_export_review_destination';
 const _reviewContinueKey =
-    'chats_screens.chat_conversation.archive_export_review_continue';
+    'chats_screens.chat_conversation.'
+    'archive_export_review_continue';
 const _reviewIncludedWithAttachmentsKey =
-    'chats_screens.chat_conversation.archive_export_review_contents';
+    'chats_screens.chat_conversation.'
+    'archive_export_review_contents';
 const _reviewIncludedWithoutAttachmentsKey =
-    'chats_screens.chat_conversation.archive_export_review_contents_without_attachments';
+    'chats_screens.chat_conversation.'
+    'archive_export_review_contents_without_attachments';
 const _reviewIncludedNoAttachmentsKey =
-    'chats_screens.chat_conversation.archive_export_review_included_no_attachments';
+    'chats_screens.chat_conversation.'
+    'archive_export_review_included_no_attachments';
 const _reviewPrivacyWithAttachmentsKey =
-    'chats_screens.chat_conversation.archive_export_review_privacy';
+    'chats_screens.chat_conversation.'
+    'archive_export_review_privacy';
 const _reviewPrivacyWithoutAttachmentsKey =
-    'chats_screens.chat_conversation.archive_export_review_privacy_without_attachments';
+    'chats_screens.chat_conversation.'
+    'archive_export_review_privacy_without_attachments';
 const _reviewPrivacyNoAttachmentsKey =
-    'chats_screens.chat_conversation.archive_export_review_privacy_no_attachments';
+    'chats_screens.chat_conversation.'
+    'archive_export_review_privacy_no_attachments';
 const _reviewIncludeAttachmentsKey =
-    'chats_screens.chat_conversation.archive_export_review_include_attachments';
+    'chats_screens.chat_conversation.'
+    'archive_export_review_include_attachments';
 const _reviewIncludeAttachmentsDescriptionKey =
-    'chats_screens.chat_conversation.archive_export_review_include_attachments_description';
+    'chats_screens.chat_conversation.'
+    'archive_export_review_include_attachments_description';
 const _reviewAttachmentSectionKey =
-    'chats_screens.chat_conversation.archive_export_review_attachment_section';
+    'chats_screens.chat_conversation.'
+    'archive_export_review_attachment_section';
 const _reviewConversationSectionKey =
-    'chats_screens.chat_conversation.archive_export_review_conversation_section';
+    'chats_screens.chat_conversation.'
+    'archive_export_review_conversation_section';
 const _reviewNoAttachmentsKey =
-    'chats_screens.chat_conversation.archive_export_review_no_attachments';
+    'chats_screens.chat_conversation.'
+    'archive_export_review_no_attachments';
 const _reviewAttachmentMimeKey =
-    'chats_screens.chat_conversation.archive_export_review_attachment_mime';
+    'chats_screens.chat_conversation.'
+    'archive_export_review_attachment_mime';
 const _reviewAttachmentSizeKey =
-    'chats_screens.chat_conversation.archive_export_review_attachment_size';
+    'chats_screens.chat_conversation.'
+    'archive_export_review_attachment_size';
 const _reviewUnnamedAttachmentKey =
-    'chats_screens.chat_conversation.archive_export_review_unnamed_attachment';
+    'chats_screens.chat_conversation.'
+    'archive_export_review_unnamed_attachment';
 
 abstract final class ConversationArchiveExportReviewDialog {
   static Future<({bool includeAttachments})?> show(
@@ -117,7 +134,7 @@ class const _ConversationArchiveExportReviewContent({
     return SizedBox(
       width: 480,
       child: ConstrainedBox(
-        constraints: BoxConstraints(
+        constraints: .new(
           maxHeight: MediaQuery.sizeOf(context).height * 0.7,
         ),
         child: Column(
@@ -135,7 +152,6 @@ class const _ConversationArchiveExportReviewContent({
               SizedBox(height: theme.fromSpacing(.sm)),
               CheckboxListTile(
                 key: const ValueKey('archive-export-include-attachments'),
-                contentPadding: EdgeInsets.zero,
                 value: includeAttachments,
                 onChanged: (value) {
                   if (value != null) onIncludeAttachmentsChanged(value);
@@ -145,6 +161,7 @@ class const _ConversationArchiveExportReviewContent({
                   _reviewIncludeAttachmentsDescriptionKey,
                 ),
                 controlAffinity: .leading,
+                contentPadding: EdgeInsets.zero,
               ),
             ],
             if (preview.attachmentCount > 0) ...[
@@ -212,7 +229,7 @@ class const _ConversationArchiveExportReviewContent({
 }
 
 class const _ConversationArchiveExportAttachmentRow({
-  required final ConversationArchiveExportPreviewAttachment attachment,
+  required final ConversationArchivePreviewAttachment attachment,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

@@ -82,7 +82,7 @@ void main() {
           .new(title: 'Research notes', workspaceId: workspace.id),
         );
     final message = await database.messageDao.insertMessage(
-      MessagesCompanion.insert(
+          .insert(
         conversationId: conversation.id,
         content: 'See the attached report',
         messageType: .text,

@@ -249,7 +249,7 @@ void main() {
           createdAt: createdAt,
           updatedAt: createdAt,
           metadata: const .new(
-            toolCalls: const [
+            toolCalls: [
               MessageToolCallEntity(
                 id: 'tool-call-id',
                 name: 'private-server-tool',
@@ -302,16 +302,19 @@ void main() {
         ),
       ];
 
-      final encoded = await ConversationArchiveCodec.exportConversation((
-        conversation: conversation,
-        messages: messages,
-        modelLabel: null,
-        agentContext: null,
-        readAttachmentBytes: (path) {
-          readCount++;
-          fail('Excluded attachments must not read bytes from $path.');
-        },
-      ), includeAttachments: false);
+      final encoded = await ConversationArchiveCodec.exportConversation(
+        (
+          conversation: conversation,
+          messages: messages,
+          modelLabel: null,
+          agentContext: null,
+          readAttachmentBytes: (path) {
+            readCount++;
+            fail('Excluded attachments must not read bytes from $path.');
+          },
+        ),
+        includeAttachments: false,
+      );
       final root = jsonDecode(encoded) as Map<String, dynamic>;
       final archivedMessages = root['messages'] as List<dynamic>;
 
@@ -332,7 +335,7 @@ void main() {
         archivedMessages
             .map((message) => (message as Map<String, dynamic>)['attachments'])
             .toList(),
-        <List<dynamic>>[<dynamic>[], <dynamic>[], <dynamic>[]],
+        [<Object?>[], <Object?>[], <Object?>[]],
       );
 
       final second = archivedMessages[1] as Map<String, dynamic>;

@@ -1,6 +1,6 @@
 {
   "name": "conversation-archive-export-review",
-  "route": "/workspaces/01a1a1d4-f1ee-78ae-ac42-132a7ec8219f/chats",
+  "route": "/workspaces/01a1a1f3-ca11-7466-a567-2bd0ea556869/chats",
   "fixture": "Local conversation with one synthetic text attachment whose path points to no file; review dialog opened before attachment byte reads or save",
   "sourceFingerprint": "46065bc5983bc9dc9100696aaa3c98ba66c7c56b",
   "renderer": "Flutter widget-test Skia, linux",
