@@ -68,6 +68,23 @@ jobs:
 
       - uses: ./.github/actions/setup-workspace
 
+      - name: Prepare hosted formatter patch for repair
+        working-directory: apps/auravibes_app
+        run: |
+          dart format --line-length 80 \
+            lib/features/chats/usecases/conversation_archive_usecase.dart \
+            test/features/chats/models/conversation_archive_test.dart
+          git -C ../.. diff --binary > "$RUNNER_TEMP/export-review-format.patch"
+
+      - name: Upload hosted formatter patch for repair
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: conversation-export-review-format-${{ github.sha }}
+          path: ${{ runner.temp }}/export-review-format.patch
+          if-no-files-found: warn
+          retention-days: 3
+
       - name: Capture the production archive review after change
         working-directory: apps/auravibes_app
         env:
