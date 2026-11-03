@@ -40,6 +40,8 @@ import 'package:auravibes_server_client/src/protocol/features/conversations/mode
     as _iikp15t9;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/continue_turn_request.dart'
     as _ivlxpbcf;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/conversation_label_summary.dart'
+    as _isafsd77;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/conversation_message_search_result.dart'
     as _id2d4bnf;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/conversation_message_view.dart'
@@ -56,8 +58,12 @@ import 'package:auravibes_server_client/src/protocol/features/conversations/mode
     as _imiup13v;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/conversation_summary.dart'
     as _i54dvwkh;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/create_conversation_label_request.dart'
+    as _iz3k62cm;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/create_conversation_request.dart'
     as _ij3epthu;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/delete_conversation_label_request.dart'
+    as _ikgx1gp7;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/delete_conversation_request.dart'
     as _ik9usty6;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/detach_tool_call_request.dart'
@@ -72,6 +78,8 @@ import 'package:auravibes_server_client/src/protocol/features/conversations/mode
     as _inh22t6z;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/list_background_works_request.dart'
     as _izjha4p3;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/list_conversation_labels_request.dart'
+    as _iw58chg2;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/list_conversation_messages_request.dart'
     as _ikmnkbtb;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/list_conversations_request.dart'
@@ -84,12 +92,16 @@ import 'package:auravibes_server_client/src/protocol/features/conversations/mode
     as _iia9quot;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/remove_pending_conversation_message_request.dart'
     as _i2sc9nxe;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/rename_conversation_label_request.dart'
+    as _i3anqlk6;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/reorder_pending_conversation_message_request.dart'
     as _i28kt77m;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/restore_conversation_checkpoint_request.dart'
     as _id785g3f;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/search_conversation_messages_request.dart'
     as _izqmo6ty;
+import 'package:auravibes_server_client/src/protocol/features/conversations/models/set_conversation_labels_request.dart'
+    as _iwwxa0o3;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/start_turn_request.dart'
     as _iewqezs8;
 import 'package:auravibes_server_client/src/protocol/features/conversations/models/start_turn_result.dart'
@@ -617,6 +629,46 @@ class EndpointConversation extends _isc.EndpointRef {
   ) => caller.callServerEndpoint<_igpxqyyq.ConversationPage>(
     'conversation',
     'listPage',
+    {'request': request},
+  );
+
+  _ida.Future<List<_isafsd77.ConversationLabelSummary>> listLabels(
+    _iw58chg2.ListConversationLabelsRequest request,
+  ) => caller.callServerEndpoint<List<_isafsd77.ConversationLabelSummary>>(
+    'conversation',
+    'listLabels',
+    {'request': request},
+  );
+
+  _ida.Future<_isafsd77.ConversationLabelSummary> createLabel(
+    _iz3k62cm.CreateConversationLabelRequest request,
+  ) => caller.callServerEndpoint<_isafsd77.ConversationLabelSummary>(
+    'conversation',
+    'createLabel',
+    {'request': request},
+  );
+
+  _ida.Future<_isafsd77.ConversationLabelSummary> renameLabel(
+    _i3anqlk6.RenameConversationLabelRequest request,
+  ) => caller.callServerEndpoint<_isafsd77.ConversationLabelSummary>(
+    'conversation',
+    'renameLabel',
+    {'request': request},
+  );
+
+  _ida.Future<void> deleteLabel(
+    _ikgx1gp7.DeleteConversationLabelRequest request,
+  ) => caller.callServerEndpoint<void>(
+    'conversation',
+    'deleteLabel',
+    {'request': request},
+  );
+
+  _ida.Future<void> setConversationLabels(
+    _iwwxa0o3.SetConversationLabelsRequest request,
+  ) => caller.callServerEndpoint<void>(
+    'conversation',
+    'setConversationLabels',
     {'request': request},
   );
 

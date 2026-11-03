@@ -24847,6 +24847,876 @@ class WorkspaceVerificationRunsCompanion
   }
 }
 
+class $ConversationLabelsTable extends ConversationLabels
+    with TableInfo<$ConversationLabelsTable, ConversationLabelsTable> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ConversationLabelsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const UuidV7().generate(),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workspaces (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _normalizedNameMeta = const VerificationMeta(
+    'normalizedName',
+  );
+  @override
+  late final GeneratedColumn<String> normalizedName = GeneratedColumn<String>(
+    'normalized_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    workspaceId,
+    name,
+    normalizedName,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'conversation_labels';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ConversationLabelsTable> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('normalized_name')) {
+      context.handle(
+        _normalizedNameMeta,
+        normalizedName.isAcceptableOrUnknown(
+          data['normalized_name']!,
+          _normalizedNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_normalizedNameMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ConversationLabelsTable map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ConversationLabelsTable(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      normalizedName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}normalized_name'],
+      )!,
+    );
+  }
+
+  @override
+  $ConversationLabelsTable createAlias(String alias) {
+    return $ConversationLabelsTable(attachedDatabase, alias);
+  }
+}
+
+class ConversationLabelsTable extends DataClass
+    implements Insertable<ConversationLabelsTable> {
+  /// Primary key column as string.
+  final String id;
+
+  /// When was created timestamp.
+  final DateTime createdAt;
+
+  /// When was last updated timestamp.
+  final DateTime updatedAt;
+  final String workspaceId;
+  final String name;
+  final String normalizedName;
+  const ConversationLabelsTable({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.workspaceId,
+    required this.name,
+    required this.normalizedName,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['name'] = Variable<String>(name);
+    map['normalized_name'] = Variable<String>(normalizedName);
+    return map;
+  }
+
+  ConversationLabelsCompanion toCompanion(bool nullToAbsent) {
+    return ConversationLabelsCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      workspaceId: Value(workspaceId),
+      name: Value(name),
+      normalizedName: Value(normalizedName),
+    );
+  }
+
+  factory ConversationLabelsTable.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ConversationLabelsTable(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      name: serializer.fromJson<String>(json['name']),
+      normalizedName: serializer.fromJson<String>(json['normalizedName']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'name': serializer.toJson<String>(name),
+      'normalizedName': serializer.toJson<String>(normalizedName),
+    };
+  }
+
+  ConversationLabelsTable copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? workspaceId,
+    String? name,
+    String? normalizedName,
+  }) => ConversationLabelsTable(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    workspaceId: workspaceId ?? this.workspaceId,
+    name: name ?? this.name,
+    normalizedName: normalizedName ?? this.normalizedName,
+  );
+  ConversationLabelsTable copyWithCompanion(ConversationLabelsCompanion data) {
+    return ConversationLabelsTable(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      name: data.name.present ? data.name.value : this.name,
+      normalizedName: data.normalizedName.present
+          ? data.normalizedName.value
+          : this.normalizedName,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ConversationLabelsTable(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('name: $name, ')
+          ..write('normalizedName: $normalizedName')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, createdAt, updatedAt, workspaceId, name, normalizedName);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ConversationLabelsTable &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.workspaceId == this.workspaceId &&
+          other.name == this.name &&
+          other.normalizedName == this.normalizedName);
+}
+
+class ConversationLabelsCompanion
+    extends UpdateCompanion<ConversationLabelsTable> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String> workspaceId;
+  final Value<String> name;
+  final Value<String> normalizedName;
+  final Value<int> rowid;
+  const ConversationLabelsCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.normalizedName = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ConversationLabelsCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    required String workspaceId,
+    required String name,
+    required String normalizedName,
+    this.rowid = const Value.absent(),
+  }) : workspaceId = Value(workspaceId),
+       name = Value(name),
+       normalizedName = Value(normalizedName);
+  static Insertable<ConversationLabelsTable> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? workspaceId,
+    Expression<String>? name,
+    Expression<String>? normalizedName,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (name != null) 'name': name,
+      if (normalizedName != null) 'normalized_name': normalizedName,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ConversationLabelsCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String>? workspaceId,
+    Value<String>? name,
+    Value<String>? normalizedName,
+    Value<int>? rowid,
+  }) {
+    return ConversationLabelsCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      workspaceId: workspaceId ?? this.workspaceId,
+      name: name ?? this.name,
+      normalizedName: normalizedName ?? this.normalizedName,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (normalizedName.present) {
+      map['normalized_name'] = Variable<String>(normalizedName.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ConversationLabelsCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('name: $name, ')
+          ..write('normalizedName: $normalizedName, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ConversationLabelAssignmentsTable extends ConversationLabelAssignments
+    with
+        TableInfo<
+          $ConversationLabelAssignmentsTable,
+          ConversationLabelAssignmentsTable
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ConversationLabelAssignmentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const UuidV7().generate(),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workspaces (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _conversationIdMeta = const VerificationMeta(
+    'conversationId',
+  );
+  @override
+  late final GeneratedColumn<String> conversationId = GeneratedColumn<String>(
+    'conversation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES conversations (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _labelIdMeta = const VerificationMeta(
+    'labelId',
+  );
+  @override
+  late final GeneratedColumn<String> labelId = GeneratedColumn<String>(
+    'label_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES conversation_labels (id) ON DELETE CASCADE',
+    ),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    workspaceId,
+    conversationId,
+    labelId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'conversation_label_assignments';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ConversationLabelAssignmentsTable> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('conversation_id')) {
+      context.handle(
+        _conversationIdMeta,
+        conversationId.isAcceptableOrUnknown(
+          data['conversation_id']!,
+          _conversationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_conversationIdMeta);
+    }
+    if (data.containsKey('label_id')) {
+      context.handle(
+        _labelIdMeta,
+        labelId.isAcceptableOrUnknown(data['label_id']!, _labelIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_labelIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ConversationLabelAssignmentsTable map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ConversationLabelAssignmentsTable(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      )!,
+      conversationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}conversation_id'],
+      )!,
+      labelId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}label_id'],
+      )!,
+    );
+  }
+
+  @override
+  $ConversationLabelAssignmentsTable createAlias(String alias) {
+    return $ConversationLabelAssignmentsTable(attachedDatabase, alias);
+  }
+}
+
+class ConversationLabelAssignmentsTable extends DataClass
+    implements Insertable<ConversationLabelAssignmentsTable> {
+  /// Primary key column as string.
+  final String id;
+
+  /// When was created timestamp.
+  final DateTime createdAt;
+
+  /// When was last updated timestamp.
+  final DateTime updatedAt;
+  final String workspaceId;
+  final String conversationId;
+  final String labelId;
+  const ConversationLabelAssignmentsTable({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.workspaceId,
+    required this.conversationId,
+    required this.labelId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['conversation_id'] = Variable<String>(conversationId);
+    map['label_id'] = Variable<String>(labelId);
+    return map;
+  }
+
+  ConversationLabelAssignmentsCompanion toCompanion(bool nullToAbsent) {
+    return ConversationLabelAssignmentsCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      workspaceId: Value(workspaceId),
+      conversationId: Value(conversationId),
+      labelId: Value(labelId),
+    );
+  }
+
+  factory ConversationLabelAssignmentsTable.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ConversationLabelAssignmentsTable(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      conversationId: serializer.fromJson<String>(json['conversationId']),
+      labelId: serializer.fromJson<String>(json['labelId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'conversationId': serializer.toJson<String>(conversationId),
+      'labelId': serializer.toJson<String>(labelId),
+    };
+  }
+
+  ConversationLabelAssignmentsTable copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? workspaceId,
+    String? conversationId,
+    String? labelId,
+  }) => ConversationLabelAssignmentsTable(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    workspaceId: workspaceId ?? this.workspaceId,
+    conversationId: conversationId ?? this.conversationId,
+    labelId: labelId ?? this.labelId,
+  );
+  ConversationLabelAssignmentsTable copyWithCompanion(
+    ConversationLabelAssignmentsCompanion data,
+  ) {
+    return ConversationLabelAssignmentsTable(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      conversationId: data.conversationId.present
+          ? data.conversationId.value
+          : this.conversationId,
+      labelId: data.labelId.present ? data.labelId.value : this.labelId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ConversationLabelAssignmentsTable(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('labelId: $labelId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    workspaceId,
+    conversationId,
+    labelId,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ConversationLabelAssignmentsTable &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.workspaceId == this.workspaceId &&
+          other.conversationId == this.conversationId &&
+          other.labelId == this.labelId);
+}
+
+class ConversationLabelAssignmentsCompanion
+    extends UpdateCompanion<ConversationLabelAssignmentsTable> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<String> workspaceId;
+  final Value<String> conversationId;
+  final Value<String> labelId;
+  final Value<int> rowid;
+  const ConversationLabelAssignmentsCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.workspaceId = const Value.absent(),
+    this.conversationId = const Value.absent(),
+    this.labelId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ConversationLabelAssignmentsCompanion.insert({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    required String workspaceId,
+    required String conversationId,
+    required String labelId,
+    this.rowid = const Value.absent(),
+  }) : workspaceId = Value(workspaceId),
+       conversationId = Value(conversationId),
+       labelId = Value(labelId);
+  static Insertable<ConversationLabelAssignmentsTable> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<String>? workspaceId,
+    Expression<String>? conversationId,
+    Expression<String>? labelId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (conversationId != null) 'conversation_id': conversationId,
+      if (labelId != null) 'label_id': labelId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ConversationLabelAssignmentsCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<String>? workspaceId,
+    Value<String>? conversationId,
+    Value<String>? labelId,
+    Value<int>? rowid,
+  }) {
+    return ConversationLabelAssignmentsCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      workspaceId: workspaceId ?? this.workspaceId,
+      conversationId: conversationId ?? this.conversationId,
+      labelId: labelId ?? this.labelId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (conversationId.present) {
+      map['conversation_id'] = Variable<String>(conversationId.value);
+    }
+    if (labelId.present) {
+      map['label_id'] = Variable<String>(labelId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ConversationLabelAssignmentsCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('labelId: $labelId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -24930,6 +25800,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $WorkspaceVerificationSettingsTable(this);
   late final $WorkspaceVerificationRunsTable workspaceVerificationRuns =
       $WorkspaceVerificationRunsTable(this);
+  late final $ConversationLabelsTable conversationLabels =
+      $ConversationLabelsTable(this);
+  late final $ConversationLabelAssignmentsTable conversationLabelAssignments =
+      $ConversationLabelAssignmentsTable(this);
   late final Index workspaceModelSelectionsConnectionModel = Index(
     'workspace_model_selections_connection_model',
     'CREATE UNIQUE INDEX workspace_model_selections_connection_model ON workspace_model_selections (model_connection_id, model_id)',
@@ -24989,6 +25863,18 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final Index backgroundWorksConversationCreatedIdx = Index(
     'background_works_conversation_created_idx',
     'CREATE INDEX background_works_conversation_created_idx ON background_works (conversation_id, created_at, id)',
+  );
+  late final Index conversationLabelsWorkspaceName = Index(
+    'conversation_labels_workspace_name',
+    'CREATE UNIQUE INDEX conversation_labels_workspace_name ON conversation_labels (workspace_id, normalized_name)',
+  );
+  late final Index conversationLabelAssignmentsIdentity = Index(
+    'conversation_label_assignments_identity',
+    'CREATE UNIQUE INDEX conversation_label_assignments_identity ON conversation_label_assignments (workspace_id, conversation_id, label_id)',
+  );
+  late final Index conversationLabelAssignmentsByLabel = Index(
+    'conversation_label_assignments_by_label',
+    'CREATE INDEX conversation_label_assignments_by_label ON conversation_label_assignments (workspace_id, label_id, conversation_id)',
   );
   late final WorkspaceDao workspaceDao = WorkspaceDao(this as AppDatabase);
   late final BackgroundWorksDao backgroundWorksDao = BackgroundWorksDao(
@@ -25085,6 +25971,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     workspaceContentReports,
     workspaceVerificationSettings,
     workspaceVerificationRuns,
+    conversationLabels,
+    conversationLabelAssignments,
     workspaceModelSelectionsConnectionModel,
     conversationsWorkspaceParentUpdatedId,
     conversationsForkSourceIdx,
@@ -25100,6 +25988,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     appSkillWorkspaceSettingsWorkspaceAppSkill,
     modelUsageRecordsConversationCreatedIdx,
     backgroundWorksConversationCreatedIdx,
+    conversationLabelsWorkspaceName,
+    conversationLabelAssignmentsIdentity,
+    conversationLabelAssignmentsByLabel,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -25514,6 +26405,40 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       ),
       result: [
         TableUpdate('workspace_verification_runs', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workspaces',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('conversation_labels', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workspaces',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('conversation_label_assignments', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'conversations',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('conversation_label_assignments', kind: UpdateKind.delete),
+      ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'conversation_labels',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('conversation_label_assignments', kind: UpdateKind.delete),
       ],
     ),
   ]);
@@ -26114,6 +27039,56 @@ final class $$WorkspacesTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _workspaceVerificationRunsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $ConversationLabelsTable,
+    List<ConversationLabelsTable>
+  >
+  _conversationLabelsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.conversationLabels,
+        aliasName: 'workspaces__id__conversation_labels__workspace_id',
+      );
+
+  $$ConversationLabelsTableProcessedTableManager get conversationLabelsRefs {
+    final manager = $$ConversationLabelsTableTableManager(
+      $_db,
+      $_db.conversationLabels,
+    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _conversationLabelsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $ConversationLabelAssignmentsTable,
+    List<ConversationLabelAssignmentsTable>
+  >
+  _conversationLabelAssignmentsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.conversationLabelAssignments,
+        aliasName:
+            'workspaces__id__conversation_label_assignments__workspace_id',
+      );
+
+  $$ConversationLabelAssignmentsTableProcessedTableManager
+  get conversationLabelAssignmentsRefs {
+    final manager = $$ConversationLabelAssignmentsTableTableManager(
+      $_db,
+      $_db.conversationLabelAssignments,
+    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _conversationLabelAssignmentsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -26838,6 +27813,60 @@ class $$WorkspacesTableFilterComposer
               }) => $$WorkspaceVerificationRunsTableFilterComposer(
                 $db: $db,
                 $table: $db.workspaceVerificationRuns,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> conversationLabelsRefs(
+    Expression<bool> Function($$ConversationLabelsTableFilterComposer f) f,
+  ) {
+    final $$ConversationLabelsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.conversationLabels,
+      getReferencedColumn: (t) => t.workspaceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationLabelsTableFilterComposer(
+            $db: $db,
+            $table: $db.conversationLabels,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> conversationLabelAssignmentsRefs(
+    Expression<bool> Function(
+      $$ConversationLabelAssignmentsTableFilterComposer f,
+    )
+    f,
+  ) {
+    final $$ConversationLabelAssignmentsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.conversationLabelAssignments,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ConversationLabelAssignmentsTableFilterComposer(
+                $db: $db,
+                $table: $db.conversationLabelAssignments,
                 $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
                 joinBuilder: joinBuilder,
                 $removeJoinBuilderFromRootComposer:
@@ -27616,6 +28645,61 @@ class $$WorkspacesTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> conversationLabelsRefs<T extends Object>(
+    Expression<T> Function($$ConversationLabelsTableAnnotationComposer a) f,
+  ) {
+    final $$ConversationLabelsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.conversationLabels,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ConversationLabelsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.conversationLabels,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> conversationLabelAssignmentsRefs<T extends Object>(
+    Expression<T> Function(
+      $$ConversationLabelAssignmentsTableAnnotationComposer a,
+    )
+    f,
+  ) {
+    final $$ConversationLabelAssignmentsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.conversationLabelAssignments,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ConversationLabelAssignmentsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.conversationLabelAssignments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$WorkspacesTableTableManager
@@ -27658,6 +28742,8 @@ class $$WorkspacesTableTableManager
             bool workspaceAgentHookSettingsRefs,
             bool workspaceVerificationSettingsRefs,
             bool workspaceVerificationRunsRefs,
+            bool conversationLabelsRefs,
+            bool conversationLabelAssignmentsRefs,
           })
         > {
   $$WorkspacesTableTableManager(_$AppDatabase db, $WorkspacesTable table)
@@ -27751,6 +28837,8 @@ class $$WorkspacesTableTableManager
                 workspaceAgentHookSettingsRefs = false,
                 workspaceVerificationSettingsRefs = false,
                 workspaceVerificationRunsRefs = false,
+                conversationLabelsRefs = false,
+                conversationLabelAssignmentsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -27790,6 +28878,9 @@ class $$WorkspacesTableTableManager
                       db.workspaceVerificationSettings,
                     if (workspaceVerificationRunsRefs)
                       db.workspaceVerificationRuns,
+                    if (conversationLabelsRefs) db.conversationLabels,
+                    if (conversationLabelAssignmentsRefs)
+                      db.conversationLabelAssignments,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -28340,6 +29431,48 @@ class $$WorkspacesTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (conversationLabelsRefs)
+                        await $_getPrefetchedData<
+                          WorkspacesTable,
+                          $WorkspacesTable,
+                          ConversationLabelsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkspacesTableReferences
+                              ._conversationLabelsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkspacesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).conversationLabelsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workspaceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (conversationLabelAssignmentsRefs)
+                        await $_getPrefetchedData<
+                          WorkspacesTable,
+                          $WorkspacesTable,
+                          ConversationLabelAssignmentsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkspacesTableReferences
+                              ._conversationLabelAssignmentsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkspacesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).conversationLabelAssignmentsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workspaceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -28387,6 +29520,8 @@ typedef $$WorkspacesTableProcessedTableManager =
         bool workspaceAgentHookSettingsRefs,
         bool workspaceVerificationSettingsRefs,
         bool workspaceVerificationRunsRefs,
+        bool conversationLabelsRefs,
+        bool conversationLabelAssignmentsRefs,
       })
     >;
 typedef $$ServiceConnectionsTableCreateCompanionBuilder =
@@ -31675,6 +32810,33 @@ final class $$ConversationsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<
+    $ConversationLabelAssignmentsTable,
+    List<ConversationLabelAssignmentsTable>
+  >
+  _conversationLabelAssignmentsRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.conversationLabelAssignments,
+    aliasName:
+        'conversations__id__conversation_label_assignments__conversation_id',
+  );
+
+  $$ConversationLabelAssignmentsTableProcessedTableManager
+  get conversationLabelAssignmentsRefs {
+    final manager = $$ConversationLabelAssignmentsTableTableManager(
+      $_db,
+      $_db.conversationLabelAssignments,
+    ).filter((f) => f.conversationId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _conversationLabelAssignmentsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$ConversationsTableFilterComposer
@@ -32064,6 +33226,35 @@ class $$ConversationsTableFilterComposer
               }) => $$WorkspaceCommandReceiptsTableFilterComposer(
                 $db: $db,
                 $table: $db.workspaceCommandReceipts,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<bool> conversationLabelAssignmentsRefs(
+    Expression<bool> Function(
+      $$ConversationLabelAssignmentsTableFilterComposer f,
+    )
+    f,
+  ) {
+    final $$ConversationLabelAssignmentsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.conversationLabelAssignments,
+          getReferencedColumn: (t) => t.conversationId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ConversationLabelAssignmentsTableFilterComposer(
+                $db: $db,
+                $table: $db.conversationLabelAssignments,
                 $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
                 joinBuilder: joinBuilder,
                 $removeJoinBuilderFromRootComposer:
@@ -32632,6 +33823,35 @@ class $$ConversationsTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> conversationLabelAssignmentsRefs<T extends Object>(
+    Expression<T> Function(
+      $$ConversationLabelAssignmentsTableAnnotationComposer a,
+    )
+    f,
+  ) {
+    final $$ConversationLabelAssignmentsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.conversationLabelAssignments,
+          getReferencedColumn: (t) => t.conversationId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ConversationLabelAssignmentsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.conversationLabelAssignments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$ConversationsTableTableManager
@@ -32661,6 +33881,7 @@ class $$ConversationsTableTableManager
             bool backgroundWorksByChildConversation,
             bool workspaceContextSelectionsRefs,
             bool workspaceCommandReceiptsRefs,
+            bool conversationLabelAssignmentsRefs,
           })
         > {
   $$ConversationsTableTableManager(_$AppDatabase db, $ConversationsTable table)
@@ -32779,6 +34000,7 @@ class $$ConversationsTableTableManager
                 backgroundWorksByChildConversation = false,
                 workspaceContextSelectionsRefs = false,
                 workspaceCommandReceiptsRefs = false,
+                conversationLabelAssignmentsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -32794,6 +34016,8 @@ class $$ConversationsTableTableManager
                       db.workspaceContextSelections,
                     if (workspaceCommandReceiptsRefs)
                       db.workspaceCommandReceipts,
+                    if (conversationLabelAssignmentsRefs)
+                      db.conversationLabelAssignments,
                   ],
                   addJoins:
                       <
@@ -33049,6 +34273,27 @@ class $$ConversationsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (conversationLabelAssignmentsRefs)
+                        await $_getPrefetchedData<
+                          ConversationsTable,
+                          $ConversationsTable,
+                          ConversationLabelAssignmentsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ConversationsTableReferences
+                              ._conversationLabelAssignmentsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ConversationsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).conversationLabelAssignmentsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.conversationId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -33083,6 +34328,7 @@ typedef $$ConversationsTableProcessedTableManager =
         bool backgroundWorksByChildConversation,
         bool workspaceContextSelectionsRefs,
         bool workspaceCommandReceiptsRefs,
+        bool conversationLabelAssignmentsRefs,
       })
     >;
 typedef $$SkillsTableCreateCompanionBuilder = SkillsCompanion Function({
@@ -49802,6 +51048,1032 @@ typedef $$WorkspaceVerificationRunsTableProcessedTableManager =
       WorkspaceVerificationRunRow,
       PrefetchHooks Function({bool workspaceId, bool turnId})
     >;
+typedef $$ConversationLabelsTableCreateCompanionBuilder =
+    ConversationLabelsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      required String workspaceId,
+      required String name,
+      required String normalizedName,
+      Value<int> rowid,
+    });
+typedef $$ConversationLabelsTableUpdateCompanionBuilder =
+    ConversationLabelsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String> workspaceId,
+      Value<String> name,
+      Value<String> normalizedName,
+      Value<int> rowid,
+    });
+
+final class $$ConversationLabelsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ConversationLabelsTable,
+          ConversationLabelsTable
+        > {
+  $$ConversationLabelsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) => db.workspaces
+      .createAlias('conversation_labels__workspace_id__workspaces__id');
+
+  $$WorkspacesTableProcessedTableManager get workspaceId {
+    final $_column = $_itemColumn<String>('workspace_id')!;
+
+    final manager = $$WorkspacesTableTableManager(
+      $_db,
+      $_db.workspaces,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $ConversationLabelAssignmentsTable,
+    List<ConversationLabelAssignmentsTable>
+  >
+  _conversationLabelAssignmentsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.conversationLabelAssignments,
+        aliasName:
+            'conversation_labels__id__conversation_label_assignments__label_id',
+      );
+
+  $$ConversationLabelAssignmentsTableProcessedTableManager
+  get conversationLabelAssignmentsRefs {
+    final manager = $$ConversationLabelAssignmentsTableTableManager(
+      $_db,
+      $_db.conversationLabelAssignments,
+    ).filter((f) => f.labelId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _conversationLabelAssignmentsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$ConversationLabelsTableFilterComposer
+    extends Composer<_$AppDatabase, $ConversationLabelsTable> {
+  $$ConversationLabelsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get normalizedName => $composableBuilder(
+    column: $table.normalizedName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$WorkspacesTableFilterComposer get workspaceId {
+    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableFilterComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> conversationLabelAssignmentsRefs(
+    Expression<bool> Function(
+      $$ConversationLabelAssignmentsTableFilterComposer f,
+    )
+    f,
+  ) {
+    final $$ConversationLabelAssignmentsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.conversationLabelAssignments,
+          getReferencedColumn: (t) => t.labelId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ConversationLabelAssignmentsTableFilterComposer(
+                $db: $db,
+                $table: $db.conversationLabelAssignments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$ConversationLabelsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ConversationLabelsTable> {
+  $$ConversationLabelsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get normalizedName => $composableBuilder(
+    column: $table.normalizedName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$WorkspacesTableOrderingComposer get workspaceId {
+    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableOrderingComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ConversationLabelsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ConversationLabelsTable> {
+  $$ConversationLabelsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get normalizedName => $composableBuilder(
+    column: $table.normalizedName,
+    builder: (column) => column,
+  );
+
+  $$WorkspacesTableAnnotationComposer get workspaceId {
+    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> conversationLabelAssignmentsRefs<T extends Object>(
+    Expression<T> Function(
+      $$ConversationLabelAssignmentsTableAnnotationComposer a,
+    )
+    f,
+  ) {
+    final $$ConversationLabelAssignmentsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.conversationLabelAssignments,
+          getReferencedColumn: (t) => t.labelId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ConversationLabelAssignmentsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.conversationLabelAssignments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$ConversationLabelsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ConversationLabelsTable,
+          ConversationLabelsTable,
+          $$ConversationLabelsTableFilterComposer,
+          $$ConversationLabelsTableOrderingComposer,
+          $$ConversationLabelsTableAnnotationComposer,
+          $$ConversationLabelsTableCreateCompanionBuilder,
+          $$ConversationLabelsTableUpdateCompanionBuilder,
+          (ConversationLabelsTable, $$ConversationLabelsTableReferences),
+          ConversationLabelsTable,
+          PrefetchHooks Function({
+            bool workspaceId,
+            bool conversationLabelAssignmentsRefs,
+          })
+        > {
+  $$ConversationLabelsTableTableManager(
+    _$AppDatabase db,
+    $ConversationLabelsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ConversationLabelsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ConversationLabelsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ConversationLabelsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String> workspaceId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String> normalizedName = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ConversationLabelsCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                workspaceId: workspaceId,
+                name: name,
+                normalizedName: normalizedName,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                required String workspaceId,
+                required String name,
+                required String normalizedName,
+                Value<int> rowid = const Value.absent(),
+              }) => ConversationLabelsCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                workspaceId: workspaceId,
+                name: name,
+                normalizedName: normalizedName,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $ConversationLabelsTable,
+                    ConversationLabelsTable
+                  >(table),
+                  $$ConversationLabelsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                workspaceId = false,
+                conversationLabelAssignmentsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (conversationLabelAssignmentsRefs)
+                      db.conversationLabelAssignments,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (workspaceId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.workspaceId,
+                            referencedTable: $$ConversationLabelsTableReferences
+                                ._workspaceIdTable(db),
+                            referencedColumn:
+                                $$ConversationLabelsTableReferences
+                                    ._workspaceIdTable(db)
+                                    .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (conversationLabelAssignmentsRefs)
+                        await $_getPrefetchedData<
+                          ConversationLabelsTable,
+                          $ConversationLabelsTable,
+                          ConversationLabelAssignmentsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ConversationLabelsTableReferences
+                              ._conversationLabelAssignmentsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ConversationLabelsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).conversationLabelAssignmentsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.labelId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$ConversationLabelsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ConversationLabelsTable,
+      ConversationLabelsTable,
+      $$ConversationLabelsTableFilterComposer,
+      $$ConversationLabelsTableOrderingComposer,
+      $$ConversationLabelsTableAnnotationComposer,
+      $$ConversationLabelsTableCreateCompanionBuilder,
+      $$ConversationLabelsTableUpdateCompanionBuilder,
+      (ConversationLabelsTable, $$ConversationLabelsTableReferences),
+      ConversationLabelsTable,
+      PrefetchHooks Function({
+        bool workspaceId,
+        bool conversationLabelAssignmentsRefs,
+      })
+    >;
+typedef $$ConversationLabelAssignmentsTableCreateCompanionBuilder =
+    ConversationLabelAssignmentsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      required String workspaceId,
+      required String conversationId,
+      required String labelId,
+      Value<int> rowid,
+    });
+typedef $$ConversationLabelAssignmentsTableUpdateCompanionBuilder =
+    ConversationLabelAssignmentsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<String> workspaceId,
+      Value<String> conversationId,
+      Value<String> labelId,
+      Value<int> rowid,
+    });
+
+final class $$ConversationLabelAssignmentsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ConversationLabelAssignmentsTable,
+          ConversationLabelAssignmentsTable
+        > {
+  $$ConversationLabelAssignmentsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) =>
+      db.workspaces.createAlias(
+        'conversation_label_assignments__workspace_id__workspaces__id',
+      );
+
+  $$WorkspacesTableProcessedTableManager get workspaceId {
+    final $_column = $_itemColumn<String>('workspace_id')!;
+
+    final manager = $$WorkspacesTableTableManager(
+      $_db,
+      $_db.workspaces,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ConversationsTable _conversationIdTable(_$AppDatabase db) =>
+      db.conversations.createAlias(
+        'conversation_label_assignments__conversation_id__conversations__id',
+      );
+
+  $$ConversationsTableProcessedTableManager get conversationId {
+    final $_column = $_itemColumn<String>('conversation_id')!;
+
+    final manager = $$ConversationsTableTableManager(
+      $_db,
+      $_db.conversations,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_conversationIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $ConversationLabelsTable _labelIdTable(_$AppDatabase db) =>
+      db.conversationLabels.createAlias(
+        'conversation_label_assignments__label_id__conversation_labels__id',
+      );
+
+  $$ConversationLabelsTableProcessedTableManager get labelId {
+    final $_column = $_itemColumn<String>('label_id')!;
+
+    final manager = $$ConversationLabelsTableTableManager(
+      $_db,
+      $_db.conversationLabels,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_labelIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ConversationLabelAssignmentsTableFilterComposer
+    extends Composer<_$AppDatabase, $ConversationLabelAssignmentsTable> {
+  $$ConversationLabelAssignmentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$WorkspacesTableFilterComposer get workspaceId {
+    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableFilterComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ConversationsTableFilterComposer get conversationId {
+    final $$ConversationsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableFilterComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ConversationLabelsTableFilterComposer get labelId {
+    final $$ConversationLabelsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.labelId,
+      referencedTable: $db.conversationLabels,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationLabelsTableFilterComposer(
+            $db: $db,
+            $table: $db.conversationLabels,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ConversationLabelAssignmentsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ConversationLabelAssignmentsTable> {
+  $$ConversationLabelAssignmentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$WorkspacesTableOrderingComposer get workspaceId {
+    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableOrderingComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ConversationsTableOrderingComposer get conversationId {
+    final $$ConversationsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableOrderingComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ConversationLabelsTableOrderingComposer get labelId {
+    final $$ConversationLabelsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.labelId,
+      referencedTable: $db.conversationLabels,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationLabelsTableOrderingComposer(
+            $db: $db,
+            $table: $db.conversationLabels,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ConversationLabelAssignmentsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ConversationLabelAssignmentsTable> {
+  $$ConversationLabelAssignmentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  $$WorkspacesTableAnnotationComposer get workspaceId {
+    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ConversationsTableAnnotationComposer get conversationId {
+    final $$ConversationsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.conversationId,
+      referencedTable: $db.conversations,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConversationsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.conversations,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$ConversationLabelsTableAnnotationComposer get labelId {
+    final $$ConversationLabelsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.labelId,
+          referencedTable: $db.conversationLabels,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ConversationLabelsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.conversationLabels,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$ConversationLabelAssignmentsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ConversationLabelAssignmentsTable,
+          ConversationLabelAssignmentsTable,
+          $$ConversationLabelAssignmentsTableFilterComposer,
+          $$ConversationLabelAssignmentsTableOrderingComposer,
+          $$ConversationLabelAssignmentsTableAnnotationComposer,
+          $$ConversationLabelAssignmentsTableCreateCompanionBuilder,
+          $$ConversationLabelAssignmentsTableUpdateCompanionBuilder,
+          (
+            ConversationLabelAssignmentsTable,
+            $$ConversationLabelAssignmentsTableReferences,
+          ),
+          ConversationLabelAssignmentsTable,
+          PrefetchHooks Function({
+            bool workspaceId,
+            bool conversationId,
+            bool labelId,
+          })
+        > {
+  $$ConversationLabelAssignmentsTableTableManager(
+    _$AppDatabase db,
+    $ConversationLabelAssignmentsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ConversationLabelAssignmentsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$ConversationLabelAssignmentsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ConversationLabelAssignmentsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<String> workspaceId = const Value.absent(),
+                Value<String> conversationId = const Value.absent(),
+                Value<String> labelId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ConversationLabelAssignmentsCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                workspaceId: workspaceId,
+                conversationId: conversationId,
+                labelId: labelId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                required String workspaceId,
+                required String conversationId,
+                required String labelId,
+                Value<int> rowid = const Value.absent(),
+              }) => ConversationLabelAssignmentsCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                workspaceId: workspaceId,
+                conversationId: conversationId,
+                labelId: labelId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $ConversationLabelAssignmentsTable,
+                    ConversationLabelAssignmentsTable
+                  >(table),
+                  $$ConversationLabelAssignmentsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({workspaceId = false, conversationId = false, labelId = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (workspaceId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.workspaceId,
+                            referencedTable:
+                                $$ConversationLabelAssignmentsTableReferences
+                                    ._workspaceIdTable(db),
+                            referencedColumn:
+                                $$ConversationLabelAssignmentsTableReferences
+                                    ._workspaceIdTable(db)
+                                    .id,
+                          ) as T;
+                        }
+                        if (conversationId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.conversationId,
+                            referencedTable:
+                                $$ConversationLabelAssignmentsTableReferences
+                                    ._conversationIdTable(db),
+                            referencedColumn:
+                                $$ConversationLabelAssignmentsTableReferences
+                                    ._conversationIdTable(db)
+                                    .id,
+                          ) as T;
+                        }
+                        if (labelId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.labelId,
+                            referencedTable:
+                                $$ConversationLabelAssignmentsTableReferences
+                                    ._labelIdTable(db),
+                            referencedColumn:
+                                $$ConversationLabelAssignmentsTableReferences
+                                    ._labelIdTable(db)
+                                    .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$ConversationLabelAssignmentsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ConversationLabelAssignmentsTable,
+      ConversationLabelAssignmentsTable,
+      $$ConversationLabelAssignmentsTableFilterComposer,
+      $$ConversationLabelAssignmentsTableOrderingComposer,
+      $$ConversationLabelAssignmentsTableAnnotationComposer,
+      $$ConversationLabelAssignmentsTableCreateCompanionBuilder,
+      $$ConversationLabelAssignmentsTableUpdateCompanionBuilder,
+      (
+        ConversationLabelAssignmentsTable,
+        $$ConversationLabelAssignmentsTableReferences,
+      ),
+      ConversationLabelAssignmentsTable,
+      PrefetchHooks Function({
+        bool workspaceId,
+        bool conversationId,
+        bool labelId,
+      })
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -49942,5 +52214,13 @@ class $AppDatabaseManager {
       $$WorkspaceVerificationRunsTableTableManager(
         _db,
         _db.workspaceVerificationRuns,
+      );
+  $$ConversationLabelsTableTableManager get conversationLabels =>
+      $$ConversationLabelsTableTableManager(_db, _db.conversationLabels);
+  $$ConversationLabelAssignmentsTableTableManager
+  get conversationLabelAssignments =>
+      $$ConversationLabelAssignmentsTableTableManager(
+        _db,
+        _db.conversationLabelAssignments,
       );
 }

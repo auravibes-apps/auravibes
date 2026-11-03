@@ -10,7 +10,11 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
+import 'package:auravibes_server/src/generated/protocol.dart' as _if5qez1k;
 import 'package:serverpod/serverpod.dart' as _is;
+
+import '../../../features/conversations/models/conversation_label_summary.dart'
+    as _i95lbxuq;
 
 abstract class ConversationSummary
     implements _is.SerializableModel, _is.ProtocolSerialization {
@@ -32,6 +36,7 @@ abstract class ConversationSummary
     this.activeCompactionCheckpointId,
     required this.createdAt,
     required this.updatedAt,
+    this.labels,
   }) : toolAccessMode = toolAccessMode ?? 'default';
 
   factory ConversationSummary({
@@ -52,6 +57,7 @@ abstract class ConversationSummary
     String? activeCompactionCheckpointId,
     required DateTime createdAt,
     required DateTime updatedAt,
+    List<_i95lbxuq.ConversationLabelSummary>? labels,
   }) = _ConversationSummaryImpl;
 
   factory ConversationSummary.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -85,6 +91,12 @@ abstract class ConversationSummary
       updatedAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['updatedAt'],
       ),
+      labels: jsonSerialization['labels'] == null
+          ? null
+          : _if5qez1k.Protocol()
+                .deserialize<List<_i95lbxuq.ConversationLabelSummary>>(
+                  jsonSerialization['labels'],
+                ),
     );
   }
 
@@ -122,6 +134,8 @@ abstract class ConversationSummary
 
   DateTime updatedAt;
 
+  List<_i95lbxuq.ConversationLabelSummary>? labels;
+
   /// Returns a shallow copy of this [ConversationSummary]
   /// with some or all fields replaced by the given arguments.
   @_is.useResult
@@ -143,6 +157,7 @@ abstract class ConversationSummary
     String? activeCompactionCheckpointId,
     DateTime? createdAt,
     DateTime? updatedAt,
+    List<_i95lbxuq.ConversationLabelSummary>? labels,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -171,6 +186,8 @@ abstract class ConversationSummary
         'activeCompactionCheckpointId': activeCompactionCheckpointId,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
+      if (labels != null)
+        'labels': labels?.toJson(valueToJson: (v) => v.toJson()),
     };
   }
 
@@ -201,6 +218,8 @@ abstract class ConversationSummary
         'activeCompactionCheckpointId': activeCompactionCheckpointId,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
+      if (labels != null)
+        'labels': labels?.toJson(valueToJson: (v) => v.toJsonForProtocol()),
     };
   }
 
@@ -231,6 +250,7 @@ class _ConversationSummaryImpl extends ConversationSummary {
     String? activeCompactionCheckpointId,
     required DateTime createdAt,
     required DateTime updatedAt,
+    List<_i95lbxuq.ConversationLabelSummary>? labels,
   }) : super._(
          id: id,
          title: title,
@@ -249,6 +269,7 @@ class _ConversationSummaryImpl extends ConversationSummary {
          activeCompactionCheckpointId: activeCompactionCheckpointId,
          createdAt: createdAt,
          updatedAt: updatedAt,
+         labels: labels,
        );
 
   /// Returns a shallow copy of this [ConversationSummary]
@@ -273,6 +294,7 @@ class _ConversationSummaryImpl extends ConversationSummary {
     Object? activeCompactionCheckpointId = _Undefined,
     DateTime? createdAt,
     DateTime? updatedAt,
+    Object? labels = _Undefined,
   }) {
     return ConversationSummary(
       id: id ?? this.id,
@@ -306,6 +328,9 @@ class _ConversationSummaryImpl extends ConversationSummary {
           : this.activeCompactionCheckpointId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      labels: labels is List<_i95lbxuq.ConversationLabelSummary>?
+          ? labels
+          : this.labels?.map((e0) => e0.copyWith()).toList(),
     );
   }
 }

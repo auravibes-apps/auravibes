@@ -13,6 +13,8 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:auravibes_server/src/generated/features/conversations/models/background_work_view.dart'
     as _idn3a4nr;
+import 'package:auravibes_server/src/generated/features/conversations/models/conversation_label_summary.dart'
+    as _il2ljt3z;
 import 'package:auravibes_server/src/generated/features/conversations/models/conversation_message_search_result.dart'
     as _inj3grkb;
 import 'package:auravibes_server/src/generated/features/conversations/models/conversation_message_view.dart'
@@ -92,6 +94,11 @@ import 'features/conversations/models/conversation_execution.dart' as _iznwbo5b;
 import 'features/conversations/models/conversation_execution_view.dart'
     as _ij9w9f8d;
 import 'features/conversations/models/conversation_job.dart' as _iq1eovrr;
+import 'features/conversations/models/conversation_label.dart' as _ifp5ysfq;
+import 'features/conversations/models/conversation_label_assignment.dart'
+    as _ixuinp9e;
+import 'features/conversations/models/conversation_label_summary.dart'
+    as _ibysc3rh;
 import 'features/conversations/models/conversation_message.dart' as _ibea51bx;
 import 'features/conversations/models/conversation_message_search_result.dart'
     as _iz9vdf0f;
@@ -114,8 +121,12 @@ import 'features/conversations/models/conversation_tool_call_view.dart'
 import 'features/conversations/models/conversation_turn.dart' as _i7mmki1w;
 import 'features/conversations/models/conversation_turn_view.dart' as _ir5w321b;
 import 'features/conversations/models/conversation_usage.dart' as _iii6xlqw;
+import 'features/conversations/models/create_conversation_label_request.dart'
+    as _ib1rcjiw;
 import 'features/conversations/models/create_conversation_request.dart'
     as _i4shnjby;
+import 'features/conversations/models/delete_conversation_label_request.dart'
+    as _i71gm7a6;
 import 'features/conversations/models/delete_conversation_request.dart'
     as _iqsppx3t;
 import 'features/conversations/models/detach_tool_call_request.dart'
@@ -129,6 +140,8 @@ import 'features/conversations/models/get_conversation_request.dart'
 import 'features/conversations/models/get_turn_request.dart' as _ilyvwvdb;
 import 'features/conversations/models/list_background_works_request.dart'
     as _i8d22946;
+import 'features/conversations/models/list_conversation_labels_request.dart'
+    as _i7gf0at6;
 import 'features/conversations/models/list_conversation_messages_request.dart'
     as _it91nt4l;
 import 'features/conversations/models/list_conversations_request.dart'
@@ -146,12 +159,16 @@ import 'features/conversations/models/queue_conversation_message_request.dart'
     as _ido51m94;
 import 'features/conversations/models/remove_pending_conversation_message_request.dart'
     as _iy526sio;
+import 'features/conversations/models/rename_conversation_label_request.dart'
+    as _iyxy6qz5;
 import 'features/conversations/models/reorder_pending_conversation_message_request.dart'
     as _infbxzxr;
 import 'features/conversations/models/restore_conversation_checkpoint_request.dart'
     as _ia1pnkb0;
 import 'features/conversations/models/search_conversation_messages_request.dart'
     as _iajm9iqs;
+import 'features/conversations/models/set_conversation_labels_request.dart'
+    as _ibcr547f;
 import 'features/conversations/models/start_turn_request.dart' as _iocu6u94;
 import 'features/conversations/models/start_turn_result.dart' as _iw8le0j7;
 import 'features/conversations/models/stop_background_work_request.dart'
@@ -407,6 +424,9 @@ export 'features/conversations/models/conversation_exception.dart';
 export 'features/conversations/models/conversation_execution.dart';
 export 'features/conversations/models/conversation_execution_view.dart';
 export 'features/conversations/models/conversation_job.dart';
+export 'features/conversations/models/conversation_label.dart';
+export 'features/conversations/models/conversation_label_assignment.dart';
+export 'features/conversations/models/conversation_label_summary.dart';
 export 'features/conversations/models/conversation_message.dart';
 export 'features/conversations/models/conversation_message_search_result.dart';
 export 'features/conversations/models/conversation_message_view.dart';
@@ -422,7 +442,9 @@ export 'features/conversations/models/conversation_tool_call_view.dart';
 export 'features/conversations/models/conversation_turn.dart';
 export 'features/conversations/models/conversation_turn_view.dart';
 export 'features/conversations/models/conversation_usage.dart';
+export 'features/conversations/models/create_conversation_label_request.dart';
 export 'features/conversations/models/create_conversation_request.dart';
+export 'features/conversations/models/delete_conversation_label_request.dart';
 export 'features/conversations/models/delete_conversation_request.dart';
 export 'features/conversations/models/detach_tool_call_request.dart';
 export 'features/conversations/models/edit_pending_conversation_message_request.dart';
@@ -430,6 +452,7 @@ export 'features/conversations/models/fork_conversation_request.dart';
 export 'features/conversations/models/get_conversation_request.dart';
 export 'features/conversations/models/get_turn_request.dart';
 export 'features/conversations/models/list_background_works_request.dart';
+export 'features/conversations/models/list_conversation_labels_request.dart';
 export 'features/conversations/models/list_conversation_messages_request.dart';
 export 'features/conversations/models/list_conversations_request.dart';
 export 'features/conversations/models/list_message_bookmarks_request.dart';
@@ -440,9 +463,11 @@ export 'features/conversations/models/provider_admission_lock.dart';
 export 'features/conversations/models/provider_admission_reservation.dart';
 export 'features/conversations/models/queue_conversation_message_request.dart';
 export 'features/conversations/models/remove_pending_conversation_message_request.dart';
+export 'features/conversations/models/rename_conversation_label_request.dart';
 export 'features/conversations/models/reorder_pending_conversation_message_request.dart';
 export 'features/conversations/models/restore_conversation_checkpoint_request.dart';
 export 'features/conversations/models/search_conversation_messages_request.dart';
+export 'features/conversations/models/set_conversation_labels_request.dart';
 export 'features/conversations/models/start_turn_request.dart';
 export 'features/conversations/models/start_turn_result.dart';
 export 'features/conversations/models/stop_background_work_request.dart';
@@ -1995,6 +2020,222 @@ class Protocol extends _is.DatabaseSerializationManager {
             _isp.IndexElementDefinition(
               type: _isp.IndexElementDefinitionType.column,
               definition: 'turnId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: false,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _isp.TableDefinition(
+      name: 'conversation_label',
+      dartName: 'ConversationLabel',
+      schema: 'public',
+      module: 'auravibes',
+      columns: [
+        _isp.ColumnDefinition(
+          name: 'id',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'serial',
+        ),
+        _isp.ColumnDefinition(
+          name: 'workspaceId',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _isp.ColumnDefinition(
+          name: 'stableId',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'name',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'normalizedName',
+          columnType: _isp.ColumnType.text,
+          isNullable: false,
+          dartType: 'String',
+        ),
+        _isp.ColumnDefinition(
+          name: 'createdAt',
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+        _isp.ColumnDefinition(
+          name: 'updatedAt',
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+      ],
+      foreignKeys: [
+        _isp.ForeignKeyDefinition(
+          constraintName: 'conversation_label_fk_0',
+          columns: ['workspaceId'],
+          referenceTable: 'cloud_workspace',
+          referenceTableSchema: 'public',
+          referenceColumns: ['id'],
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.cascade,
+          matchType: null,
+        ),
+      ],
+      indexes: [
+        _isp.IndexDefinition(
+          indexName: 'conversation_label_workspace_stable_idx',
+          tableSpace: null,
+          elements: [
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'workspaceId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'stableId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+        _isp.IndexDefinition(
+          indexName: 'conversation_label_workspace_name_idx',
+          tableSpace: null,
+          elements: [
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'workspaceId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'normalizedName',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+      ],
+      managed: true,
+    ),
+    _isp.TableDefinition(
+      name: 'conversation_label_assignment',
+      dartName: 'ConversationLabelAssignment',
+      schema: 'public',
+      module: 'auravibes',
+      columns: [
+        _isp.ColumnDefinition(
+          name: 'id',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int?',
+          columnDefault: 'serial',
+        ),
+        _isp.ColumnDefinition(
+          name: 'workspaceId',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _isp.ColumnDefinition(
+          name: 'labelId',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _isp.ColumnDefinition(
+          name: 'conversationId',
+          columnType: _isp.ColumnType.bigint,
+          isNullable: false,
+          dartType: 'int',
+        ),
+        _isp.ColumnDefinition(
+          name: 'createdAt',
+          columnType: _isp.ColumnType.timestampWithoutTimeZone,
+          isNullable: false,
+          dartType: 'DateTime',
+        ),
+      ],
+      foreignKeys: [
+        _isp.ForeignKeyDefinition(
+          constraintName: 'conversation_label_assignment_fk_0',
+          columns: ['workspaceId'],
+          referenceTable: 'cloud_workspace',
+          referenceTableSchema: 'public',
+          referenceColumns: ['id'],
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.cascade,
+          matchType: null,
+        ),
+        _isp.ForeignKeyDefinition(
+          constraintName: 'conversation_label_assignment_fk_1',
+          columns: ['labelId'],
+          referenceTable: 'conversation_label',
+          referenceTableSchema: 'public',
+          referenceColumns: ['id'],
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.cascade,
+          matchType: null,
+        ),
+        _isp.ForeignKeyDefinition(
+          constraintName: 'conversation_label_assignment_fk_2',
+          columns: ['conversationId'],
+          referenceTable: 'conversation',
+          referenceTableSchema: 'public',
+          referenceColumns: ['id'],
+          onUpdate: _isp.ForeignKeyAction.noAction,
+          onDelete: _isp.ForeignKeyAction.cascade,
+          matchType: null,
+        ),
+      ],
+      indexes: [
+        _isp.IndexDefinition(
+          indexName: 'conversation_label_assignment_identity_idx',
+          tableSpace: null,
+          elements: [
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'workspaceId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'conversationId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'labelId',
+            ),
+          ],
+          type: 'btree',
+          isUnique: true,
+          isPrimary: false,
+        ),
+        _isp.IndexDefinition(
+          indexName: 'conversation_label_assignment_filter_idx',
+          tableSpace: null,
+          elements: [
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'workspaceId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'labelId',
+            ),
+            _isp.IndexElementDefinition(
+              type: _isp.IndexElementDefinitionType.column,
+              definition: 'conversationId',
             ),
           ],
           type: 'btree',
@@ -6002,6 +6243,15 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _iq1eovrr.ConversationJob) {
       return _iq1eovrr.ConversationJob.fromJson(data) as T;
     }
+    if (t == _ifp5ysfq.ConversationLabel) {
+      return _ifp5ysfq.ConversationLabel.fromJson(data) as T;
+    }
+    if (t == _ixuinp9e.ConversationLabelAssignment) {
+      return _ixuinp9e.ConversationLabelAssignment.fromJson(data) as T;
+    }
+    if (t == _ibysc3rh.ConversationLabelSummary) {
+      return _ibysc3rh.ConversationLabelSummary.fromJson(data) as T;
+    }
     if (t == _ibea51bx.ConversationMessage) {
       return _ibea51bx.ConversationMessage.fromJson(data) as T;
     }
@@ -6047,8 +6297,14 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _iii6xlqw.ConversationUsage) {
       return _iii6xlqw.ConversationUsage.fromJson(data) as T;
     }
+    if (t == _ib1rcjiw.CreateConversationLabelRequest) {
+      return _ib1rcjiw.CreateConversationLabelRequest.fromJson(data) as T;
+    }
     if (t == _i4shnjby.CreateConversationRequest) {
       return _i4shnjby.CreateConversationRequest.fromJson(data) as T;
+    }
+    if (t == _i71gm7a6.DeleteConversationLabelRequest) {
+      return _i71gm7a6.DeleteConversationLabelRequest.fromJson(data) as T;
     }
     if (t == _iqsppx3t.DeleteConversationRequest) {
       return _iqsppx3t.DeleteConversationRequest.fromJson(data) as T;
@@ -6071,6 +6327,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (t == _i8d22946.ListBackgroundWorksRequest) {
       return _i8d22946.ListBackgroundWorksRequest.fromJson(data) as T;
+    }
+    if (t == _i7gf0at6.ListConversationLabelsRequest) {
+      return _i7gf0at6.ListConversationLabelsRequest.fromJson(data) as T;
     }
     if (t == _it91nt4l.ListConversationMessagesRequest) {
       return _it91nt4l.ListConversationMessagesRequest.fromJson(data) as T;
@@ -6103,6 +6362,9 @@ class Protocol extends _is.DatabaseSerializationManager {
       return _iy526sio.RemovePendingConversationMessageRequest.fromJson(data)
           as T;
     }
+    if (t == _iyxy6qz5.RenameConversationLabelRequest) {
+      return _iyxy6qz5.RenameConversationLabelRequest.fromJson(data) as T;
+    }
     if (t == _infbxzxr.ReorderPendingConversationMessageRequest) {
       return _infbxzxr.ReorderPendingConversationMessageRequest.fromJson(data)
           as T;
@@ -6112,6 +6374,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (t == _iajm9iqs.SearchConversationMessagesRequest) {
       return _iajm9iqs.SearchConversationMessagesRequest.fromJson(data) as T;
+    }
+    if (t == _ibcr547f.SetConversationLabelsRequest) {
+      return _ibcr547f.SetConversationLabelsRequest.fromJson(data) as T;
     }
     if (t == _iocu6u94.StartTurnRequest) {
       return _iocu6u94.StartTurnRequest.fromJson(data) as T;
@@ -6676,6 +6941,22 @@ class Protocol extends _is.DatabaseSerializationManager {
       return (data != null ? _iq1eovrr.ConversationJob.fromJson(data) : null)
           as T;
     }
+    if (t == _is.getType<_ifp5ysfq.ConversationLabel?>()) {
+      return (data != null ? _ifp5ysfq.ConversationLabel.fromJson(data) : null)
+          as T;
+    }
+    if (t == _is.getType<_ixuinp9e.ConversationLabelAssignment?>()) {
+      return (data != null
+              ? _ixuinp9e.ConversationLabelAssignment.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_ibysc3rh.ConversationLabelSummary?>()) {
+      return (data != null
+              ? _ibysc3rh.ConversationLabelSummary.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _is.getType<_ibea51bx.ConversationMessage?>()) {
       return (data != null
               ? _ibea51bx.ConversationMessage.fromJson(data)
@@ -6760,9 +7041,21 @@ class Protocol extends _is.DatabaseSerializationManager {
       return (data != null ? _iii6xlqw.ConversationUsage.fromJson(data) : null)
           as T;
     }
+    if (t == _is.getType<_ib1rcjiw.CreateConversationLabelRequest?>()) {
+      return (data != null
+              ? _ib1rcjiw.CreateConversationLabelRequest.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _is.getType<_i4shnjby.CreateConversationRequest?>()) {
       return (data != null
               ? _i4shnjby.CreateConversationRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_i71gm7a6.DeleteConversationLabelRequest?>()) {
+      return (data != null
+              ? _i71gm7a6.DeleteConversationLabelRequest.fromJson(data)
               : null)
           as T;
     }
@@ -6803,6 +7096,12 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _is.getType<_i8d22946.ListBackgroundWorksRequest?>()) {
       return (data != null
               ? _i8d22946.ListBackgroundWorksRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_i7gf0at6.ListConversationLabelsRequest?>()) {
+      return (data != null
+              ? _i7gf0at6.ListConversationLabelsRequest.fromJson(data)
               : null)
           as T;
     }
@@ -6863,6 +7162,12 @@ class Protocol extends _is.DatabaseSerializationManager {
               : null)
           as T;
     }
+    if (t == _is.getType<_iyxy6qz5.RenameConversationLabelRequest?>()) {
+      return (data != null
+              ? _iyxy6qz5.RenameConversationLabelRequest.fromJson(data)
+              : null)
+          as T;
+    }
     if (t ==
         _is.getType<_infbxzxr.ReorderPendingConversationMessageRequest?>()) {
       return (data != null
@@ -6881,6 +7186,12 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _is.getType<_iajm9iqs.SearchConversationMessagesRequest?>()) {
       return (data != null
               ? _iajm9iqs.SearchConversationMessagesRequest.fromJson(data)
+              : null)
+          as T;
+    }
+    if (t == _is.getType<_ibcr547f.SetConversationLabelsRequest?>()) {
+      return (data != null
+              ? _ibcr547f.SetConversationLabelsRequest.fromJson(data)
               : null)
           as T;
     }
@@ -7677,6 +7988,22 @@ class Protocol extends _is.DatabaseSerializationManager {
               .toList()
           as T;
     }
+    if (t == List<_ibysc3rh.ConversationLabelSummary>) {
+      return (data as List)
+              .map((e) => deserialize<_ibysc3rh.ConversationLabelSummary>(e))
+              .toList()
+          as T;
+    }
+    if (t == _is.getType<List<_ibysc3rh.ConversationLabelSummary>?>()) {
+      return (data != null
+              ? (data as List)
+                    .map(
+                      (e) => deserialize<_ibysc3rh.ConversationLabelSummary>(e),
+                    )
+                    .toList()
+              : null)
+          as T;
+    }
     if (t == List<_ir42bm8f.SubmitToolDecisionBatchCall>) {
       return (data as List)
               .map((e) => deserialize<_ir42bm8f.SubmitToolDecisionBatchCall>(e))
@@ -7761,6 +8088,12 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == List<_itibmfuz.ConversationSummary>) {
       return (data as List)
               .map((e) => deserialize<_itibmfuz.ConversationSummary>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_il2ljt3z.ConversationLabelSummary>) {
+      return (data as List)
+              .map((e) => deserialize<_il2ljt3z.ConversationLabelSummary>(e))
               .toList()
           as T;
     }
@@ -7911,6 +8244,9 @@ class Protocol extends _is.DatabaseSerializationManager {
       _iznwbo5b.ConversationExecution => 'ConversationExecution',
       _ij9w9f8d.ConversationExecutionView => 'ConversationExecutionView',
       _iq1eovrr.ConversationJob => 'ConversationJob',
+      _ifp5ysfq.ConversationLabel => 'ConversationLabel',
+      _ixuinp9e.ConversationLabelAssignment => 'ConversationLabelAssignment',
+      _ibysc3rh.ConversationLabelSummary => 'ConversationLabelSummary',
       _ibea51bx.ConversationMessage => 'ConversationMessage',
       _iz9vdf0f.ConversationMessageSearchResult =>
         'ConversationMessageSearchResult',
@@ -7927,7 +8263,11 @@ class Protocol extends _is.DatabaseSerializationManager {
       _i7mmki1w.ConversationTurn => 'ConversationTurn',
       _ir5w321b.ConversationTurnView => 'ConversationTurnView',
       _iii6xlqw.ConversationUsage => 'ConversationUsage',
+      _ib1rcjiw.CreateConversationLabelRequest =>
+        'CreateConversationLabelRequest',
       _i4shnjby.CreateConversationRequest => 'CreateConversationRequest',
+      _i71gm7a6.DeleteConversationLabelRequest =>
+        'DeleteConversationLabelRequest',
       _iqsppx3t.DeleteConversationRequest => 'DeleteConversationRequest',
       _iibrmzly.DetachToolCallRequest => 'DetachToolCallRequest',
       _iybdpw96.EditPendingConversationMessageRequest =>
@@ -7936,6 +8276,8 @@ class Protocol extends _is.DatabaseSerializationManager {
       _ixb0z1tn.GetConversationRequest => 'GetConversationRequest',
       _ilyvwvdb.GetTurnRequest => 'GetTurnRequest',
       _i8d22946.ListBackgroundWorksRequest => 'ListBackgroundWorksRequest',
+      _i7gf0at6.ListConversationLabelsRequest =>
+        'ListConversationLabelsRequest',
       _it91nt4l.ListConversationMessagesRequest =>
         'ListConversationMessagesRequest',
       _itcpel99.ListConversationsRequest => 'ListConversationsRequest',
@@ -7949,12 +8291,15 @@ class Protocol extends _is.DatabaseSerializationManager {
         'QueueConversationMessageRequest',
       _iy526sio.RemovePendingConversationMessageRequest =>
         'RemovePendingConversationMessageRequest',
+      _iyxy6qz5.RenameConversationLabelRequest =>
+        'RenameConversationLabelRequest',
       _infbxzxr.ReorderPendingConversationMessageRequest =>
         'ReorderPendingConversationMessageRequest',
       _ia1pnkb0.RestoreConversationCheckpointRequest =>
         'RestoreConversationCheckpointRequest',
       _iajm9iqs.SearchConversationMessagesRequest =>
         'SearchConversationMessagesRequest',
+      _ibcr547f.SetConversationLabelsRequest => 'SetConversationLabelsRequest',
       _iocu6u94.StartTurnRequest => 'StartTurnRequest',
       _iw8le0j7.StartTurnResult => 'StartTurnResult',
       _i4yes7gs.StopBackgroundWorkRequest => 'StopBackgroundWorkRequest',
@@ -8191,6 +8536,12 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'ConversationExecutionView';
       case _iq1eovrr.ConversationJob():
         return 'ConversationJob';
+      case _ifp5ysfq.ConversationLabel():
+        return 'ConversationLabel';
+      case _ixuinp9e.ConversationLabelAssignment():
+        return 'ConversationLabelAssignment';
+      case _ibysc3rh.ConversationLabelSummary():
+        return 'ConversationLabelSummary';
       case _ibea51bx.ConversationMessage():
         return 'ConversationMessage';
       case _iz9vdf0f.ConversationMessageSearchResult():
@@ -8221,8 +8572,12 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'ConversationTurnView';
       case _iii6xlqw.ConversationUsage():
         return 'ConversationUsage';
+      case _ib1rcjiw.CreateConversationLabelRequest():
+        return 'CreateConversationLabelRequest';
       case _i4shnjby.CreateConversationRequest():
         return 'CreateConversationRequest';
+      case _i71gm7a6.DeleteConversationLabelRequest():
+        return 'DeleteConversationLabelRequest';
       case _iqsppx3t.DeleteConversationRequest():
         return 'DeleteConversationRequest';
       case _iibrmzly.DetachToolCallRequest():
@@ -8237,6 +8592,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'GetTurnRequest';
       case _i8d22946.ListBackgroundWorksRequest():
         return 'ListBackgroundWorksRequest';
+      case _i7gf0at6.ListConversationLabelsRequest():
+        return 'ListConversationLabelsRequest';
       case _it91nt4l.ListConversationMessagesRequest():
         return 'ListConversationMessagesRequest';
       case _itcpel99.ListConversationsRequest():
@@ -8257,12 +8614,16 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'QueueConversationMessageRequest';
       case _iy526sio.RemovePendingConversationMessageRequest():
         return 'RemovePendingConversationMessageRequest';
+      case _iyxy6qz5.RenameConversationLabelRequest():
+        return 'RenameConversationLabelRequest';
       case _infbxzxr.ReorderPendingConversationMessageRequest():
         return 'ReorderPendingConversationMessageRequest';
       case _ia1pnkb0.RestoreConversationCheckpointRequest():
         return 'RestoreConversationCheckpointRequest';
       case _iajm9iqs.SearchConversationMessagesRequest():
         return 'SearchConversationMessagesRequest';
+      case _ibcr547f.SetConversationLabelsRequest():
+        return 'SetConversationLabelsRequest';
       case _iocu6u94.StartTurnRequest():
         return 'StartTurnRequest';
       case _iw8le0j7.StartTurnResult():
@@ -8650,6 +9011,15 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (dataClassName == 'ConversationJob') {
       return deserialize<_iq1eovrr.ConversationJob>(data['data']);
     }
+    if (dataClassName == 'ConversationLabel') {
+      return deserialize<_ifp5ysfq.ConversationLabel>(data['data']);
+    }
+    if (dataClassName == 'ConversationLabelAssignment') {
+      return deserialize<_ixuinp9e.ConversationLabelAssignment>(data['data']);
+    }
+    if (dataClassName == 'ConversationLabelSummary') {
+      return deserialize<_ibysc3rh.ConversationLabelSummary>(data['data']);
+    }
     if (dataClassName == 'ConversationMessage') {
       return deserialize<_ibea51bx.ConversationMessage>(data['data']);
     }
@@ -8697,8 +9067,18 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (dataClassName == 'ConversationUsage') {
       return deserialize<_iii6xlqw.ConversationUsage>(data['data']);
     }
+    if (dataClassName == 'CreateConversationLabelRequest') {
+      return deserialize<_ib1rcjiw.CreateConversationLabelRequest>(
+        data['data'],
+      );
+    }
     if (dataClassName == 'CreateConversationRequest') {
       return deserialize<_i4shnjby.CreateConversationRequest>(data['data']);
+    }
+    if (dataClassName == 'DeleteConversationLabelRequest') {
+      return deserialize<_i71gm7a6.DeleteConversationLabelRequest>(
+        data['data'],
+      );
     }
     if (dataClassName == 'DeleteConversationRequest') {
       return deserialize<_iqsppx3t.DeleteConversationRequest>(data['data']);
@@ -8722,6 +9102,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (dataClassName == 'ListBackgroundWorksRequest') {
       return deserialize<_i8d22946.ListBackgroundWorksRequest>(data['data']);
+    }
+    if (dataClassName == 'ListConversationLabelsRequest') {
+      return deserialize<_i7gf0at6.ListConversationLabelsRequest>(data['data']);
     }
     if (dataClassName == 'ListConversationMessagesRequest') {
       return deserialize<_it91nt4l.ListConversationMessagesRequest>(
@@ -8759,6 +9142,11 @@ class Protocol extends _is.DatabaseSerializationManager {
         data['data'],
       );
     }
+    if (dataClassName == 'RenameConversationLabelRequest') {
+      return deserialize<_iyxy6qz5.RenameConversationLabelRequest>(
+        data['data'],
+      );
+    }
     if (dataClassName == 'ReorderPendingConversationMessageRequest') {
       return deserialize<_infbxzxr.ReorderPendingConversationMessageRequest>(
         data['data'],
@@ -8773,6 +9161,9 @@ class Protocol extends _is.DatabaseSerializationManager {
       return deserialize<_iajm9iqs.SearchConversationMessagesRequest>(
         data['data'],
       );
+    }
+    if (dataClassName == 'SetConversationLabelsRequest') {
+      return deserialize<_ibcr547f.SetConversationLabelsRequest>(data['data']);
     }
     if (dataClassName == 'StartTurnRequest') {
       return deserialize<_iocu6u94.StartTurnRequest>(data['data']);
@@ -9282,6 +9673,10 @@ class Protocol extends _is.DatabaseSerializationManager {
         return _iznwbo5b.ConversationExecution.t;
       case _iq1eovrr.ConversationJob:
         return _iq1eovrr.ConversationJob.t;
+      case _ifp5ysfq.ConversationLabel:
+        return _ifp5ysfq.ConversationLabel.t;
+      case _ixuinp9e.ConversationLabelAssignment:
+        return _ixuinp9e.ConversationLabelAssignment.t;
       case _ibea51bx.ConversationMessage:
         return _ibea51bx.ConversationMessage.t;
       case _iflac717.ConversationToolCall:

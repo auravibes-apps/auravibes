@@ -119,6 +119,7 @@ final class ConversationsStreamProvider
     required ({
       String workspaceId,
       String search,
+      Set<String> labelIds,
       _ConversationPagination pagination,
     })
     super.argument,
@@ -153,12 +154,14 @@ final class ConversationsStreamProvider
             as ({
               String workspaceId,
               String search,
+              Set<String> labelIds,
               _ConversationPagination pagination,
             });
     return conversationsStream(
       ref,
       workspaceId: argument.workspaceId,
       search: argument.search,
+      labelIds: argument.labelIds,
       pagination: argument.pagination,
     );
   }
@@ -175,7 +178,7 @@ final class ConversationsStreamProvider
 }
 
 String _$conversationsStreamHash() =>
-    r'23fa84834e78ed7e2c12a72906da3b7514577aad';
+    r'099d09a1f2fe13b0439600a53107af599dfc9dcd';
 
 final class ConversationsStreamFamily extends $Family
     with
@@ -184,6 +187,7 @@ final class ConversationsStreamFamily extends $Family
           ({
             String workspaceId,
             String search,
+            Set<String> labelIds,
             _ConversationPagination pagination,
           })
         > {
@@ -199,11 +203,13 @@ final class ConversationsStreamFamily extends $Family
   ConversationsStreamProvider call({
     required String workspaceId,
     String search = '',
+    Set<String> labelIds = const {},
     _ConversationPagination pagination = _defaultConversationPagination,
   }) => ConversationsStreamProvider._(
     argument: (
       workspaceId: workspaceId,
       search: search,
+      labelIds: labelIds,
       pagination: pagination,
     ),
     from: this,
