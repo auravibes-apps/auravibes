@@ -82,12 +82,8 @@ void main() {
         controller.add([createConversationRow(id: 'c1')]);
         addTearDown(controller.close);
 
-        when(
-          () => mockDao.watchConversationsByWorkspace(
-            'ws-1',
-            options: defaultConversationListQueryOptions,
-          ),
-        ).thenAnswer((_) => controller.stream);
+        when(() => mockDao.watchConversationsByWorkspace('ws-1'))
+            .thenAnswer((_) => controller.stream);
 
         final result = await repository
             .watchConversationsByWorkspace('ws-1')

@@ -30,6 +30,19 @@ class ConversationArchiveStateDao extends DatabaseAccessor<AppDatabase>
       ? _archiveConversation(workspaceId, conversationId)
       : _restoreConversation(workspaceId, conversationId);
 
+  Future<void> clearConversationArchive({
+    required String workspaceId,
+    required String conversationId,
+  }) async {
+    final _ =
+        await (delete(conversationArchiveStates)..where(
+              (row) =>
+                  row.workspaceId.equals(workspaceId) &
+                  row.conversationId.equals(conversationId),
+            ))
+            .go();
+  }
+
   Future<void> _archiveConversation(
     String workspaceId,
     String conversationId,
@@ -47,19 +60,6 @@ class ConversationArchiveStateDao extends DatabaseAccessor<AppDatabase>
     String workspaceId,
     String conversationId,
   ) async {
-    final _ =
-        await (delete(conversationArchiveStates)..where(
-              (row) =>
-                  row.workspaceId.equals(workspaceId) &
-                  row.conversationId.equals(conversationId),
-            ))
-            .go();
-  }
-
-  Future<void> clearConversationArchive({
-    required String workspaceId,
-    required String conversationId,
-  }) async {
     final _ =
         await (delete(conversationArchiveStates)..where(
               (row) =>

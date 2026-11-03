@@ -600,36 +600,32 @@ class const _ChatListEmptyState({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (scope) {
-    .active => _activeEmptyState(),
-    .archived => _archivedEmptyState(),
-  };
-
-  Widget _activeEmptyState() => Center(
-    child: Padding(
-      padding: const EdgeInsets.all(32),
-      child: _ChatListEmptyStateColumn(workspaceId: workspaceId),
-    ),
-  );
-
-  Widget _archivedEmptyState() => const Center(
-    child: Padding(
-      padding: EdgeInsets.all(32),
-      child: Column(
-        mainAxisSize: .min,
-        children: [
-          AuraIcon(Icons.archive_outlined, size: .extraLarge),
-          SizedBox(height: 16),
-          AuraText(
-            child: TextLocale(
-              LocaleKeys.chats_screens_archived_conversations_empty,
-            ),
-            style: .heading3,
-            textAlign: .center,
-          ),
-        ],
+    .active => Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: _ChatListEmptyStateColumn(workspaceId: workspaceId),
       ),
     ),
-  );
+    .archived => const Center(
+      child: Padding(
+        padding: EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: .min,
+          children: [
+            AuraIcon(Icons.archive_outlined, size: .extraLarge),
+            SizedBox(height: 16),
+            AuraText(
+              child: TextLocale(
+                LocaleKeys.chats_screens_archived_conversations_empty,
+              ),
+              style: .heading3,
+              textAlign: .center,
+            ),
+          ],
+        ),
+      ),
+    ),
+  };
 }
 
 class const _ChatListEmptyStateColumn({required final String workspaceId})
@@ -1016,20 +1012,19 @@ class const _ChatListLoaded({required final _ChatListViewState state})
 class const _ChatListLoadedBody({required final _ChatListViewState state})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext _) => Column(children: _children());
-
-  List<Widget> _children() => [
-    if (state.scope == ConversationListScope.active) _bulkActions(),
-    _ChatListSearchInput(state: state),
-    Expanded(child: _ChatListResults(state: state)),
-    if (state.hasMore && !state.isRefreshing && !state.hasError)
-      _ChatListLoadMore(state: state),
-  ];
-
-  Widget _bulkActions() => _ChatListBulkActions(
-    workspaceId: state.workspaceId,
-    selectedChats: state.selectedChats,
-    isBulkActionRunning: state.isBulkActionRunning,
+  Widget build(BuildContext _) => Column(
+    children: [
+      if (state.scope == ConversationListScope.active)
+        _ChatListBulkActions(
+          workspaceId: state.workspaceId,
+          selectedChats: state.selectedChats,
+          isBulkActionRunning: state.isBulkActionRunning,
+        ),
+      _ChatListSearchInput(state: state),
+      Expanded(child: _ChatListResults(state: state)),
+      if (state.hasMore && !state.isRefreshing && !state.hasError)
+        _ChatListLoadMore(state: state),
+    ],
   );
 }
 

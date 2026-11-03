@@ -103,14 +103,14 @@ final class ConversationByIdStreamFamily extends $Family
 
 /// Riverpod generates a family call from these named inputs; keeping this
 /// signature preserves the provider API used by its consumers.
-// ignore: number-of-parameters
+// ignore: number-of-parameters - Keep Riverpod's generated family signature.
 
 @ProviderFor(conversationsStream)
 final conversationsStreamProvider = ConversationsStreamFamily._();
 
 /// Riverpod generates a family call from these named inputs; keeping this
 /// signature preserves the provider API used by its consumers.
-// ignore: number-of-parameters
+// ignore: number-of-parameters - Keep Riverpod's generated family signature.
 
 final class ConversationsStreamProvider
     extends
@@ -124,7 +124,7 @@ final class ConversationsStreamProvider
         $StreamProvider<List<ConversationEntity>> {
   /// Riverpod generates a family call from these named inputs; keeping this
   /// signature preserves the provider API used by its consumers.
-  // ignore: number-of-parameters
+  // ignore: number-of-parameters - Keep Riverpod's generated family signature.
   ConversationsStreamProvider._({
     required ConversationsStreamFamily super.from,
     required ({
@@ -193,7 +193,7 @@ String _$conversationsStreamHash() =>
 
 /// Riverpod generates a family call from these named inputs; keeping this
 /// signature preserves the provider API used by its consumers.
-// ignore: number-of-parameters
+// ignore: number-of-parameters - Keep Riverpod's generated family signature.
 
 final class ConversationsStreamFamily extends $Family
     with
@@ -217,7 +217,7 @@ final class ConversationsStreamFamily extends $Family
 
   /// Riverpod generates a family call from these named inputs; keeping this
   /// signature preserves the provider API used by its consumers.
-  // ignore: number-of-parameters
+  // ignore: number-of-parameters - Keep Riverpod's generated family signature.
 
   ConversationsStreamProvider call({
     required String workspaceId,

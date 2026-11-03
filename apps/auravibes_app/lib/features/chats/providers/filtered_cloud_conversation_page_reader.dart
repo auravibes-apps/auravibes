@@ -18,19 +18,40 @@ class FilteredCloudConversationPageReader(
   int _skipped = 0;
   String? _cursor;
 
-  bool get _stopAfterFirstPage =>
-      _scope == ConversationListScope.active &&
-      _pagination.limit == null &&
-      _pagination.offset == 0;
+  static Future<List<ConversationSummary>> readAllPages(
+    CloudWorkspaceStateGateway gateway,
+    CloudWorkspaceRef cloud,
+  ) async {
+    final conversations = <ConversationSummary>[];
+    final seenCursors = <String>{};
+    String? cursor;
+
+    while (true) {
+      final page = await _readCloudConversationPageAtCursor(
+        gateway,
+        cloud,
+        cursor,
+      );
+      conversations.addAll(page.conversations);
+
+      cursor = _nextCloudConversationCursor(page.nextCursor, seenCursors);
+      if (cursor == null) return conversations;
+    }
+  }
 
   Future<List<ConversationSummary>> read() async {
     if (_scope == .archived && _archivedIds.isEmpty) return [];
     if (_pagination.limit == 0) return [];
 
-    while (await _readNextPage()) {}
-
-    return _conversations;
+    while (true) {
+      if (!await _readNextPage()) return _conversations;
+    }
   }
+
+  bool get _stopAfterFirstPage =>
+      _scope == ConversationListScope.active &&
+      _pagination.limit == null &&
+      _pagination.offset == 0;
 
   Future<bool> _readNextPage() async {
     final page = await _readCloudConversationPageAtCursor(
@@ -52,27 +73,6 @@ class FilteredCloudConversationPageReader(
 
   bool _shouldStopAfterPage(bool reachedLimit, String? nextCursor) =>
       reachedLimit || _stopAfterFirstPage || nextCursor == null;
-
-  static Future<List<ConversationSummary>> readAllPages(
-    CloudWorkspaceStateGateway gateway,
-    CloudWorkspaceRef cloud,
-  ) async {
-    final conversations = <ConversationSummary>[];
-    final seenCursors = <String>{};
-    String? cursor;
-
-    while (true) {
-      final page = await _readCloudConversationPageAtCursor(
-        gateway,
-        cloud,
-        cursor,
-      );
-      conversations.addAll(page.conversations);
-
-      cursor = _nextCloudConversationCursor(page.nextCursor, seenCursors);
-      if (cursor == null) return conversations;
-    }
-  }
 
   bool _appendMatchingConversations(List<ConversationSummary> page) {
     for (final conversation in page) {

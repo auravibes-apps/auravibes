@@ -28,7 +28,7 @@ class const _ArchivedConversationsBody({required final String workspaceId})
   Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       children: [
-        if (_isCloudWorkspace(ref)) _cloudArchiveNotice(context),
+        if (_isCloudWorkspace(ref)) const _CloudArchiveNotice(),
         Expanded(
           child: ChatListWidget(workspaceId: workspaceId, scope: .archived),
         ),
@@ -43,8 +43,11 @@ class const _ArchivedConversationsBody({required final String workspaceId})
           ?.value
           .cloud !=
       null;
+}
 
-  Widget _cloudArchiveNotice(BuildContext context) => Padding(
+class const _CloudArchiveNotice() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Padding(
     padding: const EdgeInsetsDirectional.only(start: 16, top: 16, end: 16),
     child: AuraCallout(
       title: LocaleKeys.chats_screens_archived_conversations_cloud_notice_title

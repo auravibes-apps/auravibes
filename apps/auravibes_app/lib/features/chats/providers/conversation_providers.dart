@@ -77,7 +77,7 @@ Stream<ConversationEntity?> _localConversationById(
 
 /// Riverpod generates a family call from these named inputs; keeping this
 /// signature preserves the provider API used by its consumers.
-// ignore: number-of-parameters
+// ignore: number-of-parameters - Keep Riverpod's generated family signature.
 @riverpod
 Stream<List<ConversationEntity>> conversationsStream(
   Ref ref, {
