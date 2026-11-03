@@ -362,12 +362,9 @@ _VerificationSelectionResolution _resolveVerificationSelection(
   _EligibleVerification eligible,
   _VerificationSelection selection,
 ) {
-  if (selection.result case final ScopedVerificationResult result) {
-    return _RejectedVerificationSelection(
-      outcome: result.outcome,
-      reason: result.reason,
-    );
-  }
+  final result = selection.result;
+  if (result != null) return _rejectedVerificationSelection(result);
+
   final selections = selection.selections;
   if (selections == null || eligible.context.identity.turnId == null) {
     return const _RejectedVerificationSelection(
@@ -375,8 +372,22 @@ _VerificationSelectionResolution _resolveVerificationSelection(
       reason: 'invalid_turn',
     );
   }
-  final request = eligible.request;
 
+  return _readyVerificationSelection(eligible, selections);
+}
+
+_RejectedVerificationSelection _rejectedVerificationSelection(
+  ScopedVerificationResult result,
+) => _RejectedVerificationSelection(
+  outcome: result.outcome,
+  reason: result.reason,
+);
+
+_ReadyVerificationSelection _readyVerificationSelection(
+  _EligibleVerification eligible,
+  List<ScopedVerificationSelection> selections,
+) {
+  final request = eligible.request;
   return _ReadyVerificationSelection((
     usecase: eligible.usecase,
     invocation: eligible.invocation,
