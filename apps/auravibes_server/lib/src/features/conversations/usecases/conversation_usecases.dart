@@ -4924,8 +4924,7 @@ class ConversationUseCases {
     );
   }
 
-  Future<Map<int, List<ConversationLabelSummary>>>
-  _conversationLabelsForPage(
+  Future<Map<int, List<ConversationLabelSummary>>> _conversationLabelsForPage(
     Session session, {
     required int workspaceId,
     required List<Conversation> conversations,
@@ -4957,9 +4956,7 @@ class ConversationUseCases {
     for (final assignment in assignments) {
       final label = labelsById[assignment.labelId];
       if (label == null) continue;
-      result
-          .putIfAbsent(assignment.conversationId, () => [])
-          .add(label);
+      result.putIfAbsent(assignment.conversationId, () => []).add(label);
     }
     return result;
   }
@@ -6424,27 +6421,26 @@ class ConversationUseCases {
   ConversationSummary _summary(
     Conversation conversation, {
     List<ConversationLabelSummary> labels = const [],
-  }) =>
-      ConversationSummary(
-        id: conversation.stableId,
-        title: conversation.title ?? '',
-        isPinned: conversation.isPinned,
-        toolAccessMode: conversation.toolAccessMode,
-        modelId: conversation.modelId,
-        agentId: conversation.agentId,
-        reasoningConfigJson: conversation.reasoningConfigJson,
-        taskBrief: conversation.taskBrief,
-        parentConversationId: conversation.parentConversationStableId,
-        forkSourceConversationId: conversation.forkSourceConversationId,
-        forkSourceTitle: conversation.forkSourceTitle,
-        forkThroughMessageId: conversation.forkThroughMessageId,
-        forkMaterializedAt: conversation.forkMaterializedAt,
-        revision: conversation.revision,
-        activeCompactionCheckpointId: conversation.activeCompactionCheckpointId,
-        createdAt: conversation.createdAt,
-        updatedAt: conversation.updatedAt,
-        labels: labels,
-      );
+  }) => ConversationSummary(
+    id: conversation.stableId,
+    title: conversation.title ?? '',
+    isPinned: conversation.isPinned,
+    toolAccessMode: conversation.toolAccessMode,
+    modelId: conversation.modelId,
+    agentId: conversation.agentId,
+    reasoningConfigJson: conversation.reasoningConfigJson,
+    taskBrief: conversation.taskBrief,
+    parentConversationId: conversation.parentConversationStableId,
+    forkSourceConversationId: conversation.forkSourceConversationId,
+    forkSourceTitle: conversation.forkSourceTitle,
+    forkThroughMessageId: conversation.forkThroughMessageId,
+    forkMaterializedAt: conversation.forkMaterializedAt,
+    revision: conversation.revision,
+    activeCompactionCheckpointId: conversation.activeCompactionCheckpointId,
+    createdAt: conversation.createdAt,
+    updatedAt: conversation.updatedAt,
+    labels: labels,
+  );
 
   ConversationMessageView _messageView(
     ConversationMessage message,

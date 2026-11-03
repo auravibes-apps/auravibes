@@ -57,25 +57,25 @@ void main() {
     addTearDown(labelDatabase.close);
 
     return TestableApp(
-    child: Theme(
-      data: .new(),
-      child: Portal(
-        child: Material(
-          child: content ?? ChatListWidget(workspaceId: workspaceId),
+      child: Theme(
+        data: .new(),
+        child: Portal(
+          child: Material(
+            child: content ?? ChatListWidget(workspaceId: workspaceId),
+          ),
         ),
       ),
-    ),
-    overrides: [
-      ...overrides,
-      conversationLabelsRepositoryProvider.overrideWithValue(
-        ConversationLabelsRepository(labelDatabase),
-      ),
-      conversationLabelsStreamProvider.overrideWith(
-        (ref, workspaceId) => Stream.value(const []),
-      ),
-    ],
-    workspaceId: workspaceId,
-    startLocale: startLocale,
+      overrides: [
+        ...overrides,
+        conversationLabelsRepositoryProvider.overrideWithValue(
+          ConversationLabelsRepository(labelDatabase),
+        ),
+        conversationLabelsStreamProvider.overrideWith(
+          (ref, workspaceId) => Stream.value(const []),
+        ),
+      ],
+      workspaceId: workspaceId,
+      startLocale: startLocale,
     );
   }
 

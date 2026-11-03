@@ -141,7 +141,10 @@ void main() {
         session,
         ListConversationLabelsRequest(workspaceId: workspaceA.id!),
       );
-      expect(labelsA.map((label) => label.name).toSet(), {'Urgent', 'Planning'});
+      expect(labelsA.map((label) => label.name).toSet(), {
+        'Urgent',
+        'Planning',
+      });
       expect(
         (await endpoints.conversation.listLabels(
           session,
@@ -190,7 +193,9 @@ void main() {
           labelIds: [urgent.id, ideas.id],
         ),
       );
-      expect(page.conversations.map((conversation) => conversation.id), [olderMatch.id]);
+      expect(page.conversations.map((conversation) => conversation.id), [
+        olderMatch.id,
+      ]);
       expect(
         page.conversations.single.labels?.map((label) => label.name),
         ['Urgent'],

@@ -79,10 +79,7 @@ void main() {
   testWidgets('label badges expose one localized semantic label', (
     tester,
   ) async {
-    final labels = [
-      _label('urgent', 'Urgent'),
-      _label('planning', 'Planning'),
-    ];
+    final labels = [_label('urgent', 'Urgent'), _label('planning', 'Planning')];
     await pumpSubject(
       tester,
       child: conversationLabelBadges(labels),
@@ -96,9 +93,11 @@ void main() {
     expect(urgentBadge, findsOneWidget);
     expect(planningBadge, findsOneWidget);
     expect(
-      tester.getSemantics(
-        find.byKey(const ValueKey('conversation-labels-semantics')),
-      ).label,
+      tester
+          .getSemantics(
+            find.byKey(const ValueKey('conversation-labels-semantics')),
+          )
+          .label,
       'Etiquetas de conversación: Urgent, Planning',
     );
     expect(
@@ -128,9 +127,8 @@ void main() {
         onSelectedLabelIdsChanged: (value) => applied = value,
       ),
       overrides: [
-        conversationLabelsStreamProvider(workspaceId).overrideWith(
-          (_) => Stream.value([urgent, planning]),
-        ),
+        conversationLabelsStreamProvider(workspaceId)
+            .overrideWith((_) => Stream.value([urgent, planning])),
       ],
     );
 
@@ -138,9 +136,9 @@ void main() {
       tester,
       () => !tester.widget<AuraButton>(find.byType(AuraButton).first).disabled,
     );
-    await tester.tap(find.text(LocaleKeys
-        .chats_screens_conversation_labels_filter
-        .tr()));
+    await tester.tap(
+      find.text(LocaleKeys.chats_screens_conversation_labels_filter.tr()),
+    );
     await _pumpAnimation(tester);
     await _waitForText(tester, 'Urgent');
     await tester.tap(find.text('Urgent'));
@@ -164,9 +162,9 @@ void main() {
         onSelectedLabelIdsChanged: (_) {},
       ),
       overrides: [
-        conversationLabelsStreamProvider(workspaceId).overrideWith(
-          (_) => Stream.value(const <ConversationLabelEntity>[]),
-        ),
+        conversationLabelsStreamProvider(
+          workspaceId,
+        ).overrideWith((_) => Stream.value(const <ConversationLabelEntity>[])),
       ],
     );
 
@@ -175,15 +173,15 @@ void main() {
     );
     await _pumpAnimation(tester);
     await tester.enterText(find.byType(TextField), 'Follow up');
-    await tester.tap(find.byTooltip(
-      LocaleKeys.chats_screens_conversation_labels_create.tr(),
-    ));
+    await tester.tap(
+      find.byTooltip(LocaleKeys.chats_screens_conversation_labels_create.tr()),
+    );
     await _pumpAnimation(tester);
 
     expect(
-      (await (database.select(database.conversationLabels)
-                ..where((label) => label.workspaceId.equals(workspaceId)))
-              .get())
+      (await (database.select(
+            database.conversationLabels,
+          )..where((label) => label.workspaceId.equals(workspaceId))).get())
           .map((label) => label.name)
           .toList(),
       ['Follow up'],
@@ -215,9 +213,8 @@ void main() {
         ),
       ),
       overrides: [
-        conversationLabelsStreamProvider(workspaceId).overrideWith(
-          (_) => Stream.value([label]),
-        ),
+        conversationLabelsStreamProvider(workspaceId)
+            .overrideWith((_) => Stream.value([label])),
       ],
     );
 
@@ -227,9 +224,9 @@ void main() {
     await tester.tap(find.text('Important'));
     await tester.pump();
     await tester.tap(
-      find.text(LocaleKeys
-          .chats_screens_conversation_labels_save_assignments
-          .tr()),
+      find.text(
+        LocaleKeys.chats_screens_conversation_labels_save_assignments.tr(),
+      ),
     );
     await _pumpAnimation(tester);
     expect(find.byType(AlertDialog), findsNothing);
@@ -237,10 +234,9 @@ void main() {
     final assignments = await (database.select(
       database.conversationLabelAssignments,
     )..where((assignment) => assignment.conversationId.equals(row.id))).get();
-    expect(
-      assignments.map((assignment) => assignment.labelId).toList(),
-      [label.id],
-    );
+    expect(assignments.map((assignment) => assignment.labelId).toList(), [
+      label.id,
+    ]);
   });
 }
 
@@ -278,10 +274,7 @@ Future<void> _waitForTranslation(
 }
 
 Future<void> _waitForText(WidgetTester tester, String value) async {
-  await _waitForCondition(
-    tester,
-    () => find.text(value).evaluate().isNotEmpty,
-  );
+  await _waitForCondition(tester, () => find.text(value).evaluate().isNotEmpty);
 
   expect(find.text(value), findsOneWidget);
 }

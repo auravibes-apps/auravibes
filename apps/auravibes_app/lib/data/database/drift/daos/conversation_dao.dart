@@ -208,10 +208,12 @@ extension ConversationDaoReadOperations on ConversationDao {
     return query.watch();
   }
 
-  Stream<List<({
-    ConversationsTable conversation,
-    List<ConversationLabelEntity> labels,
-  })>> watchConversationsWithLabelsByWorkspace(
+  Stream<
+    List<
+      ({ConversationsTable conversation, List<ConversationLabelEntity> labels})
+    >
+  >
+  watchConversationsWithLabelsByWorkspace(
     String workspaceId, {
     String search = '',
     int? limit,
@@ -226,9 +228,7 @@ extension ConversationDaoReadOperations on ConversationDao {
     ];
     if (normalizedSearch.isNotEmpty) {
       predicates.add(r"c.title LIKE ? ESCAPE '\'");
-      variables.add(
-        Variable<String>('%${_escapeLike(normalizedSearch)}%'),
-      );
+      variables.add(Variable<String>('%${_escapeLike(normalizedSearch)}%'));
     }
     if (labelIds.isNotEmpty) {
       final placeholders = List.filled(labelIds.length, '?').join(', ');
@@ -274,26 +274,35 @@ ORDER BY page.is_pinned DESC, page.updated_at DESC, page.id DESC
 
     return query.watch().asyncMap((rows) async {
       if (rows.isEmpty) return const [];
-      final conversationIds = rows.map((row) => row.read<String>('id')).toList();
+      final conversationIds = rows
+          .map((row) => row.read<String>('id'))
+          .toList();
       final conversationsById = {
-        for (final conversation in await (select(conversations)
-              ..where((table) => table.id.isIn(conversationIds)))
-            .get())
+        for (final conversation in await (select(
+          conversations,
+        )..where((table) => table.id.isIn(conversationIds))).get())
           conversation.id: conversation,
       };
-      final assignmentsByConversation = <String, List<ConversationLabelEntity>>{};
-      final labelRows = await (select(conversationLabels).join([
-        innerJoin(
-          conversationLabelAssignments,
-          conversationLabelAssignments.labelId.equalsExp(conversationLabels.id) &
-              conversationLabelAssignments.workspaceId.equalsExp(
-                conversationLabels.workspaceId,
-              ),
-        ),
-      ])..where(
-        conversationLabelAssignments.workspaceId.equals(workspaceId) &
-            conversationLabelAssignments.conversationId.isIn(conversationIds),
-      )).get();
+      final assignmentsByConversation =
+          <String, List<ConversationLabelEntity>>{};
+      final labelRows =
+          await (select(conversationLabels).join([
+                innerJoin(
+                  conversationLabelAssignments,
+                  conversationLabelAssignments.labelId.equalsExp(
+                        conversationLabels.id,
+                      ) &
+                      conversationLabelAssignments.workspaceId.equalsExp(
+                        conversationLabels.workspaceId,
+                      ),
+                ),
+              ])..where(
+                conversationLabelAssignments.workspaceId.equals(workspaceId) &
+                    conversationLabelAssignments.conversationId.isIn(
+                      conversationIds,
+                    ),
+              ))
+              .get();
       for (final row in labelRows) {
         final assignment = row.readTable(conversationLabelAssignments);
         final label = row.readTable(conversationLabels);

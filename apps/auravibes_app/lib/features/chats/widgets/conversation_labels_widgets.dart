@@ -29,8 +29,7 @@ class _ConversationLabelsToolbarState
       AsyncData(value: final value) => value,
       _ => const <ConversationLabelEntity>[],
     };
-    final filterLabel = LocaleKeys
-        .chats_screens_conversation_labels_filter
+    final filterLabel = LocaleKeys.chats_screens_conversation_labels_filter
         .tr();
     final selectedLabelIds = widget.selectedLabelIds;
     final count = selectedLabelIds.length;
@@ -43,7 +42,8 @@ class _ConversationLabelsToolbarState
       final validSelection = selectedLabelIds.intersection(availableIds);
       if (validSelection.length != selectedLabelIds.length) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && widget.selectedLabelIds.length != validSelection.length) {
+          if (mounted &&
+              widget.selectedLabelIds.length != validSelection.length) {
             widget.onSelectedLabelIdsChanged(validSelection);
           }
         });
@@ -95,7 +95,7 @@ class _ConversationLabelsToolbarState
             identifier: 'conversation-label-manage',
             variant: .ghost,
             size: .small,
-              onPressed: () => _showManageConversationLabels(
+            onPressed: () => _showManageConversationLabels(
               context,
               workspaceId: workspaceId,
               ref: ref,
@@ -147,18 +147,14 @@ class _ConversationLabelFilterDialogState
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: Text(
-      LocaleKeys.chats_screens_conversation_labels_filter_title.tr(),
-    ),
+    title: Text(LocaleKeys.chats_screens_conversation_labels_filter_title.tr()),
     content: SizedBox(
       width: 420,
       child: Column(
         mainAxisSize: .min,
         crossAxisAlignment: .stretch,
         children: [
-          Text(
-            LocaleKeys.chats_screens_conversation_labels_filter_help.tr(),
-          ),
+          Text(LocaleKeys.chats_screens_conversation_labels_filter_help.tr()),
           const SizedBox(height: 12),
           if (widget.labels.isEmpty)
             Text(LocaleKeys.chats_screens_conversation_labels_empty.tr())
@@ -367,7 +363,8 @@ class const _NewConversationLabelField({
       _NewConversationLabelFieldState();
 }
 
-class _NewConversationLabelFieldState extends State<_NewConversationLabelField> {
+class _NewConversationLabelFieldState
+    extends State<_NewConversationLabelField> {
   final _controller = TextEditingController();
   String? _validationError;
 
@@ -388,15 +385,15 @@ class _NewConversationLabelFieldState extends State<_NewConversationLabelField> 
           maxLength: 40,
           textInputAction: .done,
           decoration: InputDecoration(
-            labelText: LocaleKeys
-                .chats_screens_conversation_labels_label_name
+            labelText: LocaleKeys.chats_screens_conversation_labels_label_name
                 .tr(),
             errorText: _validationError,
             isDense: true,
           ),
           onSubmitted: (_) => _submit(),
           onChanged: (_) {
-            if (_validationError != null) setState(() => _validationError = null);
+            if (_validationError != null)
+              setState(() => _validationError = null);
           },
         ),
       ),
@@ -459,10 +456,8 @@ Future<String?> _showLabelNameDialog(
   required String initialName,
 }) => showDialog<String>(
   context: context,
-  builder: (_) => _ConversationLabelNameDialog(
-    title: title,
-    initialName: initialName,
-  ),
+  builder: (_) =>
+      _ConversationLabelNameDialog(title: title, initialName: initialName),
 );
 
 class const _ConversationLabelNameDialog({
@@ -515,8 +510,7 @@ class _ConversationLabelNameDialogState
     final name = _controller.text.trim();
     if (name.isEmpty || name.length > 40) {
       setState(
-        () => _error = LocaleKeys
-            .chats_screens_conversation_labels_invalid_name
+        () => _error = LocaleKeys.chats_screens_conversation_labels_invalid_name
             .tr(),
       );
       return;
@@ -637,13 +631,7 @@ void _showLabelError(
   String messageKey = LocaleKeys.chats_screens_conversation_labels_save_error,
 }) {
   final messenger = ScaffoldMessenger.maybeOf(context);
-  messenger?.showSnackBar(
-    SnackBar(
-      content: Text(
-        messageKey.tr(),
-      ),
-    ),
-  );
+  messenger?.showSnackBar(SnackBar(content: Text(messageKey.tr())));
 }
 
 Widget conversationLabelBadges(List<ConversationLabelEntity> labels) =>
@@ -660,9 +648,7 @@ class const _ConversationLabelBadges({
       key: const ValueKey('conversation-labels-semantics'),
       container: true,
       label:
-          '${LocaleKeys.chats_screens_conversation_labels_label_semantics.tr(
-            context: context,
-          )}: '
+          '${LocaleKeys.chats_screens_conversation_labels_label_semantics.tr(context: context)}: '
           '$labelNames',
       child: ExcludeSemantics(
         child: Wrap(

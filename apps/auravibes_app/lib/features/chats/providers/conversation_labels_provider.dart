@@ -159,11 +159,10 @@ class ConversationLabelActions {
 ConversationLabelEntity _cloudLabel(
   ConversationLabelSummary label,
   String localWorkspaceId,
-) =>
-    ConversationLabelEntity(
-      id: label.id,
-      workspaceId: localWorkspaceId,
-      name: label.name,
-      createdAt: label.createdAt,
-      updatedAt: label.updatedAt,
-    );
+) => ConversationLabelEntity(
+  id: label.id,
+  workspaceId: localWorkspaceId,
+  name: label.name,
+  createdAt: label.createdAt,
+  updatedAt: label.updatedAt,
+);

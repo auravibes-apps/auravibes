@@ -439,10 +439,10 @@ void _useChatListEffects(_ChatListHookState hooks) {
 void _useChatListSearchEffect(_ChatListHookState hooks) {
   final databaseSearch = hooks.debouncedSearch ?? '';
   final labelKey = hooks.input.selectedLabelIds.value.toList()..sort();
-  useEffect(
-    () => _resetSearchEffect(hooks.results),
-    [databaseSearch, labelKey.join('\u0000')],
-  );
+  useEffect(() => _resetSearchEffect(hooks.results), [
+    databaseSearch,
+    labelKey.join('\u0000'),
+  ]);
 }
 
 void _useChatListFirstPageEffect(_ChatListHookState hooks) {
@@ -926,7 +926,9 @@ class const _ChatListLoaded({required final _ChatListViewState state})
               viewState.selectedLabelIds.value = labelIds;
             },
           ),
-          Expanded(child: _ChatListEmptyState(workspaceId: viewState.workspaceId)),
+          Expanded(
+            child: _ChatListEmptyState(workspaceId: viewState.workspaceId),
+          ),
         ],
       );
     }

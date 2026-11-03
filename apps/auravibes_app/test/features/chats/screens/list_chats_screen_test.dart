@@ -129,6 +129,7 @@ void main() {
                   ({
                     String workspaceId,
                     String search,
+                    Set<String> labelIds,
                     ({int? limit, int offset}) pagination,
                   })
                   args,

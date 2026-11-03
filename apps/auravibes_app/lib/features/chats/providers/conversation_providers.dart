@@ -456,7 +456,8 @@ ConversationEntity _cloudConversationFields(
     createdAt: conversation.createdAt,
     updatedAt: conversation.updatedAt,
     revision: conversation.revision,
-    labels: conversation.labels
+    labels:
+        conversation.labels
             ?.map(
               (label) => ConversationLabelEntity(
                 id: label.id,
