@@ -13,6 +13,7 @@ import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -240,15 +241,23 @@ extension _ScopedVerificationSectionStateActions
   }
 
   Future<void> _save() async {
+    debugPrint(
+      'TRACE verification save gate saving=$_saving loaded=$_loaded '
+      'dirty=${_draft.isDirty}',
+    );
     if (_saving || !_loaded || !_draft.isDirty) return;
     final pending = _readPendingSettings(this);
+    debugPrint('TRACE verification pendingNull=${pending == null}');
     if (pending == null) return;
+    debugPrint('TRACE verification pending enabled=${pending.enabled}');
     _beginSaving();
     try {
       await _persistDraft(pending);
     } on ScopedVerificationSettingsException catch (error) {
+      debugPrint('TRACE verification typed save failure=${error.localeKey}');
       _showSaveFailure(this, error.localeKey);
-    } on Object {
+    } on Object catch (error) {
+      debugPrint('TRACE verification untyped save failure=$error');
       _showSaveFailure(this, LocaleKeys.verification_errors_save_failed);
     } finally {
       _finishSaving();
@@ -327,7 +336,8 @@ ScopedVerificationSettings? _readPendingSettings(
 ) {
   try {
     return state._draft.read();
-  } on FormatException {
+  } on FormatException catch (error) {
+    debugPrint('TRACE verification settings parse failure=$error');
     state
       .._advanced = true
       .._showError(LocaleKeys.verification_errors_invalid);
