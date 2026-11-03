@@ -139,10 +139,7 @@ void main() {
       modality: .file,
       sizeBytes: 12,
     );
-    const middleContent = ChatDraft(
-      text: 'Middle',
-      attachments: [attachment],
-    );
+    const middleContent = ChatDraft(text: 'Middle', attachments: [attachment]);
     ChatDraft? loadedDraft;
     final queueSnapshots = <Map<String, List<ConversationQueuedDraft>>>[];
 
@@ -198,16 +195,10 @@ void main() {
       tester.getTopLeft(find.text('Middle')).dy,
       lessThan(tester.getTopLeft(find.text('First')).dy),
     );
-    expect(
-      queueSnapshots.last['conv-1'],
-      [middle, first, last],
-    );
+    expect(queueSnapshots.last['conv-1'], [middle, first, last]);
     expect(middle.draft, same(middleContent));
     expect(middle.draft.attachments.single, same(attachment));
-    expect(
-      queueSnapshots.last['conv-2'],
-      [other],
-    );
+    expect(queueSnapshots.last['conv-2'], [other]);
 
     await tester.tap(rowActions);
     final _ = await tester.pumpAndSettle();
@@ -220,20 +211,14 @@ void main() {
       tester.getTopLeft(find.text('First')).dy,
       lessThan(tester.getTopLeft(find.text('Middle')).dy),
     );
-    expect(
-      queueSnapshots.last['conv-1'],
-      [first, middle, last],
-    );
+    expect(queueSnapshots.last['conv-1'], [first, middle, last]);
 
     await tester.tap(find.byIcon(Icons.edit_outlined).at(1));
     await tester.pump();
 
     expect(loadedDraft, same(middleContent));
     expect(loadedDraft?.attachments.single, same(attachment));
-    expect(
-      queueSnapshots.last['conv-1'],
-      [first, last],
-    );
+    expect(queueSnapshots.last['conv-1'], [first, last]);
   });
 
   testWidgets('disables move actions at the first and last boundaries', (
@@ -285,16 +270,11 @@ void main() {
       find.byKey(ValueKey('queued-prompt-${queuedFirst.id}-move-up')),
     );
     final _ = await tester.pumpAndSettle();
-    expect(
-      queueSnapshots.last['conv-1'],
-      [first, last],
-    );
+    expect(queueSnapshots.last['conv-1'], [first, last]);
 
     final _ = await tester.sendKeyEvent(.escape);
     final _ = await tester.pumpAndSettle();
-    await tester.tap(
-      find.byKey(ValueKey('queued-prompt-${last.id}-actions')),
-    );
+    await tester.tap(find.byKey(ValueKey('queued-prompt-${last.id}-actions')));
     final _ = await tester.pumpAndSettle();
     final moveDownAtBottom = tester
         .getSemantics(
@@ -307,10 +287,7 @@ void main() {
       find.byKey(ValueKey('queued-prompt-${last.id}-move-down')),
     );
     final _ = await tester.pumpAndSettle();
-    expect(
-      queueSnapshots.last['conv-1'],
-      [first, last],
-    );
+    expect(queueSnapshots.last['conv-1'], [first, last]);
   });
 
   testWidgets('loads edited draft before removing it from the queue', (

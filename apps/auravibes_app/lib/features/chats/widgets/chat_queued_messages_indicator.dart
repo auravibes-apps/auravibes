@@ -41,10 +41,8 @@ class const _QueuedMessagesContent({
           notifier.remove(conversationId: conversationId, draftId: draftId),
       onMoveUp: (draftId) =>
           notifier.moveUp(conversationId: conversationId, draftId: draftId),
-      onMoveDown: (draftId) => notifier.moveDown(
-        conversationId: conversationId,
-        draftId: draftId,
-      ),
+      onMoveDown: (draftId) =>
+          notifier.moveDown(conversationId: conversationId, draftId: draftId),
       onEditDraft: _createEditDraftCallback(
         onEditDraft,
         notifier,
