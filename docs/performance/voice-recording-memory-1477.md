@@ -58,14 +58,16 @@ then one irregular-packet 120-second case per revision. Each invocation uses:
 
 ```sh
 flutter test test/performance/voice_recording_memory_test.dart --no-pub \
-  --concurrency=1 --reporter=expanded \
+  --concurrency=1 --reporter=expanded --enable-vmservice \
   --dart-define=VOICE_MEMORY_PROBE=true \
   --dart-define=VOICE_MEMORY_SECONDS=120 \
   --dart-define=VOICE_MEMORY_IRREGULAR=false
 ```
 
 `VOICE_MEMORY_OUTPUT` must name the case's artifact prefix. Normal test runs skip
-this opt-in probe. The simulated stream emits fresh 20 ms PCM packets in real
+this opt-in probe. `--enable-vmservice` is required for runtime heap queries;
+Flutter's default test worker does not expose the VM service. The simulated
+stream emits fresh 20 ms PCM packets in real
 time and never preloads an entire recording. Validation, byte comparison,
 hashing, independent decoding, and draft deletion occur after the measured
 capture/finalization interval.

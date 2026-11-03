@@ -19,7 +19,7 @@ def run_case(checkout, output, label, seconds, repetition, irregular):
     prefix = output / name
     command = [
         "flutter", "test", "test/performance/voice_recording_memory_test.dart",
-        "--no-pub", "--concurrency=1", "--reporter=expanded",
+        "--no-pub", "--concurrency=1", "--reporter=expanded", "--enable-vmservice",
         "--dart-define=VOICE_MEMORY_PROBE=true",
         f"--dart-define=VOICE_MEMORY_SECONDS={seconds}",
         f"--dart-define=VOICE_MEMORY_IRREGULAR={str(irregular).lower()}",

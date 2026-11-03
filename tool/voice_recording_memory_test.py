@@ -17,6 +17,7 @@ class VoiceMemoryRunnerTest(unittest.TestCase):
             with patch.object(probe.subprocess, "Popen", return_value=process):
                 result = probe.run_case(root, root, "baseline", 5, 1, False)
             self.assertEqual(result["status"], "missing-result")
+            self.assertIn("--enable-vmservice", result["command"])
             self.assertTrue((root / "baseline-5s-1-regular.run.json").exists())
 
     def test_failed_run_keeps_partial_samples_and_log(self):
