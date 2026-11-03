@@ -2839,6 +2839,8 @@ abstract class LocaleKeys {
   static const workspace_assets_save = 'workspace_assets.save';
   static const workspace_assets_unavailable = 'workspace_assets.unavailable';
   static const workspace_assets_invalid = 'workspace_assets.invalid';
+  static const workspace_assets_size_limit_exceeded =
+      'workspace_assets.size_limit_exceeded';
   static const workspace_assets_referenced = 'workspace_assets.referenced';
   static const workspace_assets_download_only =
       'workspace_assets.download_only';
@@ -2950,6 +2952,13 @@ abstract class LocaleKeys {
   static const workspace_items_no_records = 'workspace_items.no_records';
   static const workspace_items_save_record = 'workspace_items.save_record';
   static const workspace_items_invalid_table = 'workspace_items.invalid_table';
+  static const workspace_items_limit_columns = 'workspace_items.limit_columns';
+  static const workspace_items_limit_query_page =
+      'workspace_items.limit_query_page';
+  static const workspace_items_limit_record_batch =
+      'workspace_items.limit_record_batch';
+  static const workspace_items_limit_summary_columns =
+      'workspace_items.limit_summary_columns';
   static const workspace_items_create_column = 'workspace_items.create_column';
   static const workspace_items_column_name = 'workspace_items.column_name';
   static const workspace_items_column_type = 'workspace_items.column_type';
