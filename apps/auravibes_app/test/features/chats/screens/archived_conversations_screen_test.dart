@@ -42,6 +42,13 @@ void main() {
       ),
     );
     final _ = await tester.pumpAndSettle();
+    final appException = tester.takeException();
+    expect(
+      appException,
+      isNull,
+      reason: 'The archive screen threw while building: $appException',
+    );
+    expect(find.byType(UncontrolledProviderScope), findsOneWidget);
     final container = tester
         .widget<UncontrolledProviderScope>(
           find.byType(UncontrolledProviderScope),
