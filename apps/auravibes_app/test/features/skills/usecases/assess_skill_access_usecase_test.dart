@@ -9,10 +9,10 @@ void main() {
     () async {
       var resolverCalled = false;
       final result = await AssessSkillAccessUsecase(
-        connectorReferencesReady: (_) async {
+        connectorReferenceStatuses: (_) async {
           resolverCalled = true;
 
-          return false;
+          return [];
         },
       ).call(skill: _skill());
 
@@ -26,10 +26,10 @@ void main() {
   test('ready Connector references make Skill guidance available', () async {
     final requested = <List<String>>[];
     final result = await AssessSkillAccessUsecase(
-      connectorReferencesReady: (toolIds) async {
+      connectorReferenceStatuses: (toolIds) async {
         requested.add(toolIds);
 
-        return true;
+        return List.filled(toolIds.length, SkillToolAccessStatus.available);
       },
     ).call(skill: _skill(connectorToolIds: ['connector/notion/search']));
 
@@ -46,7 +46,10 @@ void main() {
     'missing references block guidance and show unavailable tools',
     () async {
       final result = await AssessSkillAccessUsecase(
-        connectorReferencesReady: (_) async => false,
+        connectorReferenceStatuses: (toolIds) async => List.filled(
+          toolIds.length,
+          SkillToolAccessStatus.missing,
+        ),
       ).call(skill: _skill(connectorToolIds: ['connector/notion/search']));
 
       expect(result.status, SkillAccessStatus.missing);
@@ -57,12 +60,41 @@ void main() {
 
   test('resolver errors report unknown access', () async {
     final result = await AssessSkillAccessUsecase(
-      connectorReferencesReady: (_) => throw StateError('catalog unavailable'),
+      connectorReferenceStatuses: (_) =>
+          throw StateError('catalog unavailable'),
     ).call(skill: _skill(connectorToolIds: ['connector/notion/search']));
 
     expect(result.status, SkillAccessStatus.unknown);
     expect(result.instructionsAvailable, isFalse);
     expect(result.tools.single.status, SkillToolAccessStatus.unknown);
+  });
+
+  test('keeps each batched tool result in its original order', () async {
+    final requested = <List<String>>[];
+    final ids = [
+      'connector/brave/web_search',
+      'connector/kagi/search',
+      'connector/brave/web_search',
+    ];
+    final result = await AssessSkillAccessUsecase(
+      connectorReferenceStatuses: (toolIds) async {
+        requested.add(toolIds);
+
+        return [
+          SkillToolAccessStatus.available,
+          SkillToolAccessStatus.unknown,
+          SkillToolAccessStatus.missing,
+        ];
+      },
+    ).call(skill: _skill(connectorToolIds: ids));
+
+    expect(requested, [ids]);
+    expect(result.tools.map((tool) => tool.id), ids);
+    expect(result.tools.map((tool) => tool.status), [
+      SkillToolAccessStatus.available,
+      SkillToolAccessStatus.unknown,
+      SkillToolAccessStatus.missing,
+    ]);
   });
 }
 
