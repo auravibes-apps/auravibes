@@ -11,7 +11,7 @@ const _messageCounts = [100, 1000, 5000];
 const _warmupIterations = 2;
 const _sampleCount = 15;
 const _operationsPerSample = 8;
-const _streamUpdateVersions = _sampleCount * _operationsPerSample;
+const int _streamUpdateVersions = _sampleCount * _operationsPerSample;
 
 var _resultSink = 0;
 
@@ -39,7 +39,7 @@ void _measureProjection(int messageCount, _TimelineBenchmarkScenario scenario) {
       : [stableMessages];
 
   final firstProjectionTimer = Stopwatch()..start();
-  final firstProjection = _project(updateSnapshots.first);
+  final firstProjection = _project(updateSnapshots.firstOrNull!);
   firstProjectionTimer.stop();
   final firstProjectionUs = firstProjectionTimer.elapsedMicroseconds;
 
@@ -73,7 +73,7 @@ void _measureProjection(int messageCount, _TimelineBenchmarkScenario scenario) {
 
   final sortedSamples = [...samplesUs]..sort();
   final medianUs = sortedSamples[sortedSamples.length ~/ 2];
-  final p95Index = (sortedSamples.length * .95).ceil() - 1;
+  final p95Index = (sortedSamples.length * 0.95).ceil() - 1;
   final benchmarkRecord = {
     'workload': 'chat_timeline_projection',
     'revision':
@@ -103,15 +103,11 @@ void _measureProjection(int messageCount, _TimelineBenchmarkScenario scenario) {
   debugPrint(jsonEncode(benchmarkRecord));
 }
 
-List<ResolvedChatMessage?> _buildMessages(int messageCount) {
-  final messages = <ResolvedChatMessage?>[
-    for (var index = 0; index < messageCount - 1; index++)
-      _resolvedMessage(index),
-    _streamingTail(0),
-  ];
-
-  return messages;
-}
+List<ResolvedChatMessage?> _buildMessages(int messageCount) => [
+  for (var index = 0; index < messageCount - 1; index++)
+    _resolvedMessage(index),
+  _streamingTail(0),
+];
 
 List<List<ResolvedChatMessage?>> _buildStreamingTailSnapshots(
   List<ResolvedChatMessage?> messages,
@@ -127,7 +123,7 @@ ResolvedChatMessage _resolvedMessage(int index) {
   final hasA2ui = !isCompaction && !isToolActivity && index % 17 == 0;
   final isUser = !isCompaction && !isToolActivity && !hasA2ui && index % 4 == 0;
   final hasAttachment = !isCompaction && index % 29 == 0;
-  final createdAt = DateTime.utc(2026, 1, 1).add(Duration(seconds: index));
+  final createdAt = DateTime.utc(2026, 1).add(.new(seconds: index));
   final id = 'message-$index';
   final toolCalls = isToolActivity
       ? [
@@ -183,7 +179,7 @@ ResolvedChatMessage _streamingTail(int version) {
   final createdAt = DateTime.utc(2026, 1, 1, 0, 1);
 
   return ResolvedChatMessage(
-    message: MessageEntity(
+    message: .new(
       id: 'streaming-tail',
       conversationId: 'benchmark-conversation',
       content: 'Assistant response chunk $version',
@@ -191,7 +187,7 @@ ResolvedChatMessage _streamingTail(int version) {
       isUser: false,
       status: .unfinished,
       createdAt: createdAt,
-      updatedAt: createdAt.add(Duration(milliseconds: version)),
+      updatedAt: createdAt.add(.new(milliseconds: version)),
     ),
     isStreaming: true,
   );
