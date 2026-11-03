@@ -335,8 +335,9 @@ class const _VerificationForm({
           ),
           _VerificationInput(
             controller: draft.root,
-            label: LocaleKeys.verification_root,
-            hint: LocaleKeys.verification_root_hint,
+            label: const TextLocale(LocaleKeys.verification_root),
+            hint: const TextLocale(LocaleKeys.verification_root_hint),
+            semanticLabel: LocaleKeys.verification_root.tr(),
             identifier: 'verification-root',
           ),
           _VerificationEditTools(state: state, tools: tools),
@@ -370,7 +371,7 @@ class const _VerificationForm({
             Semantics(
               key: state._errorAnchor,
               liveRegion: true,
-              child: TextLocale(error),
+              child: _verificationErrorText(error),
             ),
           AuraWrap(
             children: [
@@ -400,8 +401,11 @@ class const _VerificationForm({
               ),
             ],
           ),
-          if (state._notice case final String notice)
-            Semantics(liveRegion: true, child: TextLocale(notice)),
+          if (state._notice != null)
+            const Semantics(
+              liveRegion: true,
+              child: TextLocale(LocaleKeys.verification_saved),
+            ),
         ],
       ),
     );
@@ -470,25 +474,29 @@ class const _VerificationCheckFields({
     children: [
       _VerificationInput(
         controller: check.id,
-        label: LocaleKeys.verification_check_id,
+        label: const TextLocale(LocaleKeys.verification_check_id),
+        semanticLabel: LocaleKeys.verification_check_id.tr(),
         identifier: 'verification-check-${identityHashCode(check)}',
       ),
       _VerificationInput(
         controller: check.executable,
-        label: LocaleKeys.verification_executable,
+        label: const TextLocale(LocaleKeys.verification_executable),
+        semanticLabel: LocaleKeys.verification_executable.tr(),
         identifier: 'verification-executable-${identityHashCode(check)}',
       ),
       _VerificationInput(
         controller: check.arguments,
-        label: LocaleKeys.verification_arguments,
-        hint: LocaleKeys.verification_arguments_hint,
+        label: const TextLocale(LocaleKeys.verification_arguments),
+        hint: const TextLocale(LocaleKeys.verification_arguments_hint),
+        semanticLabel: LocaleKeys.verification_arguments.tr(),
         identifier: 'verification-arguments-${identityHashCode(check)}',
         maxLines: 3,
       ),
       _VerificationInput(
         controller: check.suffixes,
-        label: LocaleKeys.verification_suffixes,
-        hint: LocaleKeys.verification_suffixes_hint,
+        label: const TextLocale(LocaleKeys.verification_suffixes),
+        hint: const TextLocale(LocaleKeys.verification_suffixes_hint),
+        semanticLabel: LocaleKeys.verification_suffixes.tr(),
         identifier: 'verification-suffixes-${identityHashCode(check)}',
         maxLines: 2,
       ),
@@ -511,19 +519,22 @@ class const _VerificationLimits({
       const TextLocale(LocaleKeys.verification_limits_hint),
       _VerificationInput(
         controller: draft.timeout,
-        label: LocaleKeys.verification_timeout,
+        label: const TextLocale(LocaleKeys.verification_timeout),
+        semanticLabel: LocaleKeys.verification_timeout.tr(),
         identifier: 'verification-timeout',
         numeric: true,
       ),
       _VerificationInput(
         controller: draft.output,
-        label: LocaleKeys.verification_output,
+        label: const TextLocale(LocaleKeys.verification_output),
+        semanticLabel: LocaleKeys.verification_output.tr(),
         identifier: 'verification-output',
         numeric: true,
       ),
       _VerificationInput(
         controller: draft.repairs,
-        label: LocaleKeys.verification_repairs,
+        label: const TextLocale(LocaleKeys.verification_repairs),
+        semanticLabel: LocaleKeys.verification_repairs.tr(),
         identifier: 'verification-repairs',
         numeric: true,
       ),
@@ -533,22 +544,45 @@ class const _VerificationLimits({
 
 class const _VerificationInput({
   required final TextEditingController controller,
-  required final String label,
+  required final Widget label,
+  required final String semanticLabel,
   required final String identifier,
-  final String? hint,
+  final Widget? hint,
   final int maxLines = 1,
   final bool numeric = false,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraInput(
     controller: controller,
-    label: TextLocale(label),
-    hint: hint == null ? null : TextLocale(hint!),
+    label: label,
+    hint: hint,
     maxLines: maxLines,
     keyboardType: numeric
         ? const TextInputType.numberWithOptions(decimal: true)
         : null,
     identifier: identifier,
-    semanticLabel: label.tr(),
+    semanticLabel: semanticLabel,
   );
 }
+
+Widget _verificationErrorText(String key) => switch (key) {
+  LocaleKeys.verification_cloud_unavailable => const TextLocale(
+    LocaleKeys.verification_cloud_unavailable,
+  ),
+  LocaleKeys.verification_errors_bindings => const TextLocale(
+    LocaleKeys.verification_errors_bindings,
+  ),
+  LocaleKeys.verification_errors_runner_unavailable => const TextLocale(
+    LocaleKeys.verification_errors_runner_unavailable,
+  ),
+  LocaleKeys.verification_errors_unsupported_runner => const TextLocale(
+    LocaleKeys.verification_errors_unsupported_runner,
+  ),
+  LocaleKeys.verification_errors_conflict => const TextLocale(
+    LocaleKeys.verification_errors_conflict,
+  ),
+  LocaleKeys.verification_errors_invalid => const TextLocale(
+    LocaleKeys.verification_errors_invalid,
+  ),
+  _ => const TextLocale(LocaleKeys.verification_errors_save_failed),
+};
