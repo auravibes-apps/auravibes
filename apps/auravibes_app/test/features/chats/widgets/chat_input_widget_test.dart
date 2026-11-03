@@ -88,6 +88,8 @@ void main() {
     ValueChanged<bool>? onDraftStatusChanged,
     ChatDraft? draftToLoad,
     ValueListenable<String?>? activeConversation,
+    ValueListenable<String>? activeWorkspace,
+    bool reuseChatInputForContextChanges = false,
     VoidCallback? onSkillsPress,
     ConversationSkillSelectorState? skillSelectorState,
     WorkspaceFile? sharedFile,
@@ -114,6 +116,11 @@ void main() {
                 .overrideWith((_) async => sharedAssets),
           workspaceSessionForRouteProvider('ws-1')
               .overrideWithValue(AsyncData(workspaceSession)),
+          workspaceSessionForRouteProvider('ws-2').overrideWithValue(
+            const AsyncData(
+              WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-2')),
+            ),
+          ),
           if (attachmentService case final service?)
             localChatAttachmentServiceProvider.overrideWithValue(service),
           if (skillSelectorState case final state?)
@@ -124,48 +131,74 @@ void main() {
         ],
         child: Builder(
           builder: (context) {
-            Widget chatInput(String? conversationId) => ChatInputWidget(
-              workspaceId: 'ws-1',
-              onSendMessage: onSendMessage,
-              onToolsPress: onToolsPress,
-              modelSheetControl: modelSheetControl,
-              agentSheetControl: agentSheetControl,
-              modelCompactControl: (onPressed) => AuraTile(
-                child: modelCompactControl,
-                onTap: onPressed,
-                variant: .outlined,
-                size: .small,
-                leading: const AuraIcon(Icons.memory_outlined, size: .small),
-              ),
-              agentCompactControl: (onPressed) => AuraTile(
-                child: agentCompactControl,
-                onTap: onPressed,
-                variant: .selected,
-                size: .small,
-                leading: const AuraIcon(Icons.smart_toy_outlined),
-              ),
-              onDraftStatusChanged: onDraftStatusChanged,
-              conversationId: conversationId,
-              toolAccessMode: toolAccessMode,
-              onToolAccessModeChanged: onToolAccessModeChanged,
-              reasoningSettingsControl: reasoningSettingsControl,
-              draftToLoad: draftToLoad,
-              modalitiesInput: modalitiesInput,
-              onSkillsPress: onSkillsPress,
-              onContinueAgent: onContinueAgent,
-              continueDisabledHint: continueDisabledHint,
-              disabledHint: disabledHint,
-              compactDisabledHint: compactDisabledHint,
-              disabled: disabled,
-              acceptDroppedFilesWhenDisabled: acceptDroppedFilesWhenDisabled,
-              isBusy: isBusy,
-              showStopButton: showStopButton,
-              onStop: onStop,
-              onCompact: onCompact,
-              canCompact: canCompact,
-              isCompacting: isCompacting,
-              key: conversationId == null ? null : ValueKey(conversationId),
-            );
+            Widget chatInput(String? conversationId, String workspaceId) =>
+                ChatInputWidget(
+                  workspaceId: workspaceId,
+                  onSendMessage: onSendMessage,
+                  onToolsPress: onToolsPress,
+                  modelSheetControl: modelSheetControl,
+                  agentSheetControl: agentSheetControl,
+                  modelCompactControl: (onPressed) => AuraTile(
+                    child: modelCompactControl,
+                    onTap: onPressed,
+                    variant: .outlined,
+                    size: .small,
+                    leading: const AuraIcon(
+                      Icons.memory_outlined,
+                      size: .small,
+                    ),
+                  ),
+                  agentCompactControl: (onPressed) => AuraTile(
+                    child: agentCompactControl,
+                    onTap: onPressed,
+                    variant: .selected,
+                    size: .small,
+                    leading: const AuraIcon(Icons.smart_toy_outlined),
+                  ),
+                  onDraftStatusChanged: onDraftStatusChanged,
+                  conversationId: conversationId,
+                  toolAccessMode: toolAccessMode,
+                  onToolAccessModeChanged: onToolAccessModeChanged,
+                  reasoningSettingsControl: reasoningSettingsControl,
+                  draftToLoad: draftToLoad,
+                  modalitiesInput: modalitiesInput,
+                  onSkillsPress: onSkillsPress,
+                  onContinueAgent: onContinueAgent,
+                  continueDisabledHint: continueDisabledHint,
+                  disabledHint: disabledHint,
+                  compactDisabledHint: compactDisabledHint,
+                  disabled: disabled,
+                  acceptDroppedFilesWhenDisabled:
+                      acceptDroppedFilesWhenDisabled,
+                  isBusy: isBusy,
+                  showStopButton: showStopButton,
+                  onStop: onStop,
+                  onCompact: onCompact,
+                  canCompact: canCompact,
+                  isCompacting: isCompacting,
+                  key: reuseChatInputForContextChanges
+                      ? const ValueKey<String>('reused_chat_input')
+                      : conversationId == null
+                      ? null
+                      : ValueKey(conversationId),
+                );
+
+            Widget workspaceInput(String workspaceId) {
+              if (activeConversation == null) {
+                return chatInput(null, workspaceId);
+              }
+
+              return ValueListenableBuilder<String?>(
+                valueListenable: activeConversation,
+                builder: (context, conversationId, child) {
+                  if (conversationId == null) {
+                    return const SizedBox.shrink();
+                  }
+
+                  return chatInput(conversationId, workspaceId);
+                },
+              );
+            }
 
             return MaterialApp(
               home: AuraThemeScope(
@@ -176,17 +209,12 @@ void main() {
                     child: AuraSnackBarHost(
                       child: Material(
                         child: Portal(
-                          child: activeConversation == null
-                              ? chatInput(null)
-                              : ValueListenableBuilder<String?>(
-                                  valueListenable: activeConversation,
-                                  builder: (context, conversationId, child) {
-                                    if (conversationId == null) {
-                                      return const SizedBox.shrink();
-                                    }
-
-                                    return chatInput(conversationId);
-                                  },
+                          child: activeWorkspace == null
+                              ? workspaceInput('ws-1')
+                              : ValueListenableBuilder<String>(
+                                  valueListenable: activeWorkspace,
+                                  builder: (context, workspaceId, child) =>
+                                      workspaceInput(workspaceId),
                                 ),
                         ),
                       ),
@@ -731,6 +759,7 @@ void main() {
   });
 
   testWidgets('renders without error', (tester) async {
+    overridePlatform(.macOS);
     final _ = await pumpAndInit(
       tester,
       buildSubject(
@@ -745,9 +774,28 @@ void main() {
     expect(find.byType(AuraInput), findsOneWidget);
   });
 
+  for (final platform in [
+    TargetPlatform.iOS,
+    TargetPlatform.linux,
+    TargetPlatform.windows,
+  ]) {
+    testWidgets('does not expose file drop on ${platform.name}', (
+      tester,
+    ) async {
+      overridePlatform(platform);
+      final _ = await pumpAndInit(
+        tester,
+        buildSubject(onSendMessage: (_) => _noop()),
+      );
+
+      expect(find.byType(DropTarget), findsNothing);
+    });
+  }
+
   testWidgets('shows and clears the drop overlay for file previews', (
     tester,
   ) async {
+    overridePlatform(.macOS);
     final _ = await pumpAndInit(
       tester,
       buildSubject(
@@ -793,6 +841,7 @@ void main() {
   });
 
   testWidgets('adds dropped files to disabled new-chat draft', (tester) async {
+    overridePlatform(.macOS);
     const attachment = MessageAttachmentToCreate(
       localPath: '/tmp/report.pdf',
       fileName: 'report.pdf',
@@ -803,16 +852,19 @@ void main() {
     );
     final attachmentService = _FakeLocalChatAttachmentService(attachment);
     final bytes = Uint8List.fromList('report!!'.codeUnits);
+    final sentDrafts = <ChatDraft>[];
 
     final dropChannel = await pumpAndInit(
       tester,
       buildSubject(
         disabled: true,
         acceptDroppedFilesWhenDisabled: true,
+        modalitiesInput: const ['file'],
         attachmentService: attachmentService,
-        onSendMessage: (_) => _noop(),
+        onSendMessage: sentDrafts.add,
       ),
     );
+    await tester.enterText(find.byType(EditableText), 'keep this draft');
 
     dropChannel.dropFile(
       position: tester.getCenter(find.byType(AuraInput)),
@@ -823,13 +875,19 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('report.pdf'), findsOneWidget);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'keep this draft',
+    );
     expect(attachmentService.copiedBytes, bytes);
     expect(attachmentService.copiedFileName, 'report.pdf');
+    expect(sentDrafts, isEmpty);
   });
 
-  testWidgets('rejects a dropped file after the streamed byte limit', (
+  testWidgets('rejects dropped files unsupported by the current model', (
     tester,
   ) async {
+    overridePlatform(.macOS);
     const attachment = MessageAttachmentToCreate(
       localPath: '/tmp/report.pdf',
       fileName: 'report.pdf',
@@ -839,15 +897,262 @@ void main() {
       sizeBytes: 8,
     );
     final attachmentService = _FakeLocalChatAttachmentService(attachment);
+    final sentDrafts = <ChatDraft>[];
+    final dropChannel = await pumpAndInit(
+      tester,
+      buildSubject(
+        modalitiesInput: const ['image'],
+        attachmentService: attachmentService,
+        onSendMessage: sentDrafts.add,
+      ),
+    );
+    await tester.enterText(find.byType(EditableText), 'keep this draft');
+
+    dropChannel.dropFile(
+      position: tester.getCenter(find.byType(AuraInput)),
+      fileName: 'report.pdf',
+      mimeType: 'application/pdf',
+      bytes: Uint8List.fromList('report!!'.codeUnits),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        '''The selected model doesn't support file input. '''
+        'Switch to a model that accepts files.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('report.pdf'), findsNothing);
+    expect(attachmentService.deletedPaths, [attachment.localPath]);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'keep this draft',
+    );
+    expect(sentDrafts, isEmpty);
+  });
+
+  testWidgets('preserves text when a dropped file read is cancelled', (
+    tester,
+  ) async {
+    overridePlatform(.macOS);
+    const attachment = MessageAttachmentToCreate(
+      localPath: '/tmp/report.pdf',
+      fileName: 'report.pdf',
+      displayName: 'report.pdf',
+      mimeType: 'application/pdf',
+      modality: .file,
+      sizeBytes: 8,
+    );
+    final attachmentService = _FakeLocalChatAttachmentService(attachment);
+    final sentDrafts = <ChatDraft>[];
+    final dropChannel = await pumpAndInit(
+      tester,
+      buildSubject(
+        modalitiesInput: const ['file'],
+        attachmentService: attachmentService,
+        onSendMessage: sentDrafts.add,
+      ),
+    );
+    await tester.enterText(find.byType(EditableText), 'keep this draft');
+
+    dropChannel.dropFile(
+      position: tester.getCenter(find.byType(AuraInput)),
+      fileName: 'report.pdf',
+      mimeType: 'application/pdf',
+      bytes: Uint8List.fromList('report!!'.codeUnits),
+      readError: const PlatformException(code: 'cancelled'),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('report.pdf'), findsNothing);
+    expect(attachmentService.copiedBytes, isNull);
+    expect(attachmentService.deletedPaths, isEmpty);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'keep this draft',
+    );
+    expect(sentDrafts, isEmpty);
+  });
+
+  testWidgets('preserves text when storing a dropped file fails', (
+    tester,
+  ) async {
+    overridePlatform(.macOS);
+    const attachment = MessageAttachmentToCreate(
+      localPath: '/tmp/report.pdf',
+      fileName: 'report.pdf',
+      displayName: 'report.pdf',
+      mimeType: 'application/pdf',
+      modality: .file,
+      sizeBytes: 8,
+    );
+    final attachmentService = _FakeLocalChatAttachmentService(
+      attachment,
+      copyError: Exception('simulated storage failure'),
+    );
+    final sentDrafts = <ChatDraft>[];
+    final dropChannel = await pumpAndInit(
+      tester,
+      buildSubject(
+        modalitiesInput: const ['file'],
+        attachmentService: attachmentService,
+        onSendMessage: sentDrafts.add,
+      ),
+    );
+    await tester.enterText(find.byType(EditableText), 'keep this draft');
+
+    dropChannel.dropFile(
+      position: tester.getCenter(find.byType(AuraInput)),
+      fileName: 'report.pdf',
+      mimeType: 'application/pdf',
+      bytes: Uint8List.fromList('report!!'.codeUnits),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('report.pdf'), findsNothing);
+    expect(attachmentService.copiedBytes, isNotNull);
+    expect(attachmentService.deletedPaths, isEmpty);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'keep this draft',
+    );
+    expect(sentDrafts, isEmpty);
+  });
+
+  testWidgets('does not attach a completed drop to a different conversation', (
+    tester,
+  ) async {
+    overridePlatform(.macOS);
+    const attachment = MessageAttachmentToCreate(
+      localPath: '/tmp/report.pdf',
+      fileName: 'report.pdf',
+      displayName: 'report.pdf',
+      mimeType: 'application/pdf',
+      modality: .file,
+      sizeBytes: 8,
+    );
+    final copyCompleter = Completer<MessageAttachmentToCreate>();
+    final copyStarted = Completer<void>();
+    final attachmentService = _FakeLocalChatAttachmentService(
+      attachment,
+      bytesCopyCompleter: copyCompleter,
+      bytesCopyStarted: copyStarted,
+    );
+    final activeConversation = ValueNotifier<String?>('conversation-1');
+    addTearDown(activeConversation.dispose);
+    final sentDrafts = <ChatDraft>[];
+    final dropChannel = await pumpAndInit(
+      tester,
+      buildSubject(
+        activeConversation: activeConversation,
+        reuseChatInputForContextChanges: true,
+        modalitiesInput: const ['file'],
+        attachmentService: attachmentService,
+        onSendMessage: sentDrafts.add,
+      ),
+    );
+
+    dropChannel.dropFile(
+      position: tester.getCenter(find.byType(AuraInput)),
+      fileName: 'report.pdf',
+      mimeType: 'application/pdf',
+      bytes: Uint8List.fromList('report!!'.codeUnits),
+    );
+    await tester.runAsync(() => copyStarted.future);
+    activeConversation.value = 'conversation-2';
+    await tester.pump();
+    await tester.enterText(find.byType(EditableText), 'conversation two draft');
+    copyCompleter.complete(attachment);
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('report.pdf'), findsNothing);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'conversation two draft',
+    );
+    expect(attachmentService.deletedPaths, [attachment.localPath]);
+    expect(sentDrafts, isEmpty);
+  });
+
+  testWidgets('does not attach a completed drop to a different workspace', (
+    tester,
+  ) async {
+    overridePlatform(.macOS);
+    const attachment = MessageAttachmentToCreate(
+      localPath: '/tmp/report.pdf',
+      fileName: 'report.pdf',
+      displayName: 'report.pdf',
+      mimeType: 'application/pdf',
+      modality: .file,
+      sizeBytes: 8,
+    );
+    final copyCompleter = Completer<MessageAttachmentToCreate>();
+    final copyStarted = Completer<void>();
+    final attachmentService = _FakeLocalChatAttachmentService(
+      attachment,
+      bytesCopyCompleter: copyCompleter,
+      bytesCopyStarted: copyStarted,
+    );
+    final activeWorkspace = ValueNotifier<String>('ws-1');
+    addTearDown(activeWorkspace.dispose);
+    final sentDrafts = <ChatDraft>[];
+    final dropChannel = await pumpAndInit(
+      tester,
+      buildSubject(
+        activeWorkspace: activeWorkspace,
+        modalitiesInput: const ['file'],
+        attachmentService: attachmentService,
+        onSendMessage: sentDrafts.add,
+      ),
+    );
+
+    dropChannel.dropFile(
+      position: tester.getCenter(find.byType(AuraInput)),
+      fileName: 'report.pdf',
+      mimeType: 'application/pdf',
+      bytes: Uint8List.fromList('report!!'.codeUnits),
+    );
+    await tester.runAsync(() => copyStarted.future);
+    activeWorkspace.value = 'ws-2';
+    await tester.pump();
+    await tester.enterText(find.byType(EditableText), 'workspace two draft');
+    copyCompleter.complete(attachment);
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('report.pdf'), findsNothing);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'workspace two draft',
+    );
+    expect(attachmentService.deletedPaths, [attachment.localPath]);
+    expect(sentDrafts, isEmpty);
+  });
+
+  testWidgets('rejects a dropped file after the streamed byte limit', (
+    tester,
+  ) async {
+    overridePlatform(.macOS);
+    const attachment = MessageAttachmentToCreate(
+      localPath: '/tmp/report.pdf',
+      fileName: 'report.pdf',
+      displayName: 'report.pdf',
+      mimeType: 'application/pdf',
+      modality: .file,
+      sizeBytes: 8,
+    );
+    final attachmentService = _FakeLocalChatAttachmentService(attachment);
+    final sentDrafts = <ChatDraft>[];
     final dropChannel = await pumpAndInit(
       tester,
       buildSubject(
         disabled: true,
         acceptDroppedFilesWhenDisabled: true,
         attachmentService: attachmentService,
-        onSendMessage: (_) => _noop(),
+        onSendMessage: sentDrafts.add,
       ),
     );
+    await tester.enterText(find.byType(EditableText), 'keep this draft');
 
     dropChannel.dropFile(
       position: tester.getCenter(find.byType(AuraInput)),
@@ -860,6 +1165,11 @@ void main() {
 
     expect(find.text('Attachment must be 25 MB or smaller.'), findsOneWidget);
     expect(attachmentService.copiedBytes, isNull);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+      'keep this draft',
+    );
+    expect(sentDrafts, isEmpty);
   });
 
   testWidgets('blocks send when draft attachment is unsupported', (
@@ -2374,7 +2684,10 @@ class _TestFlutterFileDropChannel {
   }
 
   final StandardMessageCodec _codec = const .new();
-  final _files = <String, ({Uint8List bytes, int size})>{};
+  final _files = <
+    String,
+    ({Uint8List bytes, int size, Object? readError})
+  >{};
   MockStreamHandlerEventSink? _eventSink;
   var _nextHandle = 0;
 
@@ -2384,10 +2697,11 @@ class _TestFlutterFileDropChannel {
     required String mimeType,
     required Uint8List bytes,
     int? fileSize,
+    Object? readError,
   }) {
     final handle = 'file-${_nextHandle++}';
     final size = fileSize ?? bytes.length;
-    _files[handle] = (bytes: bytes, size: size);
+    _files[handle] = (bytes: bytes, size: size, readError: readError);
     final eventSink = _eventSink;
     if (eventSink == null) throw StateError('Drop event channel is not ready.');
 
@@ -2424,6 +2738,7 @@ class _TestFlutterFileDropChannel {
     }
     final file = _files[handle];
     if (file == null) throw StateError('Unknown dropped file handle.');
+    if (file.readError case final error?) throw error;
     final start = offset < file.size ? offset : file.size;
     final remaining = file.size - start;
     final length = remaining < maxBytes ? remaining : maxBytes;
@@ -2444,6 +2759,8 @@ class _TestFlutterFileDropChannel {
 class _FakeLocalChatAttachmentService(
   final MessageAttachmentToCreate attachment, {
   final Exception? copyError,
+  final Completer<MessageAttachmentToCreate>? bytesCopyCompleter,
+  final Completer<void>? bytesCopyStarted,
   final Exception? startError,
   final MessageAttachmentToCreate? recordingResult,
   final Completer<MessageAttachmentToCreate?>? stopCompleter,
@@ -2477,6 +2794,9 @@ class _FakeLocalChatAttachmentService(
     if (copyError case final error?) throw error;
     copiedBytes = .fromList(bytes);
     copiedFileName = fileName;
+    final started = bytesCopyStarted;
+    if (started != null && !started.isCompleted) started.complete();
+    if (bytesCopyCompleter case final completer?) return completer.future;
 
     return attachment.copyWith(displayName: displayName);
   }

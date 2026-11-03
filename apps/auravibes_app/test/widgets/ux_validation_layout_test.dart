@@ -86,6 +86,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_file_drop/flutter_file_drop.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -123,6 +124,77 @@ void main() {
       await _sdkRoboto(),
     );
   });
+
+  testWidgets('captures chat composer desktop file drop states', (
+    tester,
+  ) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockStreamHandler(
+          const .new('flutter_file_drop/events'),
+          .inline(
+            onListen: (_, _) {},
+            onCancel: (_) {},
+          ),
+        );
+
+    const size = Size(1280, 800);
+    final fixture = await UxValidationFixture.create();
+    final route = NewChatRoute(workspaceId: fixture.workspaceId).location;
+    try {
+      final _ = await fixture.pump(tester, route, size: size);
+
+      expect(find.byType(ChatInputWidget), findsOneWidget);
+      expect(find.byType(DropTarget), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await _capture(
+        tester,
+        'chat-composer-file-drop-idle',
+        route,
+        locale: 'en',
+        size: size,
+        scale: 1,
+        dark: false,
+        controlMeasurements: const {
+          'platform': 'macOS native desktop target',
+          'state': 'idle composer before file hover',
+        },
+      );
+
+      tester.widget<DropTarget>(find.byType(DropTarget)).onMove?.call(
+        DropPreview(
+          globalPosition: .zero,
+          localPosition: .zero,
+          items: const [.new(kind: .file)],
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Drop files to attach'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('chat_input_drop_highlight')),
+        findsOneWidget,
+      );
+      await _capture(
+        tester,
+        'chat-composer-file-drop-hover',
+        route,
+        locale: 'en',
+        size: size,
+        scale: 1,
+        dark: false,
+        controlMeasurements: const {
+          'platform': 'macOS native desktop target',
+          'state': 'file hover drop feedback',
+        },
+      );
+      expect(tester.takeException(), isNull);
+    } finally {
+      await fixture.close(tester);
+    }
+  });
+
   testWidgets('conversation task brief capture flow', (tester) async {
     final fixture = await UxValidationFixture.create();
     const size = Size(466, 678);
