@@ -126,10 +126,10 @@ class const WorkspaceTableException({
     if (conflict) return LocaleKeys.cloud_errors_conflict;
 
     return switch (limitKind) {
-      .columns => 'workspace_items.limit_columns',
-      .queryPageSize => 'workspace_items.limit_query_page',
-      .summaryColumns => 'workspace_items.limit_summary_columns',
-      .recordBatch => 'workspace_items.limit_record_batch',
+      .columns => LocaleKeys.workspace_items_limit_columns,
+      .queryPageSize => LocaleKeys.workspace_items_limit_query_page,
+      .summaryColumns => LocaleKeys.workspace_items_limit_summary_columns,
+      .recordBatch => LocaleKeys.workspace_items_limit_record_batch,
       null => LocaleKeys.workspace_items_invalid_table,
     };
   }

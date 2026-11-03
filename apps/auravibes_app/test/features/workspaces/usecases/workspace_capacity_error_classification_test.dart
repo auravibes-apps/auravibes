@@ -10,29 +10,30 @@ import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/usecases/query_workspace_records_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_view_validation.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('maps capacity failures to their own localized copy', () {
     expect(
       const WorkspaceTableException(limitKind: .columns).localizationKey,
-      'workspace_items.limit_columns',
+      LocaleKeys.workspace_items_limit_columns,
     );
     expect(
       const WorkspaceTableException(limitKind: .queryPageSize).localizationKey,
-      'workspace_items.limit_query_page',
+      LocaleKeys.workspace_items_limit_query_page,
     );
     expect(
       const WorkspaceTableException(limitKind: .summaryColumns).localizationKey,
-      'workspace_items.limit_summary_columns',
+      LocaleKeys.workspace_items_limit_summary_columns,
     );
     expect(
       const WorkspaceTableException(limitKind: .recordBatch).localizationKey,
-      'workspace_items.limit_record_batch',
+      LocaleKeys.workspace_items_limit_record_batch,
     );
     expect(
       const WorkspaceAssetException(.sizeLimitExceeded).localizationKey,
-      'workspace_assets.size_limit_exceeded',
+      LocaleKeys.workspace_assets_size_limit_exceeded,
     );
   });
 

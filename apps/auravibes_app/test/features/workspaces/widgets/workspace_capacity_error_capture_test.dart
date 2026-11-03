@@ -54,6 +54,7 @@ void main() {
   ) async {
     const workspaceId = '019a1e91-0000-7000-8000-000000001692';
     const size = Size(960, 900);
+    const sizeLimitFailure = WorkspaceAssetException(.sizeLimitExceeded);
     final file = _OversizedFile(
       size: ChatAttachmentModality.maxChatAttachmentBytes + 1,
     );
@@ -85,21 +86,13 @@ void main() {
       );
     } else if (captureStage == 'after') {
       expect(
-        find.text(
-          WorkspaceAssetException(
-            WorkspaceAssetFailure.sizeLimitExceeded,
-          ).localizationKey.tr(),
-        ),
+        find.text(sizeLimitFailure.localizationKey.tr()),
         findsOneWidget,
       );
     } else {
       expect(find.byType(WorkspaceItemFailure), findsOneWidget);
       expect(
-        find.text(
-          WorkspaceAssetException(
-            WorkspaceAssetFailure.sizeLimitExceeded,
-          ).localizationKey.tr(),
-        ),
+        find.text(sizeLimitFailure.localizationKey.tr()),
         findsOneWidget,
       );
     }
