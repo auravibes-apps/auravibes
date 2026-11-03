@@ -29,9 +29,9 @@ void main() {
   ConversationLabelsRepository? _repository;
   String? _workspaceId;
 
-  AppDatabase database() => _database!;
-  ConversationLabelsRepository repository() => _repository!;
-  String workspaceId() => _workspaceId!;
+  AppDatabase database() => _testFixtureValue(_database);
+  ConversationLabelsRepository repository() => _testFixtureValue(_repository);
+  String workspaceId() => _testFixtureValue(_workspaceId);
 
   setUp(() async {
     _database = AppDatabase(
@@ -108,7 +108,8 @@ void main() {
             find.byKey(const ValueKey('conversation-labels-semantics')),
           )
           .label,
-      'Etiquetas de conversaci\u00F3n: Urgent, Planning',
+      '${LocaleKeys.chats_screens_conversation_labels_label_semantics.tr()}: '
+          'Urgent, Planning',
     );
     expect(
       tester.widget<AuraBadge>(urgentBadge).variant,
@@ -213,7 +214,7 @@ void main() {
       tester,
       child: _AssignmentLauncher(
         workspaceId: workspaceId(),
-        conversation: ConversationEntity(
+        conversation: .new(
           id: row.id,
           title: row.title,
           workspaceId: workspaceId(),
@@ -304,14 +305,10 @@ Future<void> _waitForCondition(
   expect(condition(), isTrue);
 }
 
-class _AssignmentLauncher extends ConsumerWidget {
-  const _AssignmentLauncher({
-    required this.workspaceId,
-    required this.conversation,
-  });
-
-  final String workspaceId;
-  final ConversationEntity conversation;
+class const _AssignmentLauncher({
+  required final String workspaceId,
+  required final ConversationEntity conversation,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => TextButton(
     onPressed: () => showConversationLabelAssignmentDialog(
@@ -322,4 +319,12 @@ class _AssignmentLauncher extends ConsumerWidget {
     ),
     child: const Text('Assign labels'),
   );
+}
+
+T _testFixtureValue<T>(T? value) {
+  if (value == null) {
+    throw StateError('Test fixture is not initialized.');
+  }
+
+  return value;
 }

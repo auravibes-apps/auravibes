@@ -13,11 +13,12 @@ void main() {
   String? _workspaceId;
   String? _otherWorkspaceId;
 
-  AppDatabase database() => _database!;
-  ConversationRepository repository() => _repository!;
-  ConversationLabelsRepository labelsRepository() => _labelsRepository!;
-  String workspaceId() => _workspaceId!;
-  String otherWorkspaceId() => _otherWorkspaceId!;
+  AppDatabase database() => _testFixtureValue(_database);
+  ConversationRepository repository() => _testFixtureValue(_repository);
+  ConversationLabelsRepository labelsRepository() =>
+      _testFixtureValue(_labelsRepository);
+  String workspaceId() => _testFixtureValue(_workspaceId);
+  String otherWorkspaceId() => _testFixtureValue(_otherWorkspaceId);
 
   setUp(() async {
     _database = AppDatabase(
@@ -71,9 +72,8 @@ void main() {
       );
       expect(renamed.name, 'In progress');
       expect(
-        (await labelsRepository().watchLabelsByWorkspace(workspaceId()).first).map(
-          (item) => item.name,
-        ),
+        (await labelsRepository().watchLabelsByWorkspace(workspaceId()).first)
+            .map((item) => item.name),
         ['In progress'],
       );
 
@@ -86,7 +86,9 @@ void main() {
         isEmpty,
       );
       expect(
-        (await labelsRepository().watchLabelsByWorkspace(otherWorkspaceId()).first)
+        (await labelsRepository()
+                .watchLabelsByWorkspace(otherWorkspaceId())
+                .first)
             .single
             .name,
         'follow up',
@@ -209,7 +211,10 @@ void main() {
         workspaceId: workspaceId(),
         labelId: label.id,
       );
-      expect(await repository().getConversationById(conversation.id), isNotNull);
+      expect(
+        await repository().getConversationById(conversation.id),
+        isNotNull,
+      );
       expect(
         await labelsRepository()
             .watchConversationsByWorkspace(workspaceId(), labelIds: {label.id})
@@ -245,4 +250,12 @@ void main() {
       );
     },
   );
+}
+
+T _testFixtureValue<T>(T? value) {
+  if (value == null) {
+    throw StateError('Test fixture is not initialized.');
+  }
+
+  return value;
 }

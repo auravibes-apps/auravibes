@@ -19,10 +19,10 @@ mixin _$ConversationEntity {
  String get id;/// Human-readable title of the conversation.
  String get title;/// ID of the workspace this conversation belongs to.
  String get workspaceId;/// Whether this conversation is pinned.
- bool get isPinned;/// Workspace labels currently assigned to the conversation.
- List<ConversationLabelEntity> get labels;/// Timestamp when the conversation was created.
+ bool get isPinned;/// Timestamp when the conversation was created.
  DateTime get createdAt;/// Timestamp when the conversation was last updated.
- DateTime get updatedAt;/// Server revision for optimistic cloud mutations.
+ DateTime get updatedAt;/// Workspace labels currently assigned to the conversation.
+ List<ConversationLabelEntity> get labels;/// Server revision for optimistic cloud mutations.
  int get revision; ConversationToolAccessMode get toolAccessMode;/// ID of the AI model used for this conversation.
  String? get modelId;/// ID of the selected agent used for this conversation.
  String? get agentId;/// Conversation-scoped reasoning override. Null uses provider defaults.
@@ -45,20 +45,20 @@ $ConversationEntityCopyWith<ConversationEntity> get copyWith => _$ConversationEn
 @override
 bool operator ==(Object other) {
   final _this = this as ConversationEntity;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.isPinned, _this.isPinned) || other.isPinned == _this.isPinned)&&const DeepCollectionEquality().equals(other.labels, _this.labels)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&(identical(other.revision, _this.revision) || other.revision == _this.revision)&&(identical(other.toolAccessMode, _this.toolAccessMode) || other.toolAccessMode == _this.toolAccessMode)&&(identical(other.modelId, _this.modelId) || other.modelId == _this.modelId)&&(identical(other.agentId, _this.agentId) || other.agentId == _this.agentId)&&(identical(other.reasoningConfiguration, _this.reasoningConfiguration) || other.reasoningConfiguration == _this.reasoningConfiguration)&&(identical(other.taskBrief, _this.taskBrief) || other.taskBrief == _this.taskBrief)&&(identical(other.parentConversationId, _this.parentConversationId) || other.parentConversationId == _this.parentConversationId)&&(identical(other.forkSourceConversationId, _this.forkSourceConversationId) || other.forkSourceConversationId == _this.forkSourceConversationId)&&(identical(other.forkSourceTitle, _this.forkSourceTitle) || other.forkSourceTitle == _this.forkSourceTitle)&&(identical(other.forkThroughMessageId, _this.forkThroughMessageId) || other.forkThroughMessageId == _this.forkThroughMessageId)&&(identical(other.forkMaterializedAt, _this.forkMaterializedAt) || other.forkMaterializedAt == _this.forkMaterializedAt)&&(identical(other.activeCompactionCheckpointId, _this.activeCompactionCheckpointId) || other.activeCompactionCheckpointId == _this.activeCompactionCheckpointId));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ConversationEntity&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.workspaceId, _this.workspaceId) || other.workspaceId == _this.workspaceId)&&(identical(other.isPinned, _this.isPinned) || other.isPinned == _this.isPinned)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt)&&const DeepCollectionEquality().equals(other.labels, _this.labels)&&(identical(other.revision, _this.revision) || other.revision == _this.revision)&&(identical(other.toolAccessMode, _this.toolAccessMode) || other.toolAccessMode == _this.toolAccessMode)&&(identical(other.modelId, _this.modelId) || other.modelId == _this.modelId)&&(identical(other.agentId, _this.agentId) || other.agentId == _this.agentId)&&(identical(other.reasoningConfiguration, _this.reasoningConfiguration) || other.reasoningConfiguration == _this.reasoningConfiguration)&&(identical(other.taskBrief, _this.taskBrief) || other.taskBrief == _this.taskBrief)&&(identical(other.parentConversationId, _this.parentConversationId) || other.parentConversationId == _this.parentConversationId)&&(identical(other.forkSourceConversationId, _this.forkSourceConversationId) || other.forkSourceConversationId == _this.forkSourceConversationId)&&(identical(other.forkSourceTitle, _this.forkSourceTitle) || other.forkSourceTitle == _this.forkSourceTitle)&&(identical(other.forkThroughMessageId, _this.forkThroughMessageId) || other.forkThroughMessageId == _this.forkThroughMessageId)&&(identical(other.forkMaterializedAt, _this.forkMaterializedAt) || other.forkMaterializedAt == _this.forkMaterializedAt)&&(identical(other.activeCompactionCheckpointId, _this.activeCompactionCheckpointId) || other.activeCompactionCheckpointId == _this.activeCompactionCheckpointId));
 }
 
 
 @override
 int get hashCode {
   final _this = this as ConversationEntity;
-  return Object.hashAll([runtimeType,_this.id,_this.title,_this.workspaceId,_this.isPinned,const DeepCollectionEquality().hash(_this.labels),_this.createdAt,_this.updatedAt,_this.revision,_this.toolAccessMode,_this.modelId,_this.agentId,_this.reasoningConfiguration,_this.taskBrief,_this.parentConversationId,_this.forkSourceConversationId,_this.forkSourceTitle,_this.forkThroughMessageId,_this.forkMaterializedAt,_this.activeCompactionCheckpointId]);
+  return Object.hashAll([runtimeType,_this.id,_this.title,_this.workspaceId,_this.isPinned,_this.createdAt,_this.updatedAt,const DeepCollectionEquality().hash(_this.labels),_this.revision,_this.toolAccessMode,_this.modelId,_this.agentId,_this.reasoningConfiguration,_this.taskBrief,_this.parentConversationId,_this.forkSourceConversationId,_this.forkSourceTitle,_this.forkThroughMessageId,_this.forkMaterializedAt,_this.activeCompactionCheckpointId]);
 }
 
 @override
 String toString() {
   final _this = this as ConversationEntity;
-  return 'ConversationEntity(id: ${_this.id}, title: ${_this.title}, workspaceId: ${_this.workspaceId}, isPinned: ${_this.isPinned}, labels: ${_this.labels}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, revision: ${_this.revision}, toolAccessMode: ${_this.toolAccessMode}, modelId: ${_this.modelId}, agentId: ${_this.agentId}, reasoningConfiguration: ${_this.reasoningConfiguration}, taskBrief: ${_this.taskBrief}, parentConversationId: ${_this.parentConversationId}, forkSourceConversationId: ${_this.forkSourceConversationId}, forkSourceTitle: ${_this.forkSourceTitle}, forkThroughMessageId: ${_this.forkThroughMessageId}, forkMaterializedAt: ${_this.forkMaterializedAt}, activeCompactionCheckpointId: ${_this.activeCompactionCheckpointId})';
+  return 'ConversationEntity(id: ${_this.id}, title: ${_this.title}, workspaceId: ${_this.workspaceId}, isPinned: ${_this.isPinned}, createdAt: ${_this.createdAt}, updatedAt: ${_this.updatedAt}, labels: ${_this.labels}, revision: ${_this.revision}, toolAccessMode: ${_this.toolAccessMode}, modelId: ${_this.modelId}, agentId: ${_this.agentId}, reasoningConfiguration: ${_this.reasoningConfiguration}, taskBrief: ${_this.taskBrief}, parentConversationId: ${_this.parentConversationId}, forkSourceConversationId: ${_this.forkSourceConversationId}, forkSourceTitle: ${_this.forkSourceTitle}, forkThroughMessageId: ${_this.forkThroughMessageId}, forkMaterializedAt: ${_this.forkMaterializedAt}, activeCompactionCheckpointId: ${_this.activeCompactionCheckpointId})';
 }
 
 
@@ -69,7 +69,7 @@ abstract mixin class $ConversationEntityCopyWith<$Res>  {
   factory $ConversationEntityCopyWith(ConversationEntity value, $Res Function(ConversationEntity) _then) = _$ConversationEntityCopyWithImpl;
 @useResult
 $Res call({
- String id, String title, String workspaceId, bool isPinned, List<ConversationLabelEntity> labels, DateTime createdAt, DateTime updatedAt, int revision, ConversationToolAccessMode toolAccessMode, String? modelId, String? agentId, ReasoningConfiguration? reasoningConfiguration, String? taskBrief, String? parentConversationId, String? forkSourceConversationId, String? forkSourceTitle, String? forkThroughMessageId, DateTime? forkMaterializedAt, String? activeCompactionCheckpointId
+ String id, String title, String workspaceId, bool isPinned, DateTime createdAt, DateTime updatedAt, List<ConversationLabelEntity> labels, int revision, ConversationToolAccessMode toolAccessMode, String? modelId, String? agentId, ReasoningConfiguration? reasoningConfiguration, String? taskBrief, String? parentConversationId, String? forkSourceConversationId, String? forkSourceTitle, String? forkThroughMessageId, DateTime? forkMaterializedAt, String? activeCompactionCheckpointId
 });
 
 
@@ -86,16 +86,16 @@ class _$ConversationEntityCopyWithImpl<$Res>
 
 /// Create a copy of ConversationEntity
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? workspaceId = null,Object? isPinned = null,Object? labels = null,Object? createdAt = null,Object? updatedAt = null,Object? revision = null,Object? toolAccessMode = null,Object? modelId = freezed,Object? agentId = freezed,Object? reasoningConfiguration = freezed,Object? taskBrief = freezed,Object? parentConversationId = freezed,Object? forkSourceConversationId = freezed,Object? forkSourceTitle = freezed,Object? forkThroughMessageId = freezed,Object? forkMaterializedAt = freezed,Object? activeCompactionCheckpointId = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? workspaceId = null,Object? isPinned = null,Object? createdAt = null,Object? updatedAt = null,Object? labels = null,Object? revision = null,Object? toolAccessMode = null,Object? modelId = freezed,Object? agentId = freezed,Object? reasoningConfiguration = freezed,Object? taskBrief = freezed,Object? parentConversationId = freezed,Object? forkSourceConversationId = freezed,Object? forkSourceTitle = freezed,Object? forkThroughMessageId = freezed,Object? forkMaterializedAt = freezed,Object? activeCompactionCheckpointId = freezed,}) {
   return _then(ConversationEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
 as String,isPinned: null == isPinned ? _self.isPinned : isPinned // ignore: cast_nullable_to_non_nullable
-as bool,labels: null == labels ? _self.labels : labels // ignore: cast_nullable_to_non_nullable
-as List<ConversationLabelEntity>,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as bool,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,revision: null == revision ? _self.revision : revision // ignore: cast_nullable_to_non_nullable
+as DateTime,labels: null == labels ? _self.labels : labels // ignore: cast_nullable_to_non_nullable
+as List<ConversationLabelEntity>,revision: null == revision ? _self.revision : revision // ignore: cast_nullable_to_non_nullable
 as int,toolAccessMode: null == toolAccessMode ? _self.toolAccessMode : toolAccessMode // ignore: cast_nullable_to_non_nullable
 as ConversationToolAccessMode,modelId: freezed == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
 as String?,agentId: freezed == agentId ? _self.agentId : agentId // ignore: cast_nullable_to_non_nullable
@@ -192,10 +192,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String workspaceId,  bool isPinned,  List<ConversationLabelEntity> labels,  DateTime createdAt,  DateTime updatedAt,  int revision,  ConversationToolAccessMode toolAccessMode,  String? modelId,  String? agentId,  ReasoningConfiguration? reasoningConfiguration,  String? taskBrief,  String? parentConversationId,  String? forkSourceConversationId,  String? forkSourceTitle,  String? forkThroughMessageId,  DateTime? forkMaterializedAt,  String? activeCompactionCheckpointId)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String workspaceId,  bool isPinned,  DateTime createdAt,  DateTime updatedAt,  List<ConversationLabelEntity> labels,  int revision,  ConversationToolAccessMode toolAccessMode,  String? modelId,  String? agentId,  ReasoningConfiguration? reasoningConfiguration,  String? taskBrief,  String? parentConversationId,  String? forkSourceConversationId,  String? forkSourceTitle,  String? forkThroughMessageId,  DateTime? forkMaterializedAt,  String? activeCompactionCheckpointId)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ConversationEntity() when $default != null:
-return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.labels,_that.createdAt,_that.updatedAt,_that.revision,_that.toolAccessMode,_that.modelId,_that.agentId,_that.reasoningConfiguration,_that.taskBrief,_that.parentConversationId,_that.forkSourceConversationId,_that.forkSourceTitle,_that.forkThroughMessageId,_that.forkMaterializedAt,_that.activeCompactionCheckpointId);case _:
+return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.createdAt,_that.updatedAt,_that.labels,_that.revision,_that.toolAccessMode,_that.modelId,_that.agentId,_that.reasoningConfiguration,_that.taskBrief,_that.parentConversationId,_that.forkSourceConversationId,_that.forkSourceTitle,_that.forkThroughMessageId,_that.forkMaterializedAt,_that.activeCompactionCheckpointId);case _:
   return orElse();
 
 }
@@ -213,10 +213,10 @@ return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.labe
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String workspaceId,  bool isPinned,  List<ConversationLabelEntity> labels,  DateTime createdAt,  DateTime updatedAt,  int revision,  ConversationToolAccessMode toolAccessMode,  String? modelId,  String? agentId,  ReasoningConfiguration? reasoningConfiguration,  String? taskBrief,  String? parentConversationId,  String? forkSourceConversationId,  String? forkSourceTitle,  String? forkThroughMessageId,  DateTime? forkMaterializedAt,  String? activeCompactionCheckpointId)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String workspaceId,  bool isPinned,  DateTime createdAt,  DateTime updatedAt,  List<ConversationLabelEntity> labels,  int revision,  ConversationToolAccessMode toolAccessMode,  String? modelId,  String? agentId,  ReasoningConfiguration? reasoningConfiguration,  String? taskBrief,  String? parentConversationId,  String? forkSourceConversationId,  String? forkSourceTitle,  String? forkThroughMessageId,  DateTime? forkMaterializedAt,  String? activeCompactionCheckpointId)  $default,) {final _that = this;
 switch (_that) {
 case _ConversationEntity():
-return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.labels,_that.createdAt,_that.updatedAt,_that.revision,_that.toolAccessMode,_that.modelId,_that.agentId,_that.reasoningConfiguration,_that.taskBrief,_that.parentConversationId,_that.forkSourceConversationId,_that.forkSourceTitle,_that.forkThroughMessageId,_that.forkMaterializedAt,_that.activeCompactionCheckpointId);case _:
+return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.createdAt,_that.updatedAt,_that.labels,_that.revision,_that.toolAccessMode,_that.modelId,_that.agentId,_that.reasoningConfiguration,_that.taskBrief,_that.parentConversationId,_that.forkSourceConversationId,_that.forkSourceTitle,_that.forkThroughMessageId,_that.forkMaterializedAt,_that.activeCompactionCheckpointId);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -233,10 +233,10 @@ return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.labe
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String workspaceId,  bool isPinned,  List<ConversationLabelEntity> labels,  DateTime createdAt,  DateTime updatedAt,  int revision,  ConversationToolAccessMode toolAccessMode,  String? modelId,  String? agentId,  ReasoningConfiguration? reasoningConfiguration,  String? taskBrief,  String? parentConversationId,  String? forkSourceConversationId,  String? forkSourceTitle,  String? forkThroughMessageId,  DateTime? forkMaterializedAt,  String? activeCompactionCheckpointId)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String workspaceId,  bool isPinned,  DateTime createdAt,  DateTime updatedAt,  List<ConversationLabelEntity> labels,  int revision,  ConversationToolAccessMode toolAccessMode,  String? modelId,  String? agentId,  ReasoningConfiguration? reasoningConfiguration,  String? taskBrief,  String? parentConversationId,  String? forkSourceConversationId,  String? forkSourceTitle,  String? forkThroughMessageId,  DateTime? forkMaterializedAt,  String? activeCompactionCheckpointId)?  $default,) {final _that = this;
 switch (_that) {
 case _ConversationEntity() when $default != null:
-return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.labels,_that.createdAt,_that.updatedAt,_that.revision,_that.toolAccessMode,_that.modelId,_that.agentId,_that.reasoningConfiguration,_that.taskBrief,_that.parentConversationId,_that.forkSourceConversationId,_that.forkSourceTitle,_that.forkThroughMessageId,_that.forkMaterializedAt,_that.activeCompactionCheckpointId);case _:
+return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.createdAt,_that.updatedAt,_that.labels,_that.revision,_that.toolAccessMode,_that.modelId,_that.agentId,_that.reasoningConfiguration,_that.taskBrief,_that.parentConversationId,_that.forkSourceConversationId,_that.forkSourceTitle,_that.forkThroughMessageId,_that.forkMaterializedAt,_that.activeCompactionCheckpointId);case _:
   return null;
 
 }
@@ -248,7 +248,7 @@ return $default(_that.id,_that.title,_that.workspaceId,_that.isPinned,_that.labe
 
 
 class _ConversationEntity extends ConversationEntity {
-  const _ConversationEntity({required this.id, required this.title, required this.workspaceId, required this.isPinned,  List<ConversationLabelEntity> labels = const [], required this.createdAt, required this.updatedAt, this.revision = 0, this.toolAccessMode = ConversationToolAccessMode.defaultMode, this.modelId, this.agentId, this.reasoningConfiguration, this.taskBrief, this.parentConversationId, this.forkSourceConversationId, this.forkSourceTitle, this.forkThroughMessageId, this.forkMaterializedAt, this.activeCompactionCheckpointId}): _labels = labels,super._();
+  const _ConversationEntity({required this.id, required this.title, required this.workspaceId, required this.isPinned, required this.createdAt, required this.updatedAt,  List<ConversationLabelEntity> labels = const [], this.revision = 0, this.toolAccessMode = ConversationToolAccessMode.defaultMode, this.modelId, this.agentId, this.reasoningConfiguration, this.taskBrief, this.parentConversationId, this.forkSourceConversationId, this.forkSourceTitle, this.forkThroughMessageId, this.forkMaterializedAt, this.activeCompactionCheckpointId}): _labels = labels,super._();
   
 
 /// Unique identifier for the conversation.
@@ -259,6 +259,10 @@ class _ConversationEntity extends ConversationEntity {
 @override final  String workspaceId;
 /// Whether this conversation is pinned.
 @override final  bool isPinned;
+/// Timestamp when the conversation was created.
+@override final  DateTime createdAt;
+/// Timestamp when the conversation was last updated.
+@override final  DateTime updatedAt;
 /// Workspace labels currently assigned to the conversation.
  final  List<ConversationLabelEntity> _labels;
 /// Workspace labels currently assigned to the conversation.
@@ -268,10 +272,6 @@ class _ConversationEntity extends ConversationEntity {
   return EqualUnmodifiableListView(_labels);
 }
 
-/// Timestamp when the conversation was created.
-@override final  DateTime createdAt;
-/// Timestamp when the conversation was last updated.
-@override final  DateTime updatedAt;
 /// Server revision for optimistic cloud mutations.
 @override@JsonKey() final  int revision;
 @override@JsonKey() final  ConversationToolAccessMode toolAccessMode;
@@ -306,18 +306,18 @@ _$ConversationEntityCopyWith<_ConversationEntity> get copyWith => __$Conversatio
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.isPinned, isPinned) || other.isPinned == isPinned)&&const DeepCollectionEquality().equals(other.labels, _labels)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&(identical(other.revision, revision) || other.revision == revision)&&(identical(other.toolAccessMode, toolAccessMode) || other.toolAccessMode == toolAccessMode)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.reasoningConfiguration, reasoningConfiguration) || other.reasoningConfiguration == reasoningConfiguration)&&(identical(other.taskBrief, taskBrief) || other.taskBrief == taskBrief)&&(identical(other.parentConversationId, parentConversationId) || other.parentConversationId == parentConversationId)&&(identical(other.forkSourceConversationId, forkSourceConversationId) || other.forkSourceConversationId == forkSourceConversationId)&&(identical(other.forkSourceTitle, forkSourceTitle) || other.forkSourceTitle == forkSourceTitle)&&(identical(other.forkThroughMessageId, forkThroughMessageId) || other.forkThroughMessageId == forkThroughMessageId)&&(identical(other.forkMaterializedAt, forkMaterializedAt) || other.forkMaterializedAt == forkMaterializedAt)&&(identical(other.activeCompactionCheckpointId, activeCompactionCheckpointId) || other.activeCompactionCheckpointId == activeCompactionCheckpointId));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _ConversationEntity&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.workspaceId, workspaceId) || other.workspaceId == workspaceId)&&(identical(other.isPinned, isPinned) || other.isPinned == isPinned)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt)&&const DeepCollectionEquality().equals(other.labels, _labels)&&(identical(other.revision, revision) || other.revision == revision)&&(identical(other.toolAccessMode, toolAccessMode) || other.toolAccessMode == toolAccessMode)&&(identical(other.modelId, modelId) || other.modelId == modelId)&&(identical(other.agentId, agentId) || other.agentId == agentId)&&(identical(other.reasoningConfiguration, reasoningConfiguration) || other.reasoningConfiguration == reasoningConfiguration)&&(identical(other.taskBrief, taskBrief) || other.taskBrief == taskBrief)&&(identical(other.parentConversationId, parentConversationId) || other.parentConversationId == parentConversationId)&&(identical(other.forkSourceConversationId, forkSourceConversationId) || other.forkSourceConversationId == forkSourceConversationId)&&(identical(other.forkSourceTitle, forkSourceTitle) || other.forkSourceTitle == forkSourceTitle)&&(identical(other.forkThroughMessageId, forkThroughMessageId) || other.forkThroughMessageId == forkThroughMessageId)&&(identical(other.forkMaterializedAt, forkMaterializedAt) || other.forkMaterializedAt == forkMaterializedAt)&&(identical(other.activeCompactionCheckpointId, activeCompactionCheckpointId) || other.activeCompactionCheckpointId == activeCompactionCheckpointId));
 }
 
 
 @override
 int get hashCode {
-    return Object.hashAll([runtimeType,id,title,workspaceId,isPinned,const DeepCollectionEquality().hash(_labels),createdAt,updatedAt,revision,toolAccessMode,modelId,agentId,reasoningConfiguration,taskBrief,parentConversationId,forkSourceConversationId,forkSourceTitle,forkThroughMessageId,forkMaterializedAt,activeCompactionCheckpointId]);
+    return Object.hashAll([runtimeType,id,title,workspaceId,isPinned,createdAt,updatedAt,const DeepCollectionEquality().hash(_labels),revision,toolAccessMode,modelId,agentId,reasoningConfiguration,taskBrief,parentConversationId,forkSourceConversationId,forkSourceTitle,forkThroughMessageId,forkMaterializedAt,activeCompactionCheckpointId]);
 }
 
 @override
 String toString() {
-    return 'ConversationEntity(id: $id, title: $title, workspaceId: $workspaceId, isPinned: $isPinned, labels: $labels, createdAt: $createdAt, updatedAt: $updatedAt, revision: $revision, toolAccessMode: $toolAccessMode, modelId: $modelId, agentId: $agentId, reasoningConfiguration: $reasoningConfiguration, taskBrief: $taskBrief, parentConversationId: $parentConversationId, forkSourceConversationId: $forkSourceConversationId, forkSourceTitle: $forkSourceTitle, forkThroughMessageId: $forkThroughMessageId, forkMaterializedAt: $forkMaterializedAt, activeCompactionCheckpointId: $activeCompactionCheckpointId)';
+    return 'ConversationEntity(id: $id, title: $title, workspaceId: $workspaceId, isPinned: $isPinned, createdAt: $createdAt, updatedAt: $updatedAt, labels: $labels, revision: $revision, toolAccessMode: $toolAccessMode, modelId: $modelId, agentId: $agentId, reasoningConfiguration: $reasoningConfiguration, taskBrief: $taskBrief, parentConversationId: $parentConversationId, forkSourceConversationId: $forkSourceConversationId, forkSourceTitle: $forkSourceTitle, forkThroughMessageId: $forkThroughMessageId, forkMaterializedAt: $forkMaterializedAt, activeCompactionCheckpointId: $activeCompactionCheckpointId)';
 }
 
 
@@ -328,7 +328,7 @@ abstract mixin class _$ConversationEntityCopyWith<$Res> implements $Conversation
   factory _$ConversationEntityCopyWith(_ConversationEntity value, $Res Function(_ConversationEntity) _then) = __$ConversationEntityCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String title, String workspaceId, bool isPinned, List<ConversationLabelEntity> labels, DateTime createdAt, DateTime updatedAt, int revision, ConversationToolAccessMode toolAccessMode, String? modelId, String? agentId, ReasoningConfiguration? reasoningConfiguration, String? taskBrief, String? parentConversationId, String? forkSourceConversationId, String? forkSourceTitle, String? forkThroughMessageId, DateTime? forkMaterializedAt, String? activeCompactionCheckpointId
+ String id, String title, String workspaceId, bool isPinned, DateTime createdAt, DateTime updatedAt, List<ConversationLabelEntity> labels, int revision, ConversationToolAccessMode toolAccessMode, String? modelId, String? agentId, ReasoningConfiguration? reasoningConfiguration, String? taskBrief, String? parentConversationId, String? forkSourceConversationId, String? forkSourceTitle, String? forkThroughMessageId, DateTime? forkMaterializedAt, String? activeCompactionCheckpointId
 });
 
 
@@ -345,16 +345,16 @@ class __$ConversationEntityCopyWithImpl<$Res>
 
 /// Create a copy of ConversationEntity
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? workspaceId = null,Object? isPinned = null,Object? labels = null,Object? createdAt = null,Object? updatedAt = null,Object? revision = null,Object? toolAccessMode = null,Object? modelId = freezed,Object? agentId = freezed,Object? reasoningConfiguration = freezed,Object? taskBrief = freezed,Object? parentConversationId = freezed,Object? forkSourceConversationId = freezed,Object? forkSourceTitle = freezed,Object? forkThroughMessageId = freezed,Object? forkMaterializedAt = freezed,Object? activeCompactionCheckpointId = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? workspaceId = null,Object? isPinned = null,Object? createdAt = null,Object? updatedAt = null,Object? labels = null,Object? revision = null,Object? toolAccessMode = null,Object? modelId = freezed,Object? agentId = freezed,Object? reasoningConfiguration = freezed,Object? taskBrief = freezed,Object? parentConversationId = freezed,Object? forkSourceConversationId = freezed,Object? forkSourceTitle = freezed,Object? forkThroughMessageId = freezed,Object? forkMaterializedAt = freezed,Object? activeCompactionCheckpointId = freezed,}) {
   return _then(_ConversationEntity(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String,workspaceId: null == workspaceId ? _self.workspaceId : workspaceId // ignore: cast_nullable_to_non_nullable
 as String,isPinned: null == isPinned ? _self.isPinned : isPinned // ignore: cast_nullable_to_non_nullable
-as bool,labels: null == labels ? _self._labels : labels // ignore: cast_nullable_to_non_nullable
-as List<ConversationLabelEntity>,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
+as bool,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
-as DateTime,revision: null == revision ? _self.revision : revision // ignore: cast_nullable_to_non_nullable
+as DateTime,labels: null == labels ? _self._labels : labels // ignore: cast_nullable_to_non_nullable
+as List<ConversationLabelEntity>,revision: null == revision ? _self.revision : revision // ignore: cast_nullable_to_non_nullable
 as int,toolAccessMode: null == toolAccessMode ? _self.toolAccessMode : toolAccessMode // ignore: cast_nullable_to_non_nullable
 as ConversationToolAccessMode,modelId: freezed == modelId ? _self.modelId : modelId // ignore: cast_nullable_to_non_nullable
 as String?,agentId: freezed == agentId ? _self.agentId : agentId // ignore: cast_nullable_to_non_nullable

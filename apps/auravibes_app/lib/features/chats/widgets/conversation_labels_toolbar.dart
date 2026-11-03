@@ -13,10 +13,10 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
 class const ConversationLabelsToolbar({
-  super.key,
   required final String workspaceId,
   required final Set<String> selectedLabelIds,
   required final ValueChanged<Set<String>> onSelectedLabelIdsChanged,
+  super.key,
 }) extends ConsumerStatefulWidget {
   @override
   ConsumerState<ConversationLabelsToolbar> createState() =>
@@ -38,6 +38,10 @@ class _ConversationLabelsToolbarState
         .tr();
     final selectedLabelIds = widget.selectedLabelIds;
     final count = selectedLabelIds.length;
+    final selectedCountSemantics =
+        LocaleKeys
+            .chats_screens_conversation_labels_selected_count_semantics
+            .tr(args: [count.toString()]);
     final filterSemantics = count == 0
         ? LocaleKeys.chats_screens_conversation_labels_filter_semantics.tr()
         : LocaleKeys.chats_screens_conversation_labels_filter_count_semantics
@@ -76,9 +80,7 @@ class _ConversationLabelsToolbarState
                     count: count,
                     variant: .neutral,
                     size: .small,
-                    semanticLabel: LocaleKeys
-                        .chats_screens_conversation_labels_selected_count_semantics
-                        .tr(args: [count.toString()]),
+                    semanticLabel: selectedCountSemantics,
                   ),
                 ],
               ],
@@ -255,6 +257,7 @@ class _ConversationLabelManagementDialogState
     final labels = ref.watch(
       conversationLabelsStreamProvider(widget.workspaceId),
     );
+
     return AlertDialog(
       title: Text(
         LocaleKeys.chats_screens_conversation_labels_manage_title.tr(),
@@ -413,7 +416,7 @@ class _NewConversationLabelFieldState
       Expanded(
         child: TextField(
           controller: _controller,
-          decoration: InputDecoration(
+          decoration: .new(
             labelText: LocaleKeys.chats_screens_conversation_labels_label_name
                 .tr(),
             errorText: _validationError,
@@ -533,7 +536,7 @@ class _ConversationLabelNameDialogState
     title: Text(widget.title),
     content: TextField(
       controller: _controller,
-      decoration: InputDecoration(
+      decoration: .new(
         labelText: LocaleKeys.chats_screens_conversation_labels_label_name.tr(),
         errorText: _error,
       ),
@@ -608,6 +611,7 @@ class _ConversationLabelAssignmentDialogState
     final labels = ref.watch(
       conversationLabelsStreamProvider(widget.workspaceId),
     );
+
     return AlertDialog(
       title: Text(
         LocaleKeys.chats_screens_conversation_labels_assignment_title.tr(),
@@ -648,7 +652,7 @@ class _ConversationLabelAssignmentDialogState
           child: const TextLocale(LocaleKeys.common_cancel),
         ),
         TextButton(
-          onPressed: _isSaving ? null : _save,
+          onPressed: _isSaving ? null : () => unawaited(_save()),
           child: const TextLocale(
             LocaleKeys.chats_screens_conversation_labels_save_assignments,
           ),
@@ -683,16 +687,12 @@ class _ConversationLabelAssignmentDialogState
   }
 }
 
-void _showLabelError(
-  BuildContext context, {
-  required String message,
-}) {
+void _showLabelError(BuildContext context, {required String message}) {
   final messenger = ScaffoldMessenger.maybeOf(context);
-  final _ = messenger?.showSnackBar(SnackBar(content: Text(message)));
+  final _ = messenger?.showSnackBar(.new(content: Text(message)));
 }
 
 class const _ConversationLabelCheckbox({
-  super.key,
   required final ConversationLabelEntity label,
   required final bool selected,
   required final bool enabled,

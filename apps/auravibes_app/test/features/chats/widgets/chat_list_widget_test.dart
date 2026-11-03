@@ -1680,10 +1680,8 @@ void main() {
   });
 }
 
-class _PassthroughConversationLabelsRepository
+class _PassthroughConversationLabelsRepository(super._database)
     extends ConversationLabelsRepository {
-  _PassthroughConversationLabelsRepository(AppDatabase database)
-    : super(database);
 
   @override
   Stream<List<ConversationEntity>> withLabels({

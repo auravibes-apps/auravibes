@@ -1,9 +1,8 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'package:auravibes_app/domain/entities/conversation_label_entity.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-
-import 'package:auravibes_app/domain/entities/conversation_label_entity.dart';
 
 part 'conversation_entity.freezed.dart';
 

@@ -57,6 +57,7 @@ class ConversationLabelsRepository(final AppDatabase _database) {
   }) async {
     final normalized = _normalizeName(name);
     final normalizedName = normalized.toLowerCase();
+
     return await _database.transaction(() async {
       final existing =
           await (_database.select(_database.conversationLabels)..where(
@@ -92,6 +93,7 @@ class ConversationLabelsRepository(final AppDatabase _database) {
   }) async {
     final normalized = _normalizeName(name);
     final normalizedName = normalized.toLowerCase();
+
     return await _database.transaction(() async {
       final label =
           await (_database.select(_database.conversationLabels)..where(
@@ -115,15 +117,16 @@ class ConversationLabelsRepository(final AppDatabase _database) {
         throw const ConversationLabelAlreadyExistsException();
       }
       final now = DateTime.now().toUtc();
-      final _ = await (_database.update(
-        _database.conversationLabels,
-      )..where((row) => row.id.equals(labelId))).write(
-        ConversationLabelsCompanion(
-          updatedAt: .new(now),
-          name: .new(normalized),
-          normalizedName: .new(normalizedName),
-        ),
-      );
+      final _ =
+          await (_database.update(
+            _database.conversationLabels,
+          )..where((row) => row.id.equals(labelId))).write(
+            ConversationLabelsCompanion(
+              updatedAt: .new(now),
+              name: .new(normalized),
+              normalizedName: .new(normalizedName),
+            ),
+          );
       final updated = await (_database.select(
         _database.conversationLabels,
       )..where((row) => row.id.equals(labelId))).getSingle();
@@ -178,14 +181,13 @@ class ConversationLabelsRepository(final AppDatabase _database) {
     if (labels.length != labelIds.length) {
       throw const ConversationWorkspaceMismatchException();
     }
-    final _ = await (_database.delete(
-      _database.conversationLabelAssignments,
-    )..where(
-          (row) =>
-              row.workspaceId.equals(workspaceId) &
-              row.conversationId.equals(conversationId),
-        ))
-        .go();
+    final _ =
+        await (_database.delete(_database.conversationLabelAssignments)..where(
+              (row) =>
+                  row.workspaceId.equals(workspaceId) &
+                  row.conversationId.equals(conversationId),
+            ))
+            .go();
     for (final label in labels) {
       final _ = await _database
           .into(_database.conversationLabelAssignments)
