@@ -192,13 +192,29 @@ void main() {
     final errorSemantics = tester.getSemantics(header).getSemanticsData();
     expect(
       errorSemantics.label,
-      'Background work could not refresh. Last known count: 1 active. '
-      'Open the list to retry.',
+      'Background work could not refresh. Last known active count: 1. '
+      'It may be out of date. Open the list to retry.',
     );
-    semantics.dispose();
     expect(find.byIcon(Icons.error_outline), findsOneWidget);
     expect(find.text('1'), findsOneWidget);
     expect(find.text('private failure detail'), findsNothing);
+
+    await tester.tap(header);
+    final _ = await tester.pumpAndSettle();
+    expect(
+      find.text(
+        'Background work could not refresh. Last known active count: 1. '
+        'It may be out of date.',
+      ),
+      findsOneWidget,
+    );
+    final retry = find.byKey(const ValueKey('background_work_retry'));
+    expect(retry, findsOneWidget);
+    final retrySemantics = tester.getSemantics(retry).getSemanticsData();
+    expect(retrySemantics.label, 'Retry');
+    expect(retrySemantics.isButton, isTrue);
+    expect(retrySemantics.hasAction(SemanticsAction.tap), isTrue);
+    semantics.dispose();
     final closeResult = await stream.close();
     expect(closeResult, isNull);
     expect(stream.isClosed, isTrue);
@@ -254,10 +270,15 @@ void main() {
       tester.getSemantics(header).getSemanticsData().label,
       'Background work could not load. Open the list to retry.',
     );
-    semantics.dispose();
     expect(find.text('Could not load background work.'), findsOneWidget);
+    expect(find.text('temporary failure'), findsNothing);
     final retry = find.byKey(const ValueKey('background_work_retry'));
     expect(retry, findsOneWidget);
+    final retrySemantics = tester.getSemantics(retry).getSemanticsData();
+    expect(retrySemantics.label, 'Retry');
+    expect(retrySemantics.isButton, isTrue);
+    expect(retrySemantics.hasAction(SemanticsAction.tap), isTrue);
+    semantics.dispose();
 
     await tester.tap(retry);
     final _ = await tester.pumpAndSettle();
@@ -272,6 +293,7 @@ void main() {
   testWidgets('cloud background work load can be retried without dispatching', (
     tester,
   ) async {
+    final semantics = tester.ensureSemantics();
     const workspace = CloudWorkspaceRef(
       localWorkspaceId: 'workspace-1',
       serverUrl: 'https://example.com',
@@ -333,6 +355,65 @@ void main() {
       findsOneWidget,
     );
     expect(attempts, 2);
+    semantics.dispose();
+  });
+
+  testWidgets('background work error and retry are localized in Spanish', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    final failedLoad = StreamController<List<AgentBackgroundWork>>();
+    final _ = await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          startLocale: const Locale('es'),
+          child: Scaffold(
+            appBar: AppBar(
+              actions: const [
+                BackgroundWorkHeaderButton(
+                  workspaceId: 'workspace-1',
+                  conversationId: 'conversation-1',
+                ),
+              ],
+            ),
+          ),
+          overrides: [
+            conversationBackgroundWorksProvider('conversation-1').overrideWith(
+              (ref) => failedLoad.stream,
+            ),
+          ],
+        ),
+      );
+    });
+    final header = find.byKey(const ValueKey('background_work_header_button'));
+    await _pumpUntilFound(
+      tester,
+      find.bySemanticsLabel('Comprobando las tareas en segundo plano.'),
+    );
+    failedLoad
+      ..addError(StateError('detalle técnico privado'))
+      ..close();
+    final _ = await tester.pumpAndSettle();
+    expect(
+      tester.getSemantics(header).getSemanticsData().label,
+      'No se pudieron cargar las tareas en segundo plano. '
+      'Abre la lista para volver a intentarlo.',
+    );
+    expect(find.text('detalle técnico privado'), findsNothing);
+
+    await tester.tap(header);
+    final _ = await tester.pumpAndSettle();
+    expect(
+      find.text('No se pudieron cargar las tareas en segundo plano.'),
+      findsOneWidget,
+    );
+    final retry = find.byKey(const ValueKey('background_work_retry'));
+    expect(retry, findsOneWidget);
+    final retrySemantics = tester.getSemantics(retry).getSemanticsData();
+    expect(retrySemantics.label, 'Reintentar');
+    expect(retrySemantics.isButton, isTrue);
+    expect(retrySemantics.hasAction(SemanticsAction.tap), isTrue);
+    semantics.dispose();
   });
 
   testWidgets(
