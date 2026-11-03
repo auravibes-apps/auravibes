@@ -142,6 +142,7 @@ AgentContextMessageRole _contextRole(
   if (message.role == ChatMessageRole.system && provenance.mayUseSystemRole) {
     return .system;
   }
+
   return .skill;
 }
 
@@ -162,6 +163,7 @@ ChatMessageRole _chatMessageRole(AgentContextMessage message) {
       message.provenance.mayUseSystemRole) {
     return .system;
   }
+
   return .user;
 }
 
