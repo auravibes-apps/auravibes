@@ -116,9 +116,7 @@ class _TestableAppState extends State<TestableApp> {
   ProviderContainer _createContainer(TestableApp app) {
     final session =
         app.workspaceSession ??
-        WorkspaceSession(
-          LocalWorkspaceRef(localWorkspaceId: app.workspaceId),
-        );
+        WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: app.workspaceId));
     final sessionWorkspaceId = session.workspace.localWorkspaceId;
     final routeSessionProvider = workspaceSessionForRouteProvider(
       sessionWorkspaceId,

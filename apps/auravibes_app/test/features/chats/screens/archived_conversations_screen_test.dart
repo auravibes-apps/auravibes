@@ -29,14 +29,14 @@ void main() {
             workspaceId: cloudWorkspace.localWorkspaceId,
           ),
           overrides: [
-            conversationsStreamProvider((
-              workspaceId: cloudWorkspace.localWorkspaceId,
-              search: '',
-              scope: .archived,
-              pagination: (limit: 21, offset: 0),
-            )).overrideWith(
-              (ref) => Stream.value(const <ConversationEntity>[]),
-            ),
+            conversationsStreamProvider(
+              (
+                workspaceId: cloudWorkspace.localWorkspaceId,
+                search: '',
+                scope: .archived,
+                pagination: (limit: 21, offset: 0),
+              ),
+            ).overrideWith((ref) => Stream.value(const <ConversationEntity>[])),
             listWorkspaceModelSelectionsProvider.overrideWith(
               (ref, workspaceId) => Stream.value([]),
             ),
@@ -108,14 +108,14 @@ void main() {
             workspaceId: cloudWorkspace.localWorkspaceId,
           ),
           overrides: [
-            conversationsStreamProvider((
-              workspaceId: cloudWorkspace.localWorkspaceId,
-              search: '',
-              scope: .archived,
-              pagination: (limit: 21, offset: 0),
-            )).overrideWith(
-              (ref) => Stream.value(const <ConversationEntity>[]),
-            ),
+            conversationsStreamProvider(
+              (
+                workspaceId: cloudWorkspace.localWorkspaceId,
+                search: '',
+                scope: .archived,
+                pagination: (limit: 21, offset: 0),
+              ),
+            ).overrideWith((ref) => Stream.value(const <ConversationEntity>[])),
             listWorkspaceModelSelectionsProvider.overrideWith(
               (ref, workspaceId) => Stream.value([]),
             ),

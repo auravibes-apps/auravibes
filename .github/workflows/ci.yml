@@ -231,12 +231,6 @@ jobs:
           mkdir -p "$FORMAT_OUTPUT_DIRECTORY"
           dart format --line-length 80 "$target"
           cp "$target" "$FORMAT_OUTPUT_DIRECTORY/workspace_capacity_error_capture_test.dart"
-          for target in \
-            apps/auravibes_app/test/features/chats/screens/archived_conversations_screen_test.dart \
-            apps/auravibes_app/test/helpers/test_app.dart; do
-            echo "=== Dart formatter output: $target ==="
-            dart format --line-length 80 -o show "$target"
-          done
 
       - name: Upload workspace capacity formatter output
         if: ${{ always() && github.event_name == 'pull_request' && steps.check-format.outcome == 'failure' }}
