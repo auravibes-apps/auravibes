@@ -898,7 +898,10 @@ void main() {
               builder: _legacyMaterialBuilder,
               theme: ThemeData(),
               locale: context.locale,
-              localizationsDelegates: context.localizationDelegates,
+              localizationsDelegates: [
+                ...GlobalMaterialLocalizations.delegates,
+                ...context.localizationDelegates,
+              ],
               supportedLocales: context.supportedLocales,
               home: ChatA2uiSurfaceHost.historical(
                 messageId: 'localized-status',
