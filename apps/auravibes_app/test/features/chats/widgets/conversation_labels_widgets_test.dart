@@ -63,6 +63,10 @@ void main() {
       ),
     );
     await _pumpAnimation(tester);
+    await _waitForTranslation(
+      tester,
+      LocaleKeys.chats_screens_conversation_labels_filter,
+    );
   }
 
   testWidgets('label badges expose one localized semantic label', (
@@ -118,10 +122,15 @@ void main() {
       ),
     );
 
+    await _waitForCondition(
+      tester,
+      () => !tester.widget<AuraButton>(find.byType(AuraButton).first).disabled,
+    );
     await tester.tap(find.text(LocaleKeys
         .chats_screens_conversation_labels_filter
         .tr()));
     await _pumpAnimation(tester);
+    await _waitForText(tester, 'Urgent');
     await tester.tap(find.text('Urgent'));
     await tester.pump();
     await tester.tap(find.text('Planning'));
@@ -153,10 +162,14 @@ void main() {
       LocaleKeys.chats_screens_conversation_labels_create.tr(),
     ));
     await _pumpAnimation(tester);
+    await _waitForText(tester, 'Follow up');
 
     expect(
-      (await repository.watchLabelsByWorkspace(workspaceId).first)
-          .map((label) => label.name),
+      (await (database.select(database.conversationLabels)
+                ..where((label) => label.workspaceId.equals(workspaceId)))
+              .get())
+          .map((label) => label.name)
+          .toList(),
       ['Follow up'],
     );
   });
@@ -189,6 +202,7 @@ void main() {
 
     await tester.tap(find.text('Assign labels'));
     await _pumpAnimation(tester);
+    await _waitForText(tester, 'Important');
     await tester.tap(find.text('Important'));
     await tester.pump();
     await tester.tap(
@@ -197,11 +211,15 @@ void main() {
           .tr()),
     );
     await _pumpAnimation(tester);
+    expect(find.byType(AlertDialog), findsNothing);
 
-    final conversation = await repository
-        .watchConversationsByWorkspace(workspaceId)
-        .first;
-    expect(conversation.single.labels.map((value) => value.id), [label.id]);
+    final assignments = await (database.select(
+      database.conversationLabelAssignments,
+    )..where((assignment) => assignment.conversationId.equals(row.id))).get();
+    expect(
+      assignments.map((assignment) => assignment.labelId).toList(),
+      [label.id],
+    );
   });
 }
 
@@ -216,7 +234,50 @@ ConversationLabelEntity _label(String id, String name) =>
 
 Future<void> _pumpAnimation(WidgetTester tester) async {
   await tester.pump();
+  // Drift's native database and EasyLocalization's asset loader complete on
+  // the real async loop rather than the widget test's fake clock.
+  await tester.runAsync(
+    () => Future<void>.delayed(const Duration(milliseconds: 50)),
+  );
   await tester.pump(const Duration(milliseconds: 300));
+}
+
+Future<void> _waitForTranslation(
+  WidgetTester tester,
+  String localizationKey,
+) async {
+  final _ = await tester.runAsync(() async {
+    for (var attempt = 0; attempt < 50; attempt++) {
+      if (localizationKey.trExists()) return;
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
+  });
+
+  expect(localizationKey.trExists(), isTrue);
+}
+
+Future<void> _waitForText(WidgetTester tester, String value) async {
+  await _waitForCondition(
+    tester,
+    () => find.text(value).evaluate().isNotEmpty,
+  );
+
+  expect(find.text(value), findsOneWidget);
+}
+
+Future<void> _waitForCondition(
+  WidgetTester tester,
+  bool Function() condition,
+) async {
+  for (var attempt = 0; attempt < 50; attempt++) {
+    if (condition()) return;
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+    );
+    await tester.pump();
+  }
+
+  expect(condition(), isTrue);
 }
 
 class const _AssignmentLauncher({

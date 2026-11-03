@@ -110,6 +110,121 @@ jobs:
         working-directory: apps/auravibes_server
         run: python3 ../../tool/validation_lease.py --label issue-1446-cloud-labels -- dart test test/integration/features/conversations/conversation_labels_endpoint_test.dart --reporter=compact
 
+      - name: Capture current-main ChatsRoute baseline
+        id: capture-baseline
+        if: ${{ steps.local-tests.outcome == 'success' && steps.cloud-tests.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_directory="$RUNNER_TEMP/issue-1446-screenshots"
+          main_worktree="$RUNNER_TEMP/issue-1446-main"
+          mkdir -p "$evidence_directory/before"
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          git worktree add --detach "$main_worktree" refs/remotes/origin/main
+          printf '%s\n' "$(git -C "$main_worktree" rev-parse HEAD)" > "$evidence_directory/baseline-sha.txt"
+          test "$(git -C "$main_worktree" rev-parse HEAD)" = "$(git rev-parse refs/remotes/origin/main)"
+          cmp .fvmrc "$main_worktree/.fvmrc"
+          mkdir -p "$main_worktree/.fvm"
+          ln -sfn "$FLUTTER_ROOT" "$main_worktree/.fvm/flutter_sdk"
+          cp apps/auravibes_app/test/features/chats/widgets/conversation_labels_capture_test.dart \
+            "$main_worktree/apps/auravibes_app/test/features/chats/widgets/"
+          cd "$main_worktree"
+          python3 tool/validation_lease.py --label issue-1446-capture-baseline-bootstrap -- melos bootstrap
+          cd apps/auravibes_app
+          python3 ../../tool/validation_lease.py --label issue-1446-capture-baseline -- flutter test \
+            test/features/chats/widgets/conversation_labels_capture_test.dart \
+            --no-pub \
+            --dart-define="UX_CAPTURE_DIR=$evidence_directory/before" \
+            --dart-define="UX_CAPTURE_STAGE=before" \
+            --dart-define="UX_SOURCE_FINGERPRINT=$(cat "$evidence_directory/baseline-sha.txt")" \
+            --dart-define="UX_FLUTTER_VERSION=$FLUTTER_VERSION"
+
+      - name: Capture feature ChatsRoute
+        id: capture-feature
+        if: ${{ steps.local-tests.outcome == 'success' && steps.cloud-tests.outcome == 'success' && steps.capture-baseline.outcome == 'success' }}
+        working-directory: apps/auravibes_app
+        run: |
+          set -euo pipefail
+          evidence_directory="$RUNNER_TEMP/issue-1446-screenshots"
+          mkdir -p "$evidence_directory/after"
+          python3 ../../tool/validation_lease.py --label issue-1446-capture-feature -- flutter test \
+            test/features/chats/widgets/conversation_labels_capture_test.dart \
+            --no-pub \
+            --dart-define="UX_CAPTURE_DIR=$evidence_directory/after" \
+            --dart-define="UX_CAPTURE_STAGE=after" \
+            --dart-define="UX_SOURCE_FINGERPRINT=$(git rev-parse HEAD)" \
+            --dart-define="UX_FLUTTER_VERSION=$FLUTTER_VERSION"
+
+      - name: Write screenshot provenance manifest
+        if: always()
+        env:
+          BASELINE_OUTCOME: ${{ steps.capture-baseline.outcome }}
+          FEATURE_OUTCOME: ${{ steps.capture-feature.outcome }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, json, os, platform
+
+          root = Path(os.environ['RUNNER_TEMP']) / 'issue-1446-screenshots'
+          root.mkdir(parents=True, exist_ok=True)
+          sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+          captures = []
+          expected = {
+              'before': (root / 'baseline-sha.txt').read_text().strip()
+              if (root / 'baseline-sha.txt').is_file() else None,
+              'after': os.environ['GITHUB_SHA'],
+          }
+          for phase in ('before', 'after'):
+              for png in sorted((root / phase).glob('*.png')):
+                  sidecar = png.with_suffix('.json')
+                  if not sidecar.is_file():
+                      raise SystemExit('Screenshot has no provenance sidecar: ' + png.name)
+                  metadata = json.loads(sidecar.read_text())
+                  if metadata.get('stage') != phase or metadata.get('sourceFingerprint') != expected[phase]:
+                      raise SystemExit('Screenshot provenance mismatch: ' + png.name)
+                  captures.append({
+                      'stage': phase,
+                      'sourceSha': expected[phase],
+                      'png': str(png.relative_to(root)),
+                      'pngSha256': sha(png),
+                      'sidecar': str(sidecar.relative_to(root)),
+                      'sidecarSha256': sha(sidecar),
+                      'render': metadata,
+                  })
+          if os.environ['BASELINE_OUTCOME'] == 'success' and os.environ['FEATURE_OUTCOME'] == 'success' and len(captures) != 2:
+              raise SystemExit(f'Expected before and after captures, found {len(captures)}')
+          manifest = {
+              'baselineSha': expected['before'],
+              'featureSha': expected['after'],
+              'flutterVersion': os.environ.get('FLUTTER_VERSION'),
+              'host': platform.platform(),
+              'imageOS': os.environ.get('ImageOS'),
+              'imageVersion': os.environ.get('ImageVersion'),
+              'captureOutcomes': {
+                  'before': os.environ['BASELINE_OUTCOME'],
+                  'after': os.environ['FEATURE_OUTCOME'],
+              },
+              'captures': captures,
+          }
+          (root / 'capture-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+          PY
+
+      - name: Upload before/after screenshots and provenance
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: issue-1446-screenshot-evidence-${{ github.sha }}
+          path: ${{ runner.temp }}/issue-1446-screenshots/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Remove temporary baseline worktree
+        if: always()
+        run: |
+          if git worktree list --porcelain | rg -F "$RUNNER_TEMP/issue-1446-main" >/dev/null; then
+            git worktree remove --force "$RUNNER_TEMP/issue-1446-main"
+          fi
+
       - name: Stop PostgreSQL test service
         if: always()
         working-directory: apps/auravibes_server
