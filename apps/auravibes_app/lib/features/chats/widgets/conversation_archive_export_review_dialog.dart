@@ -125,7 +125,7 @@ class const _ConversationArchiveExportReviewContent({
       width: 480,
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height * 0.65,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.70,
         ),
         child: Column(
           mainAxisSize: .min,
@@ -154,6 +154,13 @@ class const _ConversationArchiveExportReviewContent({
                 ),
               ),
             ],
+            if (preview.attachmentCount > 0) ...[
+              SizedBox(height: theme.fromSpacing(.sm)),
+              TextLocale(
+                _reviewAttachmentSectionKey,
+                args: [preview.attachmentCount.toString()],
+              ),
+            ],
             SizedBox(height: theme.fromSpacing(.sm)),
             Flexible(
               child: SingleChildScrollView(
@@ -161,11 +168,6 @@ class const _ConversationArchiveExportReviewContent({
                   mainAxisSize: .min,
                   crossAxisAlignment: .start,
                   children: [
-                    if (preview.attachmentCount > 0)
-                      TextLocale(
-                        _reviewAttachmentSectionKey,
-                        args: [preview.attachmentCount.toString()],
-                      ),
                     SizedBox(height: theme.fromSpacing(.md)),
                     TextLocale(
                       _reviewConversationSectionKey,
