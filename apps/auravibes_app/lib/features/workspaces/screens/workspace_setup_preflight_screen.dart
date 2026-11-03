@@ -1,8 +1,7 @@
 import 'dart:async';
 
-import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/models/providers/chat_model_connections_provider.dart';
-import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
+import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_setup_preflight.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
@@ -264,17 +263,14 @@ IconData _statusIcon(WorkspaceSetupPreflightStatus status) => switch (status) {
 };
 
 void _refresh(WidgetRef ref, String workspaceId) {
-  final selectedModelId = ref.read(newChatProvider(workspaceId)).modelId;
   ref
     ..invalidate(workspaceByIdProvider(workspaceId))
     ..invalidate(chatModelConnectionsProvider(workspaceId))
+    ..invalidate(modelConnectionStoreProvider(workspaceId))
+    ..invalidate(modelSelectionStoreProvider(workspaceId))
+    ..invalidate(modelCatalogStoreProvider(workspaceId))
     ..invalidate(serviceConnectionsProvider(workspaceId))
     ..invalidate(workspaceSessionForRouteProvider(workspaceId));
-  if (selectedModelId != null) {
-    ref.invalidate(
-      workspaceModelSelectionByIdProvider(workspaceId, selectedModelId),
-    );
-  }
   ref
       .read(workspaceSetupPreflightRefreshProvider(workspaceId).notifier)
       .requestSavedConfigurationRefresh();

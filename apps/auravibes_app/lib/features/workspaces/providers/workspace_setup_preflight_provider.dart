@@ -5,7 +5,7 @@ import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/models/providers/api_model_repository_providers.dart';
 import 'package:auravibes_app/features/models/providers/chat_model_connections_provider.dart';
-import 'package:auravibes_app/features/models/providers/workspace_model_selection_providers.dart';
+import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connections_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
@@ -75,14 +75,14 @@ Future<WorkspaceSetupPreflight> workspaceSetupPreflight(
       ? const _ReadResult<WorkspaceSetupModelSnapshot?>.available(null)
       : sourceAllowed
       ? await _capture(
-          () => ref
-              .watch(
-                workspaceModelSelectionByIdProvider(
-                  workspaceId,
-                  selectedModelId,
-                ).future,
-              )
-              .then((model) => _modelSnapshot(ref, model, workspaceId)),
+          () async {
+            final selections = await ref.watch(
+              modelSelectionStoreProvider(workspaceId).future,
+            );
+            final model = await selections.getById(selectedModelId);
+
+            return await _modelSnapshot(ref, model, workspaceId);
+          },
         )
       : const _ReadResult<WorkspaceSetupModelSnapshot?>.unavailable();
   final mcpRead = sourceAllowed

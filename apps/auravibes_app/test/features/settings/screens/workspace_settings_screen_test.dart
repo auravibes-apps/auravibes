@@ -83,6 +83,10 @@ void main() {
       expect(find.byType(AuraSpinner), findsOneWidget);
       stream.add(CompactionSettings.defaults);
       final _ = await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('workspace_settings_setup_preflight')),
+        findsOneWidget,
+      );
       await tester.enterText(
         find.byType(EditableText).first,
         'retained invalid text',
