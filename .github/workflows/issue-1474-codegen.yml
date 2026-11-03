@@ -27,6 +27,11 @@ jobs:
       - name: Generate localization keys
         run: python3 tool/validation_lease.py --label issue-1474-localization -- dart run melos run generate:localization --no-select
 
+      - name: Install matching Serverpod CLI
+        run: |
+          version="$(ruby -ryaml -e 'puts YAML.load_file("pubspec.lock").fetch("packages").fetch("serverpod").fetch("version")')"
+          dart pub global activate serverpod_cli "$version"
+
       - name: Generate Serverpod artifacts
         run: python3 tool/validation_lease.py --label issue-1474-serverpod -- dart run melos run generate:serverpod
 

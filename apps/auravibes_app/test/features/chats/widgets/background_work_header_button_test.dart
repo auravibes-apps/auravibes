@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:auravibes_app/features/chats/providers/background_work_providers.dart';
+import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/features/chats/widgets/background_work_header_button.dart';
 import 'package:auravibes_app/features/chats/widgets/background_work_list_view.dart';
+import 'package:auravibes_app/features/chats/widgets/tool_call_response_modal.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,6 +13,66 @@ import 'package:material_ui/material_ui.dart';
 import '../../../helpers/test_app.dart';
 
 void main() {
+  testWidgets('MCP title is shown without changing background work identity', (
+    tester,
+  ) async {
+    const toolKind = 'mcp_srv1_myserver_search_records';
+    final work = _work(
+      'mcp-work-1',
+      .completed,
+      DateTime.utc(2026, 10, 11, 12),
+      resultContent: 'records found',
+      toolKind: toolKind,
+    );
+    final _ = await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: Scaffold(
+            appBar: AppBar(
+              actions: const [
+                BackgroundWorkHeaderButton(
+                  workspaceId: 'workspace-1',
+                  conversationId: 'conversation-1',
+                ),
+              ],
+            ),
+          ),
+          overrides: [
+            conversationBackgroundWorksProvider('conversation-1')
+                .overrideWith((ref) => Stream.value([work])),
+            toolDisplayNameProvider('workspace-1', toolKind).overrideWith(
+              (ref) async => 'My Server: Search records',
+            ),
+          ],
+        ),
+      );
+    });
+    final _ = await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey('background_work_header_button')),
+    );
+    final _ = await tester.pumpAndSettle();
+    final workTitle = find.byKey(
+      const ValueKey('background_work_title_mcp-work-1'),
+    );
+    expect(tester.widget<Text>(workTitle).data, 'My Server: Search records');
+    expect(work.identity.toolKind, toolKind);
+
+    await tester.tap(
+      find.byKey(const ValueKey('background_work_open_result_mcp-work-1')),
+    );
+    final _ = await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: find.byType(ToolCallResponseModal),
+        matching: find.text('My Server: Search records'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('records found'), findsOneWidget);
+  });
+
   testWidgets('active elapsed time refreshes and terminal duration freezes', (
     tester,
   ) async {
@@ -530,13 +592,14 @@ AgentBackgroundWork _work(
   String? resultContent,
   String? statusPreview,
   String? childConversationId,
+  String toolKind = 'Search',
 }) => .new(
   identity: .new(
     id: id,
     workspaceId: 'workspace-1',
     conversationId: 'conversation-1',
     toolCallId: 'tool-1',
-    toolKind: 'Search',
+    toolKind: toolKind,
     originatingMessageId: 'message-1',
     childConversationId: childConversationId,
   ),

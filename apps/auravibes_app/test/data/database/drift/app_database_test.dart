@@ -44,8 +44,105 @@ void main() {
     tearDownAll(fixture.close);
 
     test('has correct schema version', () {
-      expect(fixture.database.schemaVersion, 49);
+      expect(fixture.database.schemaVersion, 50);
     });
+
+    test(
+      'schema49 migration preserves MCP tools and adds nullable display fields',
+      () async {
+        final sqliteDb = sqlite.sqlite3.openInMemory()
+          ..userVersion = 49
+          ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
+          ..execute("INSERT INTO workspaces VALUES ('workspace-1')")
+          ..execute('''
+            CREATE TABLE workspace_revisions (
+              workspace_id TEXT, kind TEXT, resource_id TEXT, revision INTEGER,
+              data TEXT, actor_user_id TEXT, ai_involved INTEGER,
+              operation TEXT, captured_at INTEGER
+            )
+          ''')
+          ..execute(
+            'CREATE TABLE workspace_history_policies '
+            '(workspace_id TEXT, days INTEGER)',
+          )
+          ..execute('''
+            CREATE TABLE workspace_content_reports (
+              workspace_id TEXT, kind TEXT, resource_id TEXT, revision INTEGER
+            )
+          ''')
+          ..execute('''
+            CREATE TABLE tools (
+              id TEXT PRIMARY KEY,
+              created_at INTEGER NOT NULL,
+              updated_at INTEGER NOT NULL,
+              workspace_id TEXT NOT NULL,
+              workspace_tools_group_id TEXT,
+              tool_id TEXT NOT NULL,
+              description TEXT,
+              config TEXT,
+              input_schema TEXT,
+              output_schema TEXT,
+              is_enabled INTEGER NOT NULL DEFAULT 0,
+              permissions TEXT NOT NULL DEFAULT 'ask'
+            )
+          ''');
+        _createHistorySources(sqliteDb);
+        sqliteDb
+          ..execute('''
+            INSERT INTO tools (
+              id, created_at, updated_at, workspace_id,
+              workspace_tools_group_id, tool_id, description, input_schema,
+              output_schema, is_enabled, permissions
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ''', [
+            'tool-1',
+            1,
+            2,
+            'workspace-1',
+            'group-1',
+            'delete_record',
+            'Delete a record',
+            '{"type":"object"}',
+            '{"type":"null"}',
+            1,
+            'granted',
+          ]);
+        final database = AppDatabase(
+          connection: NativeDatabase.opened(sqliteDb),
+        );
+        addTearDown(database.close);
+
+        final columns = await database
+            .customSelect('PRAGMA table_info(tools)')
+            .get();
+        final titleColumn = columns.firstWhere(
+          (column) => column.read<String>('name') == 'title',
+        );
+        final annotationsColumn = columns.firstWhere(
+          (column) => column.read<String>('name') == 'annotations_json',
+        );
+        expect(titleColumn.read<int>('notnull'), 0);
+        expect(annotationsColumn.read<int>('notnull'), 0);
+
+        final tool = await database
+            .customSelect('''
+              SELECT id, tool_id, description, input_schema, output_schema,
+                     is_enabled, permissions, title, annotations_json
+              FROM tools WHERE id = ?
+            ''', variables: [const Variable<String>('tool-1')])
+            .getSingle();
+        expect(tool.read<String>('id'), 'tool-1');
+        expect(tool.read<String>('tool_id'), 'delete_record');
+        expect(tool.read<String>('description'), 'Delete a record');
+        expect(tool.read<String>('input_schema'), '{"type":"object"}');
+        expect(tool.read<String>('output_schema'), '{"type":"null"}');
+        expect(tool.read<int>('is_enabled'), 1);
+        expect(tool.read<String>('permissions'), 'granted');
+        expect(tool.data['title'], isNull);
+        expect(tool.data['annotations_json'], isNull);
+        expect(sqliteDb.userVersion, 50);
+      },
+    );
 
     test(
       'schema47 migration preserves workspaces with verification disabled',
@@ -83,7 +180,7 @@ void main() {
             .getSingle();
         expect(settings.read<int>('count'), 0);
         expect(runs.read<int>('count'), 0);
-        expect(sqliteDb.userVersion, 49);
+        expect(sqliteDb.userVersion, 50);
       },
     );
 
@@ -174,7 +271,7 @@ void main() {
             .getByWorkspaceId('existing');
         expect(row?.enabled, isFalse);
         expect(row?.trustedDigest, isNull);
-        expect(database.schemaVersion, 49);
+        expect(database.schemaVersion, 50);
       },
     );
 
@@ -290,7 +387,7 @@ void main() {
           .getSingle();
       expect(retained.read<String>('name'), 'Retained');
       expect(retained.read<String>('asset_id'), 'asset');
-      expect(sqliteDb.userVersion, 49);
+      expect(sqliteDb.userVersion, 50);
       expect(
         await database.select(database.workspaceAgentHookSettings).get(),
         isEmpty,

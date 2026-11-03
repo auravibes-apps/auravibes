@@ -18,13 +18,20 @@ import '../../../helpers/test_app.dart';
 
 const _workspaceId = 'ws-1';
 
-WorkspaceToolEntity _tool({String id = 't1', bool isEnabled = true}) {
+WorkspaceToolEntity _tool({
+  String id = 't1',
+  bool isEnabled = true,
+  String? title,
+  String? annotationsJson,
+}) {
   return WorkspaceToolEntity(
     id: id,
     workspaceId: _workspaceId,
     toolId: 'custom_tool',
     isEnabled: isEnabled,
     permissionMode: .alwaysAsk,
+    title: title,
+    annotationsJson: annotationsJson,
     createdAt: .new(2026),
     updatedAt: .new(2026),
   );
@@ -151,6 +158,44 @@ void main() {
       ),
     );
     expect((container.constraints?.maxWidth ?? 0) > 0, isTrue);
+  });
+
+  testWidgets('MCP display hints keep workspace approval unchanged', (
+    tester,
+  ) async {
+    final tool = _tool(
+      title: 'No approval needed',
+      annotationsJson:
+          '{"readOnlyHint":true,"destructiveHint":true}',
+    );
+
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        _Subject(
+          child: ToolItemRow(
+            tool: tool,
+            workspaceId: _workspaceId,
+            isMcp: true,
+          ),
+        ),
+      );
+    });
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('No approval needed'), findsOneWidget);
+    expect(find.text('Service hint: only reads information'), findsOneWidget);
+    expect(
+      find.text('Service hint: may change or remove information'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byType(AuraIconButton).last);
+    final _ = await tester.pumpAndSettle();
+    final permissionSelector = tester
+        .widget<AuraButtonGroup<ToolPermissionMode>>(
+          find.byType(AuraButtonGroup<ToolPermissionMode>),
+        );
+    expect(permissionSelector.selectedValue, ToolPermissionMode.alwaysAsk);
   });
 
   testWidgets('disabled tool expands without permission selector', (

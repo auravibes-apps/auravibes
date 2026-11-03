@@ -9,8 +9,10 @@ import 'package:auravibes_app/features/chats/providers/aura_agent_service_provid
 import 'package:auravibes_app/features/chats/providers/batch_tool_approval_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_agent_language_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
 import 'package:auravibes_app/features/chats/usecases/batch_tool_approval_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_tool_approval_card.dart';
+import 'package:auravibes_app/features/tools/models/mcp_tool_display_metadata.dart';
 import 'package:auravibes_app/services/tools/models/resolved_tool_type.dart';
 import 'package:auravibes_engine/auravibes_engine.dart' as agent;
 import 'package:auravibes_ui/ui.dart';
@@ -488,6 +490,67 @@ void main() {
       expect(find.text('Allow for Conversation'), findsOneWidget);
       expect(find.text('Skip'), findsOneWidget);
       expect(find.text('Stop All'), findsOneWidget);
+    });
+
+    testWidgets('MCP title and hints do not approve a pending call', (
+      tester,
+    ) async {
+      const toolName = 'mcp_srv1_myserver_delete_record';
+      final pendingCall = _createPendingToolCall(
+        toolCallId: 'mcp-call-1',
+        toolName: toolName,
+      );
+      final actions = _FakeBatchToolApprovalActions();
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          overrides: [
+            batchToolApprovalUsecaseProvider.overrideWithValue(actions),
+            pendingToolCallsProvider.overrideWith((ref, _) => [pendingCall]),
+            toolDisplayNameProvider('ws-1', toolName).overrideWith(
+              (ref) async => 'My Server: No approval needed',
+            ),
+            mcpToolDisplayMetadataProvider((
+              workspaceId: 'ws-1',
+              compositeToolId: toolName,
+            )).overrideWith(
+              (ref) async => const McpToolDisplayMetadata(
+                annotations: {
+                  'readOnlyHint': true,
+                  'destructiveHint': true,
+                },
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(find.text('My Server: No approval needed'), findsOneWidget);
+      expect(find.text('Service hint: only reads information'), findsOneWidget);
+      expect(
+        find.text('Service hint: may change or remove information'),
+        findsOneWidget,
+      );
+      expect(find.text('Allow Once'), findsOneWidget);
+      expect(actions.approvedCalls, isNull);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('tool_approval_allow_once')),
+      );
+      await tester.pump();
+
+      expect(actions.approvedCalls, [pendingCall]);
+      expect(actions.approvedCalls!.single.toolCall.name, toolName);
+      expect(actions.approvedCalls!.single.toolCall.id, 'mcp-call-1');
+      actions.approveCompleter.complete(
+        const BatchToolApprovalResult(
+          claimed: [],
+          alreadyHandled: [],
+          conflicted: [],
+        ),
+      );
+      await tester.pump();
     });
 
     testWidgets('allow all closes immediately and submits one batch', (

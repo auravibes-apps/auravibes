@@ -4,6 +4,7 @@ import 'package:auravibes_app/domain/entities/mcp_server_settings_update.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/models/mcp_tool_info.dart';
 import 'package:auravibes_app/features/chats/providers/tool_display_name_provider.dart';
+import 'package:auravibes_app/features/tools/models/mcp_tool_display_metadata.dart';
 import 'package:auravibes_app/features/tools/providers/mcp_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
@@ -101,6 +102,39 @@ void main() {
         toolDisplayNameProvider('ws1', 'mcp_srv1_myserver_read_file').future,
       );
       expect(name, 'My Server: Read File');
+    });
+
+    test('uses a retained MCP title for presentation', () async {
+      final server = McpServerEntity(
+        id: 'srv1',
+        workspaceId: 'ws1',
+        name: 'My Server',
+        url: 'https://example.com',
+        transport: const McpTransportTypeSSE(),
+        authenticationType: const McpAuthenticationTypeNone(),
+        createdAt: .new(2026),
+        updatedAt: .new(2026),
+      );
+      const toolName = 'mcp_srv1_myserver_read_file';
+      final container = createContainer(
+        {'srv1': server},
+        providerOverrides: [
+          mcpToolDisplayMetadataProvider((
+            workspaceId: 'ws1',
+            compositeToolId: toolName,
+          )).overrideWith(
+            (ref) async => const McpToolDisplayMetadata(
+              title: 'Search records',
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final name = await container
+          .read(toolDisplayNameProvider('ws1', toolName).future);
+
+      expect(name, 'My Server: Search records');
     });
 
     test('returns display name for built-in tool', () async {

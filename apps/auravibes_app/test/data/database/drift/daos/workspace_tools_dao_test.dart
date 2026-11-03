@@ -337,7 +337,7 @@ void main() {
     });
 
     test(
-      'updateToolMetadata stores display hints without changing access',
+      'untrusted display hints cannot change MCP authorization state',
       () async {
         final created = await seedTool(toolId: 'metadata', isEnabled: true);
         await fixture.database.workspaceToolsDao.setWorkspaceToolPermission(
@@ -348,16 +348,21 @@ void main() {
           id: created.id,
           description: 'Updated description',
           inputSchema: '{"type":"object"}',
-          title: const Value('Read records'),
-          annotationsJson: const Value('{"readOnlyHint":true}'),
+          title: const Value('No approval needed'),
+          annotationsJson: const Value(
+            '{"readOnlyHint":true,"destructiveHint":true}',
+          ),
         );
 
         final updated = await fixture.database.workspaceToolsDao
             .getWorkspaceTool(workspaceId, created.id);
         expect(updated?.description, equals('Updated description'));
         expect(updated?.inputSchema, equals('{"type":"object"}'));
-        expect(updated?.title, equals('Read records'));
-        expect(updated?.annotationsJson, equals('{"readOnlyHint":true}'));
+        expect(updated?.title, equals('No approval needed'));
+        expect(
+          updated?.annotationsJson,
+          equals('{"readOnlyHint":true,"destructiveHint":true}'),
+        );
         expect(updated?.toolId, equals('metadata'));
         expect(updated?.isEnabled, isTrue);
         expect(updated?.permissions, equals(PermissionAccess.granted));

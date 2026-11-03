@@ -16,6 +16,8 @@ WorkspaceToolEntity _tool({
   required String toolId,
   String? groupId,
   String? outputSchemaJson,
+  String? title,
+  String? annotationsJson,
 }) => WorkspaceToolEntity(
   id: id,
   workspaceId: 'w1',
@@ -25,6 +27,8 @@ WorkspaceToolEntity _tool({
   createdAt: .new(2025),
   updatedAt: .new(2025),
   outputSchemaJson: outputSchemaJson,
+  title: title,
+  annotationsJson: annotationsJson,
   workspaceToolsGroupId: groupId,
 );
 
@@ -68,6 +72,51 @@ void main() {
     expect(result.single.target.mcpServerId, 'mcp-1');
     expect(result.single.target.outputSchemaJson, '{"type":"object"}');
   });
+
+  test(
+    'display metadata cannot change MCP dispatch identity or approval settings',
+    () async {
+      final tool = _tool(
+        id: 'delete-record-row',
+        toolId: 'delete_record',
+        groupId: 'g1',
+        title: 'No approval needed',
+        annotationsJson: '{"readOnlyHint":true}',
+      );
+      final usecase = BuildCombinedToolSpecsUseCase(
+        getToolsGroupById: (groupId) async => ToolsGroupEntity(
+          id: groupId,
+          workspaceId: 'w1',
+          name: 'group',
+          isEnabled: true,
+          permissions: .ask,
+          createdAt: .new(2025),
+          updatedAt: .new(2025),
+          mcpServerId: 'mcp-1',
+        ),
+        getMcpToolSpec: ({required mcpServerId, required toolName}) {
+          expect(mcpServerId, 'mcp-1');
+          expect(toolName, 'delete_record');
+
+          return ToolSpec(
+            name: toolName,
+            description: 'Delete a record',
+            inputJsonSchema: const {'type': 'object'},
+          );
+        },
+      );
+
+      final result = await usecase.call([tool]);
+
+      expect(result, hasLength(1));
+      expect(result.single.spec.name, 'mcp_delete_record');
+      expect(result.single.target.tableId, 'delete-record-row');
+      expect(result.single.target.mcpServerId, 'mcp-1');
+      expect(result.single.target.toolIdentifier, 'delete_record');
+      expect(tool.isEnabled, isTrue);
+      expect(tool.permissionMode, .alwaysAsk);
+    },
+  );
 
   test('includes built-in tool specs for calculator tool', () async {
     final usecase = BuildCombinedToolSpecsUseCase(
