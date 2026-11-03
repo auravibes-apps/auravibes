@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:io';
-import 'dart:isolate';
+import 'dart:isolate' as isolates;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -17,17 +17,22 @@ import 'package:vm_service/vm_service_io.dart';
 const _enabled = bool.fromEnvironment('VOICE_MEMORY_PROBE');
 const _seconds = int.fromEnvironment('VOICE_MEMORY_SECONDS', defaultValue: 5);
 const _irregular = bool.fromEnvironment('VOICE_MEMORY_IRREGULAR');
-const _bytesPerSecond = 44100 * 2;
+const int _bytesPerSecond = 44100 * 2;
 const _channel = MethodChannel('plugins.flutter.io/path_provider');
+const _decoderScript =
+    'import json,sys,wave; '
+    'w=wave.open(sys.argv[1],"rb"); '
+    'print(json.dumps(dict(frames=w.getnframes(),rate=w.getframerate(),'
+    'channels=w.getnchannels(),width=w.getsampwidth())))';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  final _ = TestWidgetsFlutterBinding.ensureInitialized();
 
   test(
     'measures the actual macOS voice attachment service',
     _measureRecording,
+    timeout: const Timeout(.new(minutes: 4)),
     skip: !_enabled || !Platform.isMacOS,
-    timeout: const Timeout(Duration(minutes: 4)),
   );
 }
 
@@ -35,7 +40,7 @@ Future<void> _measureRecording() async {
   expect([5, 30, 120], contains(_seconds));
   final output = Platform.environment['VOICE_MEMORY_OUTPUT'];
   if (output == null) throw StateError('VOICE_MEMORY_OUTPUT is required');
-  final samples = File('$output.samples.jsonl').openSync(mode: FileMode.write);
+  final samples = File('$output.samples.jsonl').openSync(mode: .write);
   addTearDown(samples.closeSync);
   final temporary = await Directory.systemTemp.createTemp('voice_memory_');
   addTearDown(() => temporary.delete(recursive: true));
@@ -44,11 +49,12 @@ Future<void> _measureRecording() async {
   RecordPlatform.instance = recorder;
   addTearDown(() => RecordPlatform.instance = originalPlatform);
   final messenger =
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-  messenger.setMockMethodCallHandler(_channel, (call) async {
-    if (call.method == 'getTemporaryDirectory') return temporary.path;
-    return null;
-  });
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        ..setMockMethodCallHandler(_channel, (call) async {
+          if (call.method == 'getTemporaryDirectory') return temporary.path;
+
+          return null;
+        });
   addTearDown(() => messenger.setMockMethodCallHandler(_channel, null));
 
   final server = await developer.Service.controlWebServer(
@@ -61,7 +67,7 @@ Future<void> _measureRecording() async {
     uri.replace(scheme: 'ws', path: '${uri.path}ws').toString(),
   );
   addTearDown(vm.dispose);
-  final isolateId = developer.Service.getIsolateId(Isolate.current);
+  final isolateId = developer.Service.getIsolateId(isolates.Isolate.current);
   if (isolateId == null) throw StateError('The worker isolate is unavailable');
   final meter = _MemoryMeter(vm, isolateId, samples);
   addTearDown(meter.stop);
@@ -80,7 +86,7 @@ Future<void> _measureRecording() async {
   await meter.mark('idle');
   meter.start();
 
-  final expectedBytes = _seconds * _bytesPerSecond;
+  const expectedBytes = _seconds * _bytesPerSecond;
   await service.startVoiceRecording();
   await meter.mark('recording-started');
   expect(recorder.config?.sampleRate, 44100);
@@ -101,22 +107,21 @@ Future<void> _measureRecording() async {
   final size = await file.length();
   expect(size, expectedBytes + 44);
   expect(attachment.sizeBytes, size);
-  final header = await file.openRead(0, 44).fold<List<int>>(
-    <int>[],
-    (result, part) => result..addAll(part),
-  );
+  final header = await file
+      .openRead(0, 44)
+      .fold<List<int>>(<int>[], (result, part) => result..addAll(part));
   final data = ByteData.sublistView(Uint8List.fromList(header));
   expect(ascii.decode(header.sublist(0, 4)), 'RIFF');
   expect(ascii.decode(header.sublist(8, 12)), 'WAVE');
   expect(ascii.decode(header.sublist(36, 40)), 'data');
-  expect(data.getUint32(4, Endian.little), expectedBytes + 36);
-  expect(data.getUint16(20, Endian.little), 1);
-  expect(data.getUint16(22, Endian.little), 1);
-  expect(data.getUint32(24, Endian.little), 44100);
-  expect(data.getUint32(28, Endian.little), _bytesPerSecond);
-  expect(data.getUint16(32, Endian.little), 2);
-  expect(data.getUint16(34, Endian.little), 16);
-  expect(data.getUint32(40, Endian.little), expectedBytes);
+  expect(data.getUint32(4, .little), expectedBytes + 36);
+  expect(data.getUint16(20, .little), 1);
+  expect(data.getUint16(22, .little), 1);
+  expect(data.getUint32(24, .little), 44100);
+  expect(data.getUint32(28, .little), _bytesPerSecond);
+  expect(data.getUint16(32, .little), 2);
+  expect(data.getUint16(34, .little), 16);
+  expect(data.getUint32(40, .little), expectedBytes);
   var offset = 0;
   await for (final part in file.openRead(44)) {
     for (final byte in part) {
@@ -130,10 +135,7 @@ Future<void> _measureRecording() async {
   final digest = await sha256.bind(file.openRead()).first;
   final decoder = await Process.run('python3', [
     '-c',
-    'import json,sys,wave; '
-        'w=wave.open(sys.argv[1],"rb"); '
-        'print(json.dumps(dict(frames=w.getnframes(),rate=w.getframerate(),'
-        'channels=w.getnchannels(),width=w.getsampwidth())))',
+    _decoderScript,
     file.path,
   ]);
   expect(decoder.exitCode, 0);
@@ -145,9 +147,10 @@ Future<void> _measureRecording() async {
     'width': 2,
   });
   await service.deleteAttachment(file.path);
-  final leftovers = await temporary.list(recursive: true).where(
-    (entry) => entry is File,
-  ).length;
+  final leftovers = await temporary
+      .list(recursive: true)
+      .where((entry) => entry is File)
+      .length;
   expect(leftovers, 0);
   final result = <String, Object?>{
     'schema': 1,
@@ -176,25 +179,26 @@ Future<void> _measureRecording() async {
     'cleanup_files_remaining': leftovers,
     'source': 'synthetic PCM through unmodified macOS IO service',
   };
-  await File('$output.result.json').writeAsString(jsonEncode(result));
+  final _ = await File('$output.result.json').writeAsString(jsonEncode(result));
 }
 
-class _MemoryMeter(this.vm, this.isolateId, this.output) {
-  final VmService vm;
-  final String isolateId;
-  final RandomAccessFile output;
+class _MemoryMeter(
+  final VmService vm,
+  final String isolateId,
+  final RandomAccessFile output,
+) {
   final Stopwatch clock = Stopwatch()..start();
   final Map<String, Object?> phases = {};
-  Timer? _timer;
-  Future<void>? _pending;
   int peakRss = 0;
   int peakHeap = 0;
   int peakExternal = 0;
   int peakManaged = 0;
   int vmSamples = 0;
-  bool _finalizing = false;
   int finalizationPeakRss = 0;
   int finalizationPeakManaged = 0;
+  Timer? _timer;
+  Future<void>? _pending;
+  bool _finalizing = false;
 
   void beginFinalization() {
     _finalizing = true;
@@ -202,7 +206,7 @@ class _MemoryMeter(this.vm, this.isolateId, this.output) {
   }
 
   void start() {
-    _timer = Timer.periodic(const Duration(milliseconds: 10), (_) {
+    _timer = .periodic(const .new(milliseconds: 10), (_) {
       final rss = ProcessInfo.currentRss;
       peakRss = math.max(peakRss, rss);
       if (_finalizing) {
@@ -254,13 +258,16 @@ class _MemoryMeter(this.vm, this.isolateId, this.output) {
 }
 
 class _MemoryRecordPlatform extends RecordPlatform {
-  StreamController<Uint8List>? _controller;
   RecordConfig? config;
   int packets = 0;
+  void Function(RecordConfig config)? configChanged;
+  StreamController<Uint8List>? _controller;
   bool _active = false;
 
   Future<void> feed(int bytes, {required bool irregular}) async {
     const sizes = [257, 1801, 4096, 913];
+    final controller = _controller;
+    if (controller == null) throw StateError('No active recording stream');
     final clock = Stopwatch()..start();
     var emitted = 0;
     packets = 0;
@@ -273,19 +280,26 @@ class _MemoryRecordPlatform extends RecordPlatform {
       for (var index = 0; index < size; index++) {
         packet[index] = (emitted + index) & 255;
       }
-      _controller!.add(packet);
+      controller.add(packet);
       emitted += size;
       packets++;
       final due = emitted * Duration.microsecondsPerSecond ~/ _bytesPerSecond;
       final remaining = due - clock.elapsedMicroseconds;
       if (remaining > 0) {
-        await Future<void>.delayed(Duration(microseconds: remaining));
+        await Future<void>.delayed(.new(microseconds: remaining));
       }
     }
   }
 
   @override
-  Future<void> create(String recorderId) async {}
+  Future<void> create(String recorderId) => .value();
+
+  @override
+  Future<void> start(
+    String recorderId,
+    RecordConfig config, {
+    required String path,
+  }) => throw UnsupportedError('The probe measures streaming capture only.');
 
   @override
   Future<Stream<Uint8List>> startStream(
@@ -294,16 +308,41 @@ class _MemoryRecordPlatform extends RecordPlatform {
   ) async {
     this.config = config;
     _active = true;
-    _controller = StreamController<Uint8List>();
-    return _controller!.stream;
+    final controller = StreamController<Uint8List>();
+    _controller = controller;
+
+    return controller.stream;
   }
 
   @override
   Future<String?> stop(String recorderId) async {
-    await _controller?.close();
+    final _ = await _controller?.close();
     _active = false;
+
     return null;
   }
+
+  @override
+  Future<void> pause(String recorderId) => .value();
+
+  @override
+  Future<void> resume(String recorderId) => .value();
+
+  @override
+  Future<void> cancel(String recorderId) => .value();
+
+  @override
+  Future<bool> isPaused(String recorderId) async => false;
+
+  @override
+  Future<Amplitude> getAmplitude(String recorderId) async =>
+      .new(current: 0, max: 0);
+
+  @override
+  Future<bool> isEncoderSupported(
+    String recorderId,
+    AudioEncoder encoder,
+  ) async => true;
 
   @override
   Future<bool> isRecording(String recorderId) async => _active;
@@ -314,7 +353,7 @@ class _MemoryRecordPlatform extends RecordPlatform {
 
   @override
   Future<List<InputDevice>> listInputDevices(String recorderId) async => const [
-    InputDevice(id: 'fixture', label: 'Fixture', type: InputDeviceType.builtIn),
+    InputDevice(id: 'fixture', label: 'Fixture', type: .builtIn),
   ];
 
   @override
@@ -324,8 +363,10 @@ class _MemoryRecordPlatform extends RecordPlatform {
   void setOnConfigChanged(
     String recorderId,
     void Function(RecordConfig config)? handler,
-  ) {}
+  ) {
+    configChanged = handler;
+  }
 
   @override
-  Future<void> dispose(String recorderId) async {}
+  Future<void> dispose(String recorderId) => .value();
 }
