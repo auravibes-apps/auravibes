@@ -198,6 +198,22 @@ void main() {
     expect(permissionSelector.selectedValue, ToolPermissionMode.alwaysAsk);
   });
 
+  testWidgets('ignores MCP metadata fields on non-MCP tools', (tester) async {
+    final tool = _tool(
+      title: 'Untrusted server title',
+      annotationsJson: '{"destructiveHint":true}',
+    );
+
+    await pumpSubject(
+      tester,
+      ToolItemRow(tool: tool, workspaceId: _workspaceId),
+    );
+
+    expect(find.text('custom_tool'), findsOneWidget);
+    expect(find.text('Untrusted server title'), findsNothing);
+    expect(find.textContaining('Service hint:'), findsNothing);
+  });
+
   testWidgets('disabled tool expands without permission selector', (
     tester,
   ) async {

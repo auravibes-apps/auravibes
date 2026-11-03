@@ -316,7 +316,9 @@ class const _ToolItemDescription({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final metadata = McpToolDisplayMetadata.fromWorkspaceTool(tool);
+    final metadata = isMcp
+        ? McpToolDisplayMetadata.fromWorkspaceTool(tool)
+        : const McpToolDisplayMetadata();
     return AuraColumn(
       children: [
         AuraText(
