@@ -44,10 +44,10 @@ void main() {
           '(id, workspace_id, name, normalized_name) '
           'VALUES (?, ?, ?, ?)',
           [
-            const Variable<String>('capture-label-review'),
-            Variable<String>(fixture.workspaceId),
-            const Variable<String>('Review'),
-            const Variable<String>('review'),
+            'capture-label-review',
+            fixture.workspaceId,
+            'Review',
+            'review',
           ],
         );
         await fixture.database.customStatement(
@@ -55,10 +55,10 @@ void main() {
           '(id, workspace_id, name, normalized_name) '
           'VALUES (?, ?, ?, ?)',
           [
-            const Variable<String>('capture-label-follow-up'),
-            Variable<String>(fixture.workspaceId),
-            const Variable<String>('Follow up'),
-            const Variable<String>('follow up'),
+            'capture-label-follow-up',
+            fixture.workspaceId,
+            'Follow up',
+            'follow up',
           ],
         );
         await fixture.database.customStatement(
@@ -66,10 +66,10 @@ void main() {
           '(id, workspace_id, conversation_id, label_id) '
           'VALUES (?, ?, ?, ?)',
           [
-            const Variable<String>('capture-assignment-review'),
-            Variable<String>(fixture.workspaceId),
-            Variable<String>(fixture.chatId),
-            const Variable<String>('capture-label-review'),
+            'capture-assignment-review',
+            fixture.workspaceId,
+            fixture.chatId,
+            'capture-label-review',
           ],
         );
         await fixture.database.customStatement(
@@ -77,10 +77,10 @@ void main() {
           '(id, workspace_id, conversation_id, label_id) '
           'VALUES (?, ?, ?, ?)',
           [
-            const Variable<String>('capture-assignment-follow-up'),
-            Variable<String>(fixture.workspaceId),
-            Variable<String>(fixture.chatId),
-            const Variable<String>('capture-label-follow-up'),
+            'capture-assignment-follow-up',
+            fixture.workspaceId,
+            fixture.chatId,
+            'capture-label-follow-up',
           ],
         );
       }
