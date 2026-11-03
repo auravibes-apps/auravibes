@@ -402,9 +402,9 @@ class const _VerificationForm({
             ],
           ),
           if (state._notice != null)
-            const Semantics(
+            Semantics(
               liveRegion: true,
-              child: TextLocale(LocaleKeys.verification_saved),
+              child: const TextLocale(LocaleKeys.verification_saved),
             ),
         ],
       ),
