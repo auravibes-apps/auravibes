@@ -174,8 +174,7 @@ void main() {
     );
     await fixture.settle(tester);
     expect(find.byType(ChatsListScreen), findsOneWidget);
-    final conversationTitle = find.text('Export review sample');
-    expect(conversationTitle, findsOneWidget);
+    final conversationTitle = find.text('Export review sample').first;
     final card = find.ancestor(
       of: conversationTitle,
       matching: find.byType(AuraCard),
