@@ -22,6 +22,7 @@ import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/services/log_redaction.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_app_tool_metadata.dart';
 import 'package:auravibes_app/services/mcp_service/mcp_manager_client.dart';
+import 'package:auravibes_app/services/mcp_service/mcp_verification_session.dart';
 import 'package:auravibes_app/services/mcp_service/oauth_authentication_canceled_exception.dart';
 import 'package:auravibes_app/services/oauth_credential_service.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
@@ -516,8 +517,7 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
     );
   }
 
-  Future<({String modelText, Map<String, Object?> appData})>
-  callToolWithAppData({
+  Future<McpToolOutput> callToolWithAppData({
     required String mcpServerId,
     required String toolIdentifier,
     required Map<String, dynamic> arguments,
@@ -527,6 +527,18 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
     toolIdentifier: toolIdentifier,
     arguments: arguments,
     onElicitation: onElicitation,
+  ));
+
+  Future<McpVerificationSession> openVerificationSession({
+    required String mcpServerId,
+    required String toolIdentifier,
+    required DateTime deadline,
+    required AgentCancellationScope cancellation,
+  }) => _openMcpVerificationSession(this, (
+    mcpServerId: mcpServerId,
+    toolIdentifier: toolIdentifier,
+    deadline: deadline,
+    cancellation: cancellation,
   ));
 
   /// Read a UI resource declared by [toolIdentifier].
@@ -588,7 +600,107 @@ extension McpConnectionNotifierOperations on McpConnectionNotifier {
   }
 }
 
-Future<({String modelText, Map<String, Object?> appData})> _callToolWithAppData(
+typedef _McpVerificationSessionRequest = ({
+  String mcpServerId,
+  String toolIdentifier,
+  DateTime deadline,
+  AgentCancellationScope cancellation,
+});
+
+Future<McpVerificationSession> _openMcpVerificationSession(
+  McpConnectionNotifier notifier,
+  _McpVerificationSessionRequest request,
+) async {
+  final connection = _connectedVerificationServer(notifier, request);
+  final authentication = await _verificationAuthentication(
+    notifier,
+    connection,
+  );
+  _requireActiveVerificationConnection(notifier, connection, request);
+  final session = await _connectVerificationSession(
+    notifier,
+    request,
+    connection,
+    authentication,
+  );
+
+  return _retainActiveVerificationSession(
+    notifier,
+    connection,
+    request,
+    session,
+  );
+}
+
+McpConnectionState _connectedVerificationServer(
+  McpConnectionNotifier notifier,
+  _McpVerificationSessionRequest request,
+) {
+  _requireLocalMcp(notifier);
+  final connection = notifier._requiredConnection(request.mcpServerId);
+  final _ = notifier._requiredToolClient(
+    request.mcpServerId,
+    request.toolIdentifier,
+  );
+
+  return connection;
+}
+
+Future<McpAuthenticationType> _verificationAuthentication(
+  McpConnectionNotifier notifier,
+  McpConnectionState connection,
+) => notifier._notifierRef
+    .read(oauthCredentialServiceProvider)
+    .resolveMcpAuthentication(connection.server.serviceConnectionId);
+
+Future<McpVerificationSession> _connectVerificationSession(
+  McpConnectionNotifier notifier,
+  _McpVerificationSessionRequest request,
+  McpConnectionState connection,
+  McpAuthenticationType authentication,
+) => notifier._requiredMcpManager.openVerificationSession((
+  server: connection.server.copyWith(authenticationType: authentication),
+  serverId: request.mcpServerId,
+  toolIdentifier: request.toolIdentifier,
+  deadline: request.deadline,
+  cancellation: request.cancellation,
+));
+
+McpVerificationSession _retainActiveVerificationSession(
+  McpConnectionNotifier notifier,
+  McpConnectionState connection,
+  _McpVerificationSessionRequest request,
+  McpVerificationSession session,
+) {
+  if (_isActiveVerificationConnection(notifier, connection, request)) {
+    return session;
+  }
+  session.close();
+  throw StateError('Verification connection changed.');
+}
+
+void _requireActiveVerificationConnection(
+  McpConnectionNotifier notifier,
+  McpConnectionState connection,
+  _McpVerificationSessionRequest request,
+) {
+  if (!_isActiveVerificationConnection(notifier, connection, request)) {
+    throw StateError('Verification connection cancelled.');
+  }
+}
+
+bool _isActiveVerificationConnection(
+  McpConnectionNotifier notifier,
+  McpConnectionState connection,
+  _McpVerificationSessionRequest request,
+) =>
+    !request.cancellation.isCancellationRequested &&
+    request.deadline.isAfter(DateTime.now().toUtc()) &&
+    !notifier._isDisposed &&
+    !notifier._isCloud &&
+    notifier.getConnection(request.mcpServerId)?.server == connection.server;
+
+Future<McpToolOutput> _callToolWithAppData(
   McpConnectionNotifier notifier,
   _McpToolCallRequest request,
 ) => notifier._requiredMcpManager.callToolOutput(

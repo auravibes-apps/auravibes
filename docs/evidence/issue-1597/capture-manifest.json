@@ -1,0 +1,118 @@
+{
+  "baselineSha": "6137bbf607ca3839a7722295d7fcc6a90a2e210e",
+  "featureSha": "797a3ca27ab9cfd9c2f58dabce1b291755a497d8",
+  "host": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.43",
+  "imageOS": "ubuntu26",
+  "imageVersion": "20261026.180.1",
+  "prepareOutcome": "success",
+  "needsGeneratedPatch": "false",
+  "generatedPatchSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "captures": [
+    {
+      "phase": "before",
+      "sourceSha": "6137bbf607ca3839a7722295d7fcc6a90a2e210e",
+      "png": "before/001-WorkspaceSettingsRoute-900.0-en-1.0.png",
+      "pngSha256": "ad871483434e15fd315d2441f9c72bca25a3af868e1ddf1d647c462db24243cd",
+      "sidecar": "before/001-WorkspaceSettingsRoute-900.0-en-1.0.json",
+      "sidecarSha256": "cb7cbef3f67552dda4061d45fc7cc514cfcf0b3fb132996ec5c2e9811a3312fb",
+      "render": {
+        "name": "WorkspaceSettingsRoute-900.0-en-1.0",
+        "route": "/workspaces/01a19ed0-4dc3-7d08-a924-eb6bf221be76/workspace-settings",
+        "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+        "sourceFingerprint": "6137bbf607ca3839a7722295d7fcc6a90a2e210e",
+        "renderer": "Flutter widget-test Skia, linux",
+        "viewport": [
+          900.0,
+          1200.0
+        ],
+        "locale": "en",
+        "textScale": 1.0,
+        "theme": "light",
+        "accentHue": 186.0,
+        "flavor": "prod view under controlled widget fixture",
+        "disableAnimations": true,
+        "fonts": [
+          {
+            "family": "Inter",
+            "source": "assets/fonts/Inter.ttf",
+            "sha256": "29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031"
+          },
+          {
+            "family": "JetBrains Mono",
+            "source": "packages/gpt_markdown/lib/fonts/JetBrainsMono-Regular.ttf",
+            "sha256": "a0bf60ef0f83c5ed4d7a75d45838548b1f6873372dfac88f71804491898d138f"
+          },
+          {
+            "family": "packages/gpt_markdown/JetBrainsMono",
+            "source": "packages/gpt_markdown/lib/fonts/JetBrainsMono-Regular.ttf",
+            "sha256": "a0bf60ef0f83c5ed4d7a75d45838548b1f6873372dfac88f71804491898d138f"
+          },
+          {
+            "family": "MaterialIcons",
+            "source": "fonts/MaterialIcons-Regular.otf",
+            "sha256": "d9865b671a09d683d13a863089d8825e0f61a37696ce5d7d448bc8023aa62453"
+          },
+          {
+            "family": "Roboto",
+            "source": "Flutter SDK artifacts/material_fonts/Roboto-Regular.ttf",
+            "sha256": "79e851404657dac2106b3d22ad256d47824a9a5765458edb72c9102a45816d95"
+          }
+        ],
+        "fontLimitations": "Flutter widget-test text only; native system typography and assistive technology are not represented."
+      }
+    },
+    {
+      "phase": "after",
+      "sourceSha": "797a3ca27ab9cfd9c2f58dabce1b291755a497d8",
+      "png": "after/001-WorkspaceSettingsRoute-900.0-en-1.0.png",
+      "pngSha256": "a8bd0c422cb184e03393dbd06a58e605a2ccfc2909b1cede240ce3d77fdba2ce",
+      "sidecar": "after/001-WorkspaceSettingsRoute-900.0-en-1.0.json",
+      "sidecarSha256": "69819ed9cb2c55656e402b87cacda581bf00927963dd4105eb2a5d773d11d5a4",
+      "render": {
+        "name": "WorkspaceSettingsRoute-900.0-en-1.0",
+        "route": "/workspaces/01a19ed3-19dd-7e55-8166-7c0fe444fff4/workspace-settings",
+        "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
+        "sourceFingerprint": "797a3ca27ab9cfd9c2f58dabce1b291755a497d8",
+        "renderer": "Flutter widget-test Skia, linux",
+        "viewport": [
+          900.0,
+          1200.0
+        ],
+        "locale": "en",
+        "textScale": 1.0,
+        "theme": "light",
+        "accentHue": 186.0,
+        "flavor": "prod view under controlled widget fixture",
+        "disableAnimations": true,
+        "fonts": [
+          {
+            "family": "Inter",
+            "source": "assets/fonts/Inter.ttf",
+            "sha256": "29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031"
+          },
+          {
+            "family": "JetBrains Mono",
+            "source": "packages/gpt_markdown/lib/fonts/JetBrainsMono-Regular.ttf",
+            "sha256": "a0bf60ef0f83c5ed4d7a75d45838548b1f6873372dfac88f71804491898d138f"
+          },
+          {
+            "family": "packages/gpt_markdown/JetBrainsMono",
+            "source": "packages/gpt_markdown/lib/fonts/JetBrainsMono-Regular.ttf",
+            "sha256": "a0bf60ef0f83c5ed4d7a75d45838548b1f6873372dfac88f71804491898d138f"
+          },
+          {
+            "family": "MaterialIcons",
+            "source": "fonts/MaterialIcons-Regular.otf",
+            "sha256": "d9865b671a09d683d13a863089d8825e0f61a37696ce5d7d448bc8023aa62453"
+          },
+          {
+            "family": "Roboto",
+            "source": "Flutter SDK artifacts/material_fonts/Roboto-Regular.ttf",
+            "sha256": "79e851404657dac2106b3d22ad256d47824a9a5765458edb72c9102a45816d95"
+          }
+        ],
+        "fontLimitations": "Flutter widget-test text only; native system typography and assistive technology are not represented."
+      }
+    }
+  ]
+}

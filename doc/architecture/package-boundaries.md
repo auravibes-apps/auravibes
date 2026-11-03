@@ -80,6 +80,15 @@ Does not belong here:
 
 Refactor signal: if app `services/agent_harness/*` logic is pure Dart and duplicates engine concepts, move it into this package or delete the duplicate. Keep app persistence, permissions, credentials, and Riverpod runtime adapters in app.
 
+Scoped verification follows this split. The engine owns immutable check policy,
+strict edit reports, path selection, bounded outcomes, and the cancellable runner
+lifecycle. The app owns workspace settings, durable reservations and repair
+accounting, permission fences, and a fresh MCP connection per invocation. The
+external owner-configured runner owns its checkout, canonical path containment,
+command sandbox, and process cleanup. AuraVibes workspaces do not supply a host
+filesystem root or a shell fallback. See the
+[runner integration contract](../../docs/development/scoped-agent-verification.md).
+
 ## `auravibes_ui`
 
 Owns reusable UI components.

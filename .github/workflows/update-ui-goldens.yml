@@ -13,13 +13,23 @@ on:
         type: boolean
         required: false
         default: false
+      scoped_verification_evidence:
+        description: Capture scoped verification baseline/evidence and prepare generated artifacts
+        type: boolean
+        required: false
+        default: false
+      scoped_verification_lint_fix:
+        description: Prepare reviewable lint fixes in the scoped verification evidence artifact
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
 
 jobs:
   update-goldens:
-    if: ${{ inputs.capture_first_chat_evidence != true && inputs.update_intro_goldens != true }}
+    if: ${{ inputs.capture_first_chat_evidence != true && inputs.update_intro_goldens != true && inputs.scoped_verification_evidence != true }}
     name: update UI goldens (Linux x64)
     runs-on: ubuntu-26.04
     timeout-minutes: 30
@@ -50,7 +60,7 @@ jobs:
           retention-days: 7
 
   update-intro-goldens:
-    if: ${{ inputs.capture_first_chat_evidence != true && inputs.update_intro_goldens == true }}
+    if: ${{ inputs.capture_first_chat_evidence != true && inputs.update_intro_goldens == true && inputs.scoped_verification_evidence != true }}
     name: update intro goldens (Linux x64)
     runs-on: ubuntu-26.04
     timeout-minutes: 15
@@ -78,7 +88,7 @@ jobs:
           retention-days: 7
 
   capture-first-chat-evidence:
-    if: ${{ inputs.capture_first_chat_evidence == true }}
+    if: ${{ inputs.capture_first_chat_evidence == true && inputs.scoped_verification_evidence != true }}
     name: Capture first-chat UI evidence (Linux x64)
     runs-on: ubuntu-26.04
     timeout-minutes: 30
@@ -260,5 +270,171 @@ jobs:
             ${{ runner.temp }}/issue-1527-ui-evidence/*.png
             ${{ runner.temp }}/issue-1527-ui-evidence/*.json
             ${{ runner.temp }}/issue-1527-ui-evidence/*.txt
+          if-no-files-found: error
+          retention-days: 7
+
+  scoped-verification-evidence:
+    if: ${{ inputs.scoped_verification_evidence == true }}
+    name: Scoped verification evidence (Linux x64)
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    env:
+      VERIFICATION_BASELINE_SHA: 6137bbf607ca3839a7722295d7fcc6a90a2e210e
+      VERIFICATION_FEATURE_SHA: ${{ github.sha }}
+      VERIFICATION_LINT_FIX: ${{ inputs.scoped_verification_lint_fix }}
+    steps:
+      - name: Checkout exact feature revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Record renderer and source provenance
+        run: |
+          mkdir -p "$RUNNER_TEMP/scoped-verification-evidence"
+          flutter --version --machine > "$RUNNER_TEMP/scoped-verification-evidence/flutter-version.json"
+          uname -srm > "$RUNNER_TEMP/scoped-verification-evidence/host.txt"
+          test "$(git rev-parse HEAD)" = "$VERIFICATION_FEATURE_SHA"
+
+      - name: Prepare clean separate baseline checkout
+        run: |
+          git clone --no-hardlinks --no-checkout "$GITHUB_WORKSPACE" "$RUNNER_TEMP/scoped-verification-baseline"
+          git -C "$RUNNER_TEMP/scoped-verification-baseline" checkout --detach "$VERIFICATION_BASELINE_SHA"
+          mkdir -p "$RUNNER_TEMP/scoped-verification-baseline/.fvm"
+          ln -s "$FLUTTER_ROOT" "$RUNNER_TEMP/scoped-verification-baseline/.fvm/flutter_sdk"
+          cmp .fvmrc "$RUNNER_TEMP/scoped-verification-baseline/.fvmrc"
+          cd "$RUNNER_TEMP/scoped-verification-baseline"
+          # Use the already activated CLI, as setup-workspace does. `dart run`
+          # resolves the unbootstrapped clone before Melos can prepare it.
+          melos bootstrap
+          git diff --exit-code
+
+      - name: Capture real main workspace settings baseline
+        run: |
+          cd "$RUNNER_TEMP/scoped-verification-baseline/apps/auravibes_app"
+          flutter test test/widgets/ux_validation_layout_test.dart --no-pub \
+            --plain-name='reflow WorkspaceSettingsRoute 900.0 en 1.0' \
+            --dart-define="UX_CAPTURE_DIR=$RUNNER_TEMP/scoped-verification-evidence/before" \
+            --dart-define="UX_SOURCE_FINGERPRINT=$VERIFICATION_BASELINE_SHA"
+          git diff --exit-code
+          sha256sum test/widgets/ux_validation_layout_test.dart test/helpers/ux_validation_fixture.dart \
+            > "$RUNNER_TEMP/scoped-verification-evidence/before-fixtures.sha256"
+
+      - name: Generate and format feature artifacts
+        id: prepare
+        run: |
+          dart run melos run generate --no-select
+          dart run melos run generate:localization --no-select
+          if test "$VERIFICATION_LINT_FIX" = true; then
+            mapfile -d '' verification_lint_targets < <(git diff --name-only --diff-filter=ACMRT -z "$VERIFICATION_BASELINE_SHA" HEAD -- '*.dart' ':!**/*.g.dart' ':!**/*.freezed.dart' ':!**/locale_keys.dart')
+            git diff --name-only -z > "$RUNNER_TEMP/scoped-verification-generated-paths"
+            dart fix --apply apps/auravibes_app
+            dart fix --apply packages/auravibes_engine
+            dart run dart_code_linter:metrics fix "${verification_lint_targets[@]}" --no-congratulate
+            # A package-wide Dart fix may discover baseline issues. Never export
+            # unrelated source repairs as part of this feature's fix artifact.
+            python3 - <<'PY'
+          import os, subprocess
+          from pathlib import Path
+          baseline = os.environ['VERIFICATION_BASELINE_SHA']
+          git_paths = lambda *args: set(filter(None, subprocess.check_output(['git', 'diff', '--name-only', '-z', *args]).decode().split('\0')))
+          allowed = git_paths(baseline, 'HEAD')
+          allowed.update(filter(None, (Path(os.environ['RUNNER_TEMP']) / 'scoped-verification-generated-paths').read_text().split('\0')))
+          unexpected = git_paths() - allowed
+          if unexpected:
+              raise SystemExit('Lint fix touched unrelated paths: ' + ', '.join(sorted(unexpected)))
+          PY
+          fi
+          git diff --name-only --diff-filter=ACMRT -z "$VERIFICATION_BASELINE_SHA" HEAD -- '*.dart' | xargs -0 -r dart format
+          git add -N .
+          git diff --check
+          git diff --binary > "$RUNNER_TEMP/scoped-verification-evidence/generated-and-format.patch"
+          if test -s "$RUNNER_TEMP/scoped-verification-evidence/generated-and-format.patch"; then
+            echo 'needs_patch=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'needs_patch=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Record remaining scoped analyzer findings for repair review
+        if: ${{ steps.prepare.outcome == 'success' && inputs.scoped_verification_lint_fix == true }}
+        run: |
+          mapfile -d '' verification_lint_targets < <(git diff --name-only --diff-filter=ACMRT -z "$VERIFICATION_BASELINE_SHA" HEAD -- '*.dart' ':!**/*.g.dart' ':!**/*.freezed.dart' ':!**/locale_keys.dart')
+          set +e
+          dart analyze --fatal-infos --fatal-warnings --format=machine "${verification_lint_targets[@]}" > "$RUNNER_TEMP/scoped-verification-evidence/remaining-analysis.machine" 2>&1
+          verification_analysis_status=$?
+          set -e
+          printf '%s\n' "$verification_analysis_status" > "$RUNNER_TEMP/scoped-verification-evidence/remaining-analysis-exit-code.txt"
+          cat "$RUNNER_TEMP/scoped-verification-evidence/remaining-analysis.machine"
+
+      - name: Focused engine verification tests
+        if: ${{ steps.prepare.outcome == 'success' }}
+        working-directory: packages/auravibes_engine
+        run: dart test test/scoped_verification_test.dart test/scoped_verification_paths_test.dart test/scoped_verification_service_test.dart
+
+      - name: Focused app verification and transport tests
+        if: ${{ steps.prepare.outcome == 'success' }}
+        working-directory: apps/auravibes_app
+        run: |
+          flutter test --no-pub \
+            test/data/repositories/workspace_verification_repository_test.dart \
+            test/data/database/drift/app_database_test.dart \
+            test/features/chats/usecases/verify_reported_edits_usecase_test.dart \
+            test/features/chats/agent_adapters/scoped_verification_cancellation_test.dart \
+            test/features/chats/agent_adapters/scoped_verification_identity_test.dart \
+            test/features/chats/agent_adapters/mcp_scoped_verification_runner_test.dart \
+            test/services/mcp_service/mcp_verification_session_test.dart \
+            test/services/mcp_service/mcp_manager_client_auto_transport_test.dart \
+            test/notifiers/mcp_connection_notifier_test.dart \
+            test/features/chats/agent_adapters/resolved_tool_service_test.dart
+
+      - name: Capture matched feature settings at a clean exact revision
+        if: ${{ steps.prepare.outcome == 'success' && steps.prepare.outputs.needs_patch == 'false' }}
+        working-directory: apps/auravibes_app
+        run: |
+          test "$(git rev-parse HEAD)" = "$VERIFICATION_FEATURE_SHA"
+          git diff --exit-code
+          flutter test test/widgets/ux_validation_layout_test.dart --no-pub \
+            --plain-name='reflow WorkspaceSettingsRoute 900.0 en 1.0' \
+            --dart-define="UX_CAPTURE_DIR=$RUNNER_TEMP/scoped-verification-evidence/after" \
+            --dart-define="UX_SOURCE_FINGERPRINT=$VERIFICATION_FEATURE_SHA"
+          git diff --exit-code
+          sha256sum test/widgets/ux_validation_layout_test.dart test/helpers/ux_validation_fixture.dart \
+            > "$RUNNER_TEMP/scoped-verification-evidence/after-fixtures.sha256"
+
+      - name: Write image evidence manifest
+        if: ${{ always() }}
+        env:
+          PREPARE_OUTCOME: ${{ steps.prepare.outcome }}
+          NEEDS_PATCH: ${{ steps.prepare.outputs.needs_patch }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, json, os, platform
+          root = Path(os.environ['RUNNER_TEMP']) / 'scoped-verification-evidence'
+          root.mkdir(parents=True, exist_ok=True)
+          sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+          captures = []
+          for phase, revision in [('before', os.environ['VERIFICATION_BASELINE_SHA']), ('after', os.environ['VERIFICATION_FEATURE_SHA'])]:
+              for png in sorted((root / phase).glob('*.png')):
+                  sidecar = png.with_suffix('.json')
+                  if not sidecar.is_file():
+                      raise SystemExit('Capture has no JSON provenance: ' + png.name)
+                  metadata = json.loads(sidecar.read_text())
+                  if metadata['sourceFingerprint'] != revision:
+                      raise SystemExit('Capture source fingerprint mismatch')
+                  captures.append({'phase': phase, 'sourceSha': revision, 'png': str(png.relative_to(root)), 'pngSha256': sha(png), 'sidecar': str(sidecar.relative_to(root)), 'sidecarSha256': sha(sidecar), 'render': metadata})
+          patch = root / 'generated-and-format.patch'
+          manifest = {'baselineSha': os.environ['VERIFICATION_BASELINE_SHA'], 'featureSha': os.environ['VERIFICATION_FEATURE_SHA'], 'host': platform.platform(), 'imageOS': os.environ.get('ImageOS'), 'imageVersion': os.environ.get('ImageVersion'), 'prepareOutcome': os.environ['PREPARE_OUTCOME'], 'needsGeneratedPatch': os.environ['NEEDS_PATCH'], 'generatedPatchSha256': sha(patch) if patch.is_file() else None, 'captures': captures}
+          (root / 'capture-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+          PY
+
+      - name: Upload real captures and successful generation patch
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: scoped-verification-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/scoped-verification-evidence/
           if-no-files-found: error
           retention-days: 7

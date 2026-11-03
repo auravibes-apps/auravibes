@@ -29,6 +29,8 @@ final mcpToolCallerProvider = Provider<McpToolCaller>((ref) {
     return McpToolCallerResult(
       modelText: result.modelText,
       appData: result.appData,
+      structuredContent: result.structuredContent,
+      isError: result.isError,
     );
   };
 });

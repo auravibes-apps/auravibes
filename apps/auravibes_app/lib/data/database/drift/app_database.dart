@@ -58,6 +58,8 @@ import 'package:auravibes_app/data/database/drift/tables/workspace_record_batch_
 import 'package:auravibes_app/data/database/drift/tables/workspace_revisions.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_tables.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_trash_batches.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_verification_runs.dart';
+import 'package:auravibes_app/data/database/drift/tables/workspace_verification_settings.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspace_views.dart';
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
 import 'package:auravibes_app/data/database/drift/workspace_revision_capture.dart';
@@ -135,6 +137,8 @@ part 'app_database.g.dart';
     WorkspaceContextSelections,
     WorkspaceAgentHookSettings,
     WorkspaceContentReports,
+    WorkspaceVerificationSettings,
+    WorkspaceVerificationRuns,
   ],
   daos: [
     WorkspaceDao,
@@ -244,8 +248,9 @@ class AppDatabase extends _$AppDatabase {
       _workspaceAssetDeletionOwnerSchemaVersion + 1;
   static const int _workspaceAgentHookSettingsSchemaVersion =
       _conversationTaskBriefSchemaVersion + 1;
-  static const int _currentSchemaVersion =
-      _workspaceAgentHookSettingsSchemaVersion;
+  static const int _workspaceVerificationSchemaVersion =
+      _workspaceAgentHookSettingsSchemaVersion + 1;
+  static const int _currentSchemaVersion = _workspaceVerificationSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -303,6 +308,7 @@ extension on AppDatabase {
     await _upgradeWorkspaceAttachmentDeletionsSchema(m, from);
     await _upgradeWorkspaceAssetDeletionOwnerSchema(m, from);
     await _upgradeWorkspaceAgentHookSettingsSchema(m, from);
+    await _upgradeWorkspaceVerificationSchema(m, from);
   }
 
   Future<void> _upgradeWorkspaceAgentHookSettingsSchema(
@@ -311,6 +317,12 @@ extension on AppDatabase {
   ) async {
     if (from >= AppDatabase._workspaceAgentHookSettingsSchemaVersion) return;
     await m.createTable(workspaceAgentHookSettings);
+  }
+
+  Future<void> _upgradeWorkspaceVerificationSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._workspaceVerificationSchemaVersion) return;
+    await m.createTable(workspaceVerificationSettings);
+    await m.createTable(workspaceVerificationRuns);
   }
 
   Future<void> _upgradeWorkspaceContentSchema(Migrator m, int from) async {

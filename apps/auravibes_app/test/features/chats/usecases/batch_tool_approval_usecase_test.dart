@@ -64,16 +64,7 @@ void main() {
     registerFallbackValue(<ToolCallApprovalBatchItem>[]);
     registerFallbackValue(<ToolCallExecutionBatchUpdate>[]);
     registerFallbackValue(<CloudToolDecisionItem>[]);
-    registerFallbackValue((
-      conversationId: '',
-      toolCallId: '',
-      tool: ResolvedTool.builtIn(
-        tableId: 'fallback',
-        toolIdentifier: 'calculator',
-        tooltype: .calculator,
-      ),
-      arguments: <String, dynamic>{},
-    ));
+    registerFallbackValue(<String, dynamic>{});
   });
 
   var messageRepository = MockMessageRepository();
@@ -302,9 +293,9 @@ void main() {
       when(
         () => resolvedToolService.call(
           conversationId: any(named: 'conversationId'),
+          toolCallId: any(named: 'toolCallId'),
           tool: any(named: 'tool'),
           arguments: any(named: 'arguments'),
-          toolCallId: any(named: 'toolCallId'),
         ),
       ).thenAnswer((_) async => 'done');
       when(
