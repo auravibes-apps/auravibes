@@ -203,9 +203,8 @@ void main() {
     expect(find.byType(ScopedVerificationSection), findsOneWidget);
     final field = find.byType(EditableText).first;
     await tester.enterText(field, '456');
-    await tester.ensureVisible(
-      find.byKey(const ValueKey<String>('settings_compaction_save')),
-    );
+    await tester.drag(find.byType(ListView).first, const Offset(0, -300));
+    final _ = await tester.pumpAndSettle();
     await tester.tap(
       find.byKey(const ValueKey<String>('settings_compaction_save')),
     );

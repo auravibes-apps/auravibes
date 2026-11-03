@@ -41,9 +41,8 @@ Future<WorkspaceSetupPreflight> workspaceSetupPreflight(
   String workspaceId,
 ) async {
   final scope = await _readWorkspaceScope(ref, workspaceId);
-  final preflight = await _buildPreflight(ref, workspaceId, scope);
 
-  return preflight;
+  return _buildPreflight(ref, workspaceId, scope);
 }
 
 Future<WorkspaceSetupPreflight> _buildPreflight(
@@ -202,7 +201,9 @@ Future<bool> _cloudWorkspaceConfiguration(
   Ref ref,
   WorkspaceSession session,
 ) async {
-  await ref.watch(cloudWorkspaceConfigurationProvider(session).future);
+  final _ = await ref.watch(
+    cloudWorkspaceConfigurationProvider(session).future,
+  );
 
   return true;
 }

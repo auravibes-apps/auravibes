@@ -171,7 +171,7 @@ final class WorkspaceSetupPreflightProvider
 }
 
 String _$workspaceSetupPreflightHash() =>
-    r'f8809937b59276f29908718161ca049a62f18241';
+    r'a53c5dd88cfc4b7d74344111fbd88f071674ed25';
 
 final class WorkspaceSetupPreflightFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<WorkspaceSetupPreflight>, String> {
