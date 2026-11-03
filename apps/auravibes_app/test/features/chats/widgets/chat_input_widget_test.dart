@@ -775,6 +775,7 @@ void main() {
     expect(find.byType(ChatInputWidget), findsOneWidget);
     expect(find.byType(DropTarget), findsOneWidget);
     expect(find.byType(AuraInput), findsOneWidget);
+    debugDefaultTargetPlatformOverride = null;
   });
 
   for (final platform in [
@@ -792,6 +793,7 @@ void main() {
       );
 
       expect(find.byType(DropTarget), findsNothing);
+      debugDefaultTargetPlatformOverride = null;
     });
   }
 
@@ -841,6 +843,7 @@ void main() {
 
     expect(find.byIcon(Icons.file_upload_outlined), findsNothing);
     expect(find.text('Drop files to attach'), findsNothing);
+    debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('adds dropped files to disabled new-chat draft', (tester) async {
@@ -885,6 +888,7 @@ void main() {
     expect(attachmentService.copiedBytes, bytes);
     expect(attachmentService.copiedFileName, 'report.pdf');
     expect(sentDrafts, isEmpty);
+    debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('rejects dropped files unsupported by the current model', (
@@ -933,6 +937,7 @@ void main() {
       'keep this draft',
     );
     expect(sentDrafts, isEmpty);
+    debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('preserves text when a dropped file read is cancelled', (
@@ -976,6 +981,7 @@ void main() {
       'keep this draft',
     );
     expect(sentDrafts, isEmpty);
+    debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('preserves text when storing a dropped file fails', (
@@ -990,9 +996,11 @@ void main() {
       modality: .file,
       sizeBytes: 8,
     );
+    final copyStarted = Completer<void>();
     final attachmentService = _FakeLocalChatAttachmentService(
       attachment,
       copyError: .new('simulated storage failure'),
+      bytesCopyStarted: copyStarted,
     );
     final sentDrafts = <ChatDraft>[];
     final dropChannel = await pumpAndInit(
@@ -1011,6 +1019,7 @@ void main() {
       mimeType: 'application/pdf',
       bytes: .fromList('report!!'.codeUnits),
     );
+    await tester.runAsync(() => copyStarted.future);
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('report.pdf'), findsNothing);
@@ -1021,6 +1030,7 @@ void main() {
       'keep this draft',
     );
     expect(sentDrafts, isEmpty);
+    debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('does not attach a completed drop to a different conversation', (
@@ -1076,6 +1086,7 @@ void main() {
     );
     expect(attachmentService.deletedPaths, [attachment.localPath]);
     expect(sentDrafts, isEmpty);
+    debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('does not attach a completed drop to a different workspace', (
@@ -1130,6 +1141,7 @@ void main() {
     );
     expect(attachmentService.deletedPaths, [attachment.localPath]);
     expect(sentDrafts, isEmpty);
+    debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('rejects a dropped file after the streamed byte limit', (
@@ -1173,6 +1185,7 @@ void main() {
       'keep this draft',
     );
     expect(sentDrafts, isEmpty);
+    debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('blocks send when draft attachment is unsupported', (
@@ -2793,11 +2806,11 @@ class _FakeLocalChatAttachmentService(
     required String fileName,
     required String displayName,
   }) async {
-    if (copyError case final error?) throw error;
     copiedBytes = .fromList(bytes);
     copiedFileName = fileName;
     final started = bytesCopyStarted;
     if (started != null && !started.isCompleted) started.complete();
+    if (copyError case final error?) throw error;
     if (bytesCopyCompleter case final completer?) {
       return await completer.future;
     }

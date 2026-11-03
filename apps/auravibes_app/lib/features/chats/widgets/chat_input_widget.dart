@@ -673,13 +673,22 @@ Future<void> _handleChatInputDrop(
   _ChatInputState state,
   DropResult result,
 ) async {
-  if (!state.capabilities.supportsDrop ||
-      (state.input.disabled && !state.input.acceptDroppedFilesWhenDisabled)) {
-    return;
-  }
-  final dropContext = state.actions.hooks.dropContext.value;
+  if (!_canAcceptChatInputDrop(state)) return;
 
-  for (final resultItem in result.items) {
+  final dropContext = state.actions.hooks.dropContext.value;
+  await _addAcceptedDroppedChatFiles(state, result.items, dropContext);
+}
+
+bool _canAcceptChatInputDrop(_ChatInputState state) =>
+    state.capabilities.supportsDrop &&
+    (!state.input.disabled || state.input.acceptDroppedFilesWhenDisabled);
+
+Future<void> _addAcceptedDroppedChatFiles(
+  _ChatInputState state,
+  List<DropResultItem> items,
+  _ChatInputContext dropContext,
+) async {
+  for (final resultItem in items) {
     final item = resultItem.item;
     if (!resultItem.accepted || item is! DropFile) continue;
 
@@ -1306,28 +1315,51 @@ extension _ChatInputAttachmentActions on _ChatInputActions {
   }) async {
     if (!_isCurrentDropContext(dropContext)) return;
 
+    final attachment = await _copyDroppedFile(
+      bytes,
+      fileName: fileName,
+      dropContext: dropContext,
+    );
+    if (attachment == null) return;
+
+    await _attachDroppedFile(attachment, dropContext);
+  }
+
+  Future<MessageAttachmentToCreate?> _copyDroppedFile(
+    Uint8List bytes, {
+    required String fileName,
+    required _ChatInputContext dropContext,
+  }) async {
     try {
       final displayName = AttachmentDisplayNames.unique(
         fileName,
         _draft.attachments.value.map((attachment) => attachment.displayName),
       );
-      final attachment = await _attachmentUsecase.copyBytesIntoAppStorage(
+      return await _attachmentUsecase.copyBytesIntoAppStorage(
         bytes,
         fileName: fileName,
         displayName: displayName,
       );
-      if (!_isCurrentDropContext(dropContext)) {
-        await _discardDetachedAttachment(attachment);
-
-        return;
-      }
-
-      await _addAttachment(attachment);
     } on ChatAttachmentTooLargeException catch (error) {
       if (_isCurrentDropContext(dropContext)) {
         _showAttachmentError(error.localizationKey);
       }
+
+      return null;
     }
+  }
+
+  Future<void> _attachDroppedFile(
+    MessageAttachmentToCreate attachment,
+    _ChatInputContext dropContext,
+  ) async {
+    if (_isCurrentDropContext(dropContext)) {
+      await _addAttachment(attachment);
+
+      return;
+    }
+
+    await _discardDetachedAttachment(attachment);
   }
 
   Future<void> _addAttachment(MessageAttachmentToCreate attachment) async {
