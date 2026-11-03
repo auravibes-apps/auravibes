@@ -73,6 +73,8 @@ class VoiceMemoryRunnerTest(unittest.TestCase):
             arguments = ["probe", "--baseline", str(root), "--candidate", str(root),
                          "--output", str(output)]
             with patch.object(probe.sys, "argv", arguments), \
+                    patch.object(probe.platform, "platform", return_value="fixture-os"), \
+                    patch.object(probe.platform, "machine", return_value="fixture-machine"), \
                     patch.object(probe.subprocess, "check_output", return_value="a" * 40), \
                     patch.object(probe, "run_case", return_value=case) as run:
                 code = probe.main()
