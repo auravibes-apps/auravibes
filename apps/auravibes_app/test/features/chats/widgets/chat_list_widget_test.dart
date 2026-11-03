@@ -162,7 +162,7 @@ void main() {
       );
       final semantics = tester.getSemantics(checkbox);
       expect(semantics.label, contains('Incluir archivos adjuntos'));
-      expect(semantics.flagsCollection.isChecked, true);
+      expect(tester.widget<CheckboxListTile>(checkbox).value, isTrue);
 
       await tester.tap(find.text('Continuar para guardar'));
       final _ = await tester.pumpAndSettle();
@@ -1238,8 +1238,15 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(find.text('Chat One'), findsOneWidget);
-      expect(find.text('Chat Two'), findsOneWidget);
+      final reviewDialog = find.byType(AlertDialog);
+      expect(
+        find.descendant(of: reviewDialog, matching: find.text('Chat One')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: reviewDialog, matching: find.text('Chat Two')),
+        findsOneWidget,
+      );
       expect(find.text('research-notes.txt'), findsOneWidget);
       expect(find.text('Type: text/plain'), findsOneWidget);
       expect(find.text('Size: 4 bytes'), findsOneWidget);

@@ -82,6 +82,7 @@ class const _ConversationArchiveExportReviewDialog({
 
     return StatefulBuilder(
       builder: (context, setState) => AlertDialog(
+        scrollable: true,
         title: const TextLocale(_reviewTitleKey),
         content: _ConversationArchiveExportReviewContent(
           fileName: fileName,
@@ -133,27 +134,24 @@ class const _ConversationArchiveExportReviewContent({
 
     return SizedBox(
       width: 480,
-      child: ConstrainedBox(
-        constraints: .new(maxHeight: MediaQuery.sizeOf(context).height * 0.7),
-        child: Column(
-          mainAxisSize: .min,
-          crossAxisAlignment: .start,
-          children: [
-            _ConversationArchiveExportReviewSummary(
-              preview: preview,
-              includeAttachments: includeAttachments,
-              onIncludeAttachmentsChanged: onIncludeAttachmentsChanged,
-            ),
-            SizedBox(height: theme.fromSpacing(.sm)),
-            _ArchiveExportConversationList(preview: preview),
-            SizedBox(height: theme.fromSpacing(.md)),
-            _ArchiveExportReviewDisclosure(
-              fileName: fileName,
-              preview: preview,
-              includeAttachments: includeAttachments,
-            ),
-          ],
-        ),
+      child: Column(
+        mainAxisSize: .min,
+        crossAxisAlignment: .start,
+        children: [
+          _ConversationArchiveExportReviewSummary(
+            preview: preview,
+            includeAttachments: includeAttachments,
+            onIncludeAttachmentsChanged: onIncludeAttachmentsChanged,
+          ),
+          SizedBox(height: theme.fromSpacing(.sm)),
+          _ArchiveExportConversationList(preview: preview),
+          SizedBox(height: theme.fromSpacing(.md)),
+          _ArchiveExportReviewDisclosure(
+            fileName: fileName,
+            preview: preview,
+            includeAttachments: includeAttachments,
+          ),
+        ],
       ),
     );
   }
@@ -181,16 +179,9 @@ class const _ConversationArchiveExportReviewSummary({
         }),
         if (preview.attachmentCount > 0) ...[
           SizedBox(height: theme.fromSpacing(.sm)),
-          CheckboxListTile(
-            key: const ValueKey('archive-export-include-attachments'),
-            value: includeAttachments,
-            onChanged: (value) {
-              if (value != null) onIncludeAttachmentsChanged(value);
-            },
-            title: const TextLocale(_reviewIncludeAttachmentsKey),
-            subtitle: const TextLocale(_reviewIncludeAttachmentsDescriptionKey),
-            controlAffinity: .leading,
-            contentPadding: EdgeInsets.zero,
+          _ArchiveExportAttachmentToggle(
+            includeAttachments: includeAttachments,
+            onChanged: onIncludeAttachmentsChanged,
           ),
           SizedBox(height: theme.fromSpacing(.sm)),
           TextLocale(
@@ -203,6 +194,24 @@ class const _ConversationArchiveExportReviewSummary({
   }
 }
 
+class const _ArchiveExportAttachmentToggle({
+  required final bool includeAttachments,
+  required final ValueChanged<bool> onChanged,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => CheckboxListTile(
+    key: const ValueKey('archive-export-include-attachments'),
+    value: includeAttachments,
+    onChanged: (value) {
+      if (value != null) onChanged(value);
+    },
+    title: const TextLocale(_reviewIncludeAttachmentsKey),
+    subtitle: const TextLocale(_reviewIncludeAttachmentsDescriptionKey),
+    controlAffinity: .leading,
+    contentPadding: EdgeInsets.zero,
+  );
+}
+
 class const _ArchiveExportConversationList({
   required final ConversationArchiveExportPreview preview,
 }) extends StatelessWidget {
@@ -210,24 +219,20 @@ class const _ArchiveExportConversationList({
   Widget build(BuildContext context) {
     final theme = context.auraTheme;
 
-    return Flexible(
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: .min,
-          crossAxisAlignment: .start,
-          children: [
-            SizedBox(height: theme.fromSpacing(.md)),
-            TextLocale(
-              _reviewConversationSectionKey,
-              args: [preview.conversations.length.toString()],
-            ),
-            for (final conversation in preview.conversations)
-              _ConversationArchiveExportConversationRow(
-                conversation: conversation,
-              ),
-          ],
+    return Column(
+      mainAxisSize: .min,
+      crossAxisAlignment: .start,
+      children: [
+        SizedBox(height: theme.fromSpacing(.md)),
+        TextLocale(
+          _reviewConversationSectionKey,
+          args: [preview.conversations.length.toString()],
         ),
-      ),
+        for (final conversation in preview.conversations)
+          _ConversationArchiveExportConversationRow(
+            conversation: conversation,
+          ),
+      ],
     );
   }
 }
