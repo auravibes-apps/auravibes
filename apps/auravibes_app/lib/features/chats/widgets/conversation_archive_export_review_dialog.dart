@@ -343,14 +343,13 @@ class const _ConversationArchiveExportAttachmentRow({
         vertical: context.auraTheme.fromSpacing(.xs),
       ),
       child: AuraRow(
-        crossAxisAlignment: .start,
-        spacing: .sm,
         children: [
           const _ArchiveExportAttachmentIcon(),
           Expanded(
             child: _ArchiveExportAttachmentDetails(attachment: attachment),
           ),
         ],
+        spacing: .sm,
         crossAxisAlignment: .start,
       ),
     ),

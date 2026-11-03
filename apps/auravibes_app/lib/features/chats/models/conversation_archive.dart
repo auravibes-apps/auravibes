@@ -1254,7 +1254,7 @@ _archiveMessageAttachmentsIfIncluded(
   bool includeAttachments,
 ) {
   if (!includeAttachments) {
-    return Future<List<ConversationArchiveAttachment>>.value(const []);
+    return Future.value(const <ConversationArchiveAttachment>[]);
   }
 
   return _archiveMessageAttachments(
