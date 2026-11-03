@@ -51,8 +51,9 @@ class _TestableAppState extends State<TestableApp> {
         WorkspaceSession(
           LocalWorkspaceRef(localWorkspaceId: widget.workspaceId),
         );
+    final sessionWorkspaceId = session.workspace.localWorkspaceId;
     final routeSessionProvider = workspaceSessionForRouteProvider(
-      widget.workspaceId,
+      sessionWorkspaceId,
     );
     final hasRouteSessionOverride = widget.overrides
         .whereType<riverpod_misc.Override>()
@@ -61,15 +62,14 @@ class _TestableAppState extends State<TestableApp> {
       overrides: [
         workspaceSessionProvider(session).overrideWithValue(session),
         if (!hasRouteSessionOverride)
-          workspaceSessionForRouteProvider.overrideWith((_, localWorkspaceId) {
-            if (localWorkspaceId == session.workspace.localWorkspaceId) {
-              return session;
-            }
+          routeSessionProvider.overrideWithValue(AsyncData(session)),
+        workspaceSessionForRouteProvider.overrideWith((_, localWorkspaceId) {
+          if (localWorkspaceId == sessionWorkspaceId) return session;
 
-            return WorkspaceSession(
-              LocalWorkspaceRef(localWorkspaceId: localWorkspaceId),
-            );
-          }),
+          return WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: localWorkspaceId),
+          );
+        }),
         ...widget.overrides.cast(),
       ],
     );
