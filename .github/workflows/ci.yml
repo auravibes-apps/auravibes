@@ -220,28 +220,6 @@ jobs:
         id: check-format
         run: melos run format:check
 
-      - name: Capture Anthropic encoder formatter output (temporary)
-        if: ${{ always() && github.event_name == 'pull_request' && steps.check-format.outcome == 'failure' }}
-        shell: bash
-        env:
-          FORMAT_OUTPUT_DIRECTORY: ${{ runner.temp }}/anthropic-encoder-format-output
-        run: |
-          set -euo pipefail
-          target=apps/auravibes_app/lib/features/chats/services/chatbot/anthropic_request_encoder.dart
-          mkdir -p "$FORMAT_OUTPUT_DIRECTORY"
-          dart format --line-length 80 "$target"
-          git diff -- "$target" | tee "$FORMAT_OUTPUT_DIRECTORY/anthropic_request_encoder.patch"
-          cp "$target" "$FORMAT_OUTPUT_DIRECTORY/anthropic_request_encoder.dart"
-
-      - name: Upload Anthropic encoder formatter output (temporary)
-        if: ${{ always() && github.event_name == 'pull_request' && steps.check-format.outcome == 'failure' }}
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
-        with:
-          name: anthropic-encoder-format-output-${{ github.run_id }}
-          path: ${{ runner.temp }}/anthropic-encoder-format-output
-          if-no-files-found: error
-          retention-days: 1
-
       - name: Capture workspace capacity formatter output
         if: ${{ always() && github.event_name == 'pull_request' && steps.check-format.outcome == 'failure' }}
         shell: bash

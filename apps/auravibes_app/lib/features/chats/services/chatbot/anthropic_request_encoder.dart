@@ -133,10 +133,7 @@ Map<String, Object?>? _messageMetadata(Message message) {
   return metadata == null ? null : Map<String, Object?>.of(metadata);
 }
 
-List<sdk.InputContentBlock> _changes(
-  Message message, {
-  required bool enabled,
-}) {
+List<sdk.InputContentBlock> _changes(Message message, {required bool enabled}) {
   if (!enabled) return const [];
   final blocks = message.metadata?['anthropicToolChanges'];
   if (blocks is! List<Map<String, dynamic>>) return const [];
@@ -249,15 +246,9 @@ extension _AnthropicTranscriptHistory on AnthropicRequestEncoder {
   }
 
   void _appendUpdatesAfterMessage(_UpdatesAfterMessageRequest request) {
-    for (final entry in _entriesAfterMessage(
-      request.history,
-      request.index,
-    )) {
-      _AnthropicUpdateProjection(this)._appendEntryUpdates(
-        entry,
-        request.messages,
-        request.seen,
-      );
+    for (final entry in _entriesAfterMessage(request.history, request.index)) {
+      _AnthropicUpdateProjection(this)
+          ._appendEntryUpdates(entry, request.messages, request.seen);
       final _ = request.applied.add(entry);
     }
   }
