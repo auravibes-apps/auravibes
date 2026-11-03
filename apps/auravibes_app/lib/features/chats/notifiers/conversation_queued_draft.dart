@@ -170,12 +170,15 @@ List<ConversationQueuedDraft>? _reorderedDrafts(
   if (indices == null) return null;
 
   final reorderedDrafts = [...drafts];
-  reorderedDrafts.insert(indices.$2, reorderedDrafts.removeAt(indices.$1));
+  reorderedDrafts.insert(
+    indices.to,
+    reorderedDrafts.removeAt(indices.from),
+  );
 
   return reorderedDrafts;
 }
 
-(int, int)? _draftMoveIndices(
+({int from, int to})? _draftMoveIndices(
   List<ConversationQueuedDraft> drafts,
   String draftId,
   int offset,
@@ -188,7 +191,7 @@ List<ConversationQueuedDraft>? _reorderedDrafts(
     return null;
   }
 
-  return (index, targetIndex);
+  return (from: index, to: targetIndex);
 }
 
 List<ConversationQueuedDraft> _withoutDraft(
