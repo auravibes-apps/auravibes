@@ -1,5 +1,3 @@
-// ignore_for_file: use_late_for_private_fields_and_variables - avoid late
-
 import 'dart:async';
 
 import 'package:auravibes_app/domain/exceptions/scoped_verification_settings_exception.dart';
@@ -29,7 +27,7 @@ class const ScopedVerificationSection({
 
 class _ScopedVerificationSectionState
     extends ConsumerState<ScopedVerificationSection> {
-  final GlobalKey _errorAnchor = GlobalKey();
+  final GlobalKey _errorAnchor = .new();
   ScopedVerificationFormDraft _draft = .new(.new());
   ScopedVerificationSettings? _latest;
   String _lastFingerprint = '';
@@ -301,17 +299,19 @@ class const _VerificationLoadError({required final String workspaceId})
     children: [
       const TextLocale(LocaleKeys.verification_errors_load_failed),
       AuraButton(
-        onPressed: () {
-          ref
-            ..invalidate(scopedVerificationSettingsProvider(workspaceId))
-            ..invalidate(scopedVerificationToolsProvider(workspaceId));
-        },
+        onPressed: () => _retry(ref),
         child: const TextLocale(LocaleKeys.route_state_retry),
         variant: .ghost,
       ),
     ],
     crossAxisAlignment: .start,
   );
+
+  void _retry(WidgetRef ref) {
+    ref
+      ..invalidate(scopedVerificationSettingsProvider(workspaceId))
+      ..invalidate(scopedVerificationToolsProvider(workspaceId));
+  }
 }
 
 class const _VerificationForm({

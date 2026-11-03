@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-late-keyword - async setUp needs fixtures
-
 import 'dart:async';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
@@ -12,17 +10,44 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  late AppDatabase database;
-  late WorkspaceVerificationRepository repository;
-  late SaveScopedVerificationSettingsUsecase save;
-  late List<String> calls;
+  var database = AppDatabase(connection: NativeDatabase.memory());
+  var repository = WorkspaceVerificationRepository(database);
+  var calls = <String>[];
   var allowed = true;
   var compliant = true;
   var revokeDuringProbe = false;
   Future<ScopedVerificationCapabilities> Function()? probeOverride;
   Future<bool> Function()? bindingsOverride;
 
+  SaveScopedVerificationSettingsUsecase buildSave() =>
+      SaveScopedVerificationSettingsUsecase(
+        repository: repository,
+        validateBindings: (workspaceId, settings) async {
+          calls.add('bindings:$workspaceId');
+          final override = bindingsOverride;
+          if (override != null) return await override();
+
+          return allowed;
+        },
+        probeCapabilities: (workspaceId, settings, deadline) async {
+          calls.add('capabilities:$workspaceId');
+          if (revokeDuringProbe) allowed = false;
+          final override = probeOverride;
+          if (override != null) return await override();
+
+          return ScopedVerificationCapabilities(
+            protocol: ScopedVerificationLimits.protocol,
+            features: ScopedVerificationCapabilities.requiredFeatures
+                .where((feature) => compliant || feature != 'nonInteractive')
+                .toSet(),
+          );
+        },
+        probeTimeout: const Duration(milliseconds: 50),
+      );
+
+  var save = buildSave();
   setUp(() async {
+    await database.close();
     database = AppDatabase(connection: NativeDatabase.memory());
     repository = WorkspaceVerificationRepository(database);
     calls = [];
@@ -40,32 +65,9 @@ void main() {
             type: .local,
           ),
         );
-    save = SaveScopedVerificationSettingsUsecase(
-      repository: repository,
-      validateBindings: (workspaceId, settings) async {
-        calls.add('bindings:$workspaceId');
-        final override = bindingsOverride;
-        if (override != null) return await override();
-
-        return allowed;
-      },
-      probeCapabilities: (workspaceId, settings, deadline) async {
-        calls.add('capabilities:$workspaceId');
-        if (revokeDuringProbe) allowed = false;
-        final override = probeOverride;
-        if (override != null) return await override();
-
-        return ScopedVerificationCapabilities(
-          protocol: ScopedVerificationLimits.protocol,
-          features: ScopedVerificationCapabilities.requiredFeatures
-              .where((feature) => compliant || feature != 'nonInteractive')
-              .toSet(),
-        );
-      },
-      probeTimeout: const Duration(milliseconds: 50),
-    );
+    save = buildSave();
   });
-  tearDown(() => database.close());
+  tearDownAll(() => database.close());
 
   test(
     'enabling probes capabilities between two binding checks and saves',

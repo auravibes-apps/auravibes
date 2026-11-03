@@ -7,56 +7,57 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  late AppDatabase database;
-  late ScopedVerificationConfiguration configuration;
+  var database = AppDatabase(connection: NativeDatabase.memory());
+  var configuration = ScopedVerificationConfiguration(database);
   setUp(() async {
+    await database.close();
     database = AppDatabase(connection: NativeDatabase.memory());
     configuration = ScopedVerificationConfiguration(database);
     for (final id in ['local', 'other']) {
-      await database
+      final _ = await database
           .into(database.workspaces)
           .insert(
-            WorkspacesCompanion.insert(id: Value(id), name: id, type: .local),
+            WorkspacesCompanion.insert(id: .new(id), name: id, type: .local),
           );
-      await database
+      final _ = await database
           .into(database.mcpServers)
           .insert(
             McpServersCompanion.insert(
-              id: Value('server-$id'),
+              id: .new('server-$id'),
               workspaceId: id,
               name: id,
               url: 'http://localhost/mcp',
               transport: const McpTransportTypeStreamableHttp(),
             ),
           );
-      await database
+      final _ = await database
           .into(database.toolsGroups)
           .insert(
             ToolsGroupsCompanion.insert(
-              id: Value('group-$id'),
+              id: .new('group-$id'),
               workspaceId: id,
+              mcpServerId: .new('server-$id'),
               name: id,
-              mcpServerId: Value('server-$id'),
               permissions: .granted,
             ),
           );
       for (final tool in ['runner', 'edit']) {
-        await database
+        final _ = await database
             .into(database.tools)
             .insert(
               ToolsCompanion.insert(
-                id: Value('$tool-$id'),
+                id: .new('$tool-$id'),
                 workspaceId: id,
+                workspaceToolsGroupId: .new('group-$id'),
                 toolId: tool,
-                workspaceToolsGroupId: Value('group-$id'),
-                isEnabled: const Value(true),
-                permissions: const Value(.granted),
+                isEnabled: const .new(true),
+                permissions: const .new(.granted),
               ),
             );
       }
     }
   });
-  tearDown(() => database.close());
+  tearDownAll(() => database.close());
 
   test(
     'lists only this workspace tools and validates exact same-server binding',
@@ -77,13 +78,15 @@ void main() {
   test(
     'ask permits edit selection but cannot authorize unattended runner probes',
     () async {
-      await (database.update(database.tools)
-            ..where((row) => row.id.equals('edit-local')))
-          .write(const ToolsCompanion(permissions: Value(.ask)));
+      final _ =
+          await (database.update(database.tools)
+                ..where((row) => row.id.equals('edit-local')))
+              .write(const ToolsCompanion(permissions: .new(.ask)));
       expect(await configuration.validate('local', _settings()), isTrue);
-      await (database.update(database.tools)
-            ..where((row) => row.id.equals('runner-local')))
-          .write(const ToolsCompanion(permissions: Value(.ask)));
+      final _ =
+          await (database.update(database.tools)
+                ..where((row) => row.id.equals('runner-local')))
+              .write(const ToolsCompanion(permissions: .new(.ask)));
       expect(await configuration.validate('local', _settings()), isFalse);
     },
   );
@@ -91,17 +94,20 @@ void main() {
   test(
     'denied or disabled tools, groups, and servers remove saved authority',
     () async {
-      await (database.update(database.toolsGroups)
-            ..where((row) => row.id.equals('group-local')))
-          .write(const ToolsGroupsCompanion(permissions: Value(.denied)));
+      final _ =
+          await (database.update(database.toolsGroups)
+                ..where((row) => row.id.equals('group-local')))
+              .write(const ToolsGroupsCompanion(permissions: .new(.denied)));
       expect(await configuration.tools('local'), isEmpty);
       expect(await configuration.validate('local', _settings()), isFalse);
-      await (database.update(database.toolsGroups)
-            ..where((row) => row.id.equals('group-local')))
-          .write(const ToolsGroupsCompanion(permissions: Value(.granted)));
-      await (database.update(database.mcpServers)
-            ..where((row) => row.id.equals('server-local')))
-          .write(const McpServersCompanion(isEnabled: Value(false)));
+      final _ =
+          await (database.update(database.toolsGroups)
+                ..where((row) => row.id.equals('group-local')))
+              .write(const ToolsGroupsCompanion(permissions: .new(.granted)));
+      final _ =
+          await (database.update(database.mcpServers)
+                ..where((row) => row.id.equals('server-local')))
+              .write(const McpServersCompanion(isEnabled: .new(false)));
       expect(await configuration.validate('local', _settings()), isFalse);
     },
   );
@@ -109,9 +115,10 @@ void main() {
   test(
     'conversion to a cloud workspace invalidates local configuration',
     () async {
-      await (database.update(database.workspaces)
-            ..where((row) => row.id.equals('local')))
-          .write(const WorkspacesCompanion(type: Value(.remote)));
+      final _ =
+          await (database.update(database.workspaces)
+                ..where((row) => row.id.equals('local')))
+              .write(const WorkspacesCompanion(type: .new(.remote)));
       expect(await configuration.validate('local', _settings()), isFalse);
     },
   );

@@ -1,5 +1,3 @@
-// ignore_for_file: avoid-late-keyword - async setUp needs fixtures
-
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/workspace_verification_repository.dart';
 import 'package:auravibes_app/features/settings/providers/scoped_verification_settings_provider.dart';
@@ -18,14 +16,16 @@ import 'package:material_ui/material_ui.dart';
 import '../../../helpers/test_app.dart';
 
 void main() {
-  late AppDatabase database;
-  late WorkspaceVerificationRepository repository;
-  late DraftExitGuard guard;
-  late ScopedVerificationSettings initial;
+  var database = AppDatabase(connection: NativeDatabase.memory());
+  var repository = WorkspaceVerificationRepository(database);
+  var guard = DraftExitGuard();
+  var initial = _settings();
   var probes = 0;
   var failProbe = false;
 
   setUp(() async {
+    await database.close();
+    guard.dispose();
     database = AppDatabase(connection: NativeDatabase.memory());
     repository = WorkspaceVerificationRepository(database);
     guard = DraftExitGuard();
@@ -42,7 +42,7 @@ void main() {
           ),
         );
   });
-  tearDown(() async {
+  tearDownAll(() async {
     guard.dispose();
     await database.close();
   });
@@ -108,7 +108,9 @@ void main() {
   Future<void> open(WidgetTester tester, {bool spanish = false}) async {
     await tester.tap(
       find.text(
-        spanish ? 'Configurar verificaci\u00f3n' : 'Configure verification',
+        spanish
+            ? 'Configurar verificaci' + String.fromCharCode(243) + 'n'
+            : 'Configure verification',
       ),
     );
     final _ = await tester.pumpAndSettle();
