@@ -334,15 +334,24 @@ extension _AnthropicUpdateProjection on AnthropicRequestEncoder {
 
   List<Message> _contextMessages(AgentTranscriptContextUpdate update) {
     if (!supportsMidConversationSystemMessages) return const [];
-    final messages = (update.contextMessages ?? const <AgentContextMessage>[])
-        .map(_contextMessage)
-        .toList();
+    final contextMessages =
+        update.contextMessages ?? const <AgentContextMessage>[];
+    final messages = contextMessages.map(_contextMessage).toList();
+    final orderedMessages = <Message>[];
 
     // Anthropic permits mid-conversation system messages only after user data.
-    return [
-      ...messages.where((message) => message.role != Role.system),
-      ...messages.where((message) => message.role == Role.system),
-    ];
+    for (final message in messages) {
+      if (message.role != Role.system) {
+        orderedMessages.add(message);
+      }
+    }
+    for (final message in messages) {
+      if (message.role == Role.system) {
+        orderedMessages.add(message);
+      }
+    }
+
+    return orderedMessages;
   }
 
   Message? _toolDeltaMessage(
