@@ -293,12 +293,14 @@ class const _VerificationCard({
             child: TextLocale(LocaleKeys.verification_subtitle),
             style: .bodySmall,
           ),
-          _VerificationCardContent(
-            state: state,
-            cloud: cloud,
-            loadError: loadError,
-            tools: tools,
-          ),
+          if (cloud)
+            const TextLocale(LocaleKeys.verification_cloud_unavailable)
+          else if (loadError || state._loaded)
+            _VerificationCardContent(
+              state: state,
+              loadError: loadError,
+              tools: tools,
+            ),
         ],
         crossAxisAlignment: .stretch,
       ),
@@ -391,25 +393,18 @@ class const _VerificationDisabledStatus() extends StatelessWidget {
 
 class const _VerificationCardContent({
   required final _ScopedVerificationSectionState state,
-  required final bool cloud,
   required final bool loadError,
   required final List<ScopedVerificationToolOption> tools,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    if (cloud) {
-      return const TextLocale(LocaleKeys.verification_cloud_unavailable);
-    }
-
-    return AuraColumn(
-      children: [
-        if (loadError)
-          _VerificationLoadError(workspaceId: state.widget.workspaceId),
-        if (state._loaded) _VerificationAccordion(state: state, tools: tools),
-      ],
-      crossAxisAlignment: .stretch,
-    );
-  }
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      if (loadError)
+        _VerificationLoadError(workspaceId: state.widget.workspaceId),
+      if (state._loaded) _VerificationAccordion(state: state, tools: tools),
+    ],
+    crossAxisAlignment: .stretch,
+  );
 }
 
 class const _VerificationAccordion({
@@ -467,7 +462,7 @@ class const _VerificationForm({
         _VerificationEditTools(state: state, tools: tools),
         _VerificationCheckList(state: state),
         _VerificationAdvancedFields(state: state),
-        _VerificationFormFeedback(state: state),
+        ..._verificationFormFeedback(state),
         _VerificationFormActions(state: state),
       ],
     ),
@@ -630,12 +625,8 @@ class const _VerificationAdvancedFields({
   );
 }
 
-class const _VerificationFormFeedback({
-  required final _ScopedVerificationSectionState state,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => AuraColumn(
-    children: [
+List<Widget> _verificationFormFeedback(_ScopedVerificationSectionState state) =>
+    [
       if (state._error case final String error)
         Semantics(
           key: state._errorAnchor,
@@ -647,9 +638,7 @@ class const _VerificationFormFeedback({
           child: const TextLocale(LocaleKeys.verification_saved),
           liveRegion: true,
         ),
-    ],
-  );
-}
+    ];
 
 class const _VerificationFormActions({
   required final _ScopedVerificationSectionState state,
@@ -712,30 +701,13 @@ class const _VerificationEditTools({
           style: .heading6,
         ),
         const TextLocale(LocaleKeys.verification_edit_tools_hint),
-        _MissingEditSelections(
-          state: state,
-          draft: draft,
-          eligibleIds: eligible,
-        ),
-        _VerificationEditToolList(state: state, draft: draft, tools: edits),
+        ..._missingEditSelections(state, draft, eligible),
+        for (final tool in edits)
+          _VerificationEditToolToggle(state: state, draft: draft, tool: tool),
       ],
       crossAxisAlignment: .stretch,
     );
   }
-}
-
-class const _VerificationEditToolList({
-  required final _ScopedVerificationSectionState state,
-  required final ScopedVerificationFormDraft draft,
-  required final List<ScopedVerificationToolOption> tools,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => AuraColumn(
-    children: [
-      for (final tool in tools)
-        _VerificationEditToolToggle(state: state, draft: draft, tool: tool),
-    ],
-  );
 }
 
 List<ScopedVerificationToolOption> _availableEditTools(
@@ -748,30 +720,23 @@ List<ScopedVerificationToolOption> _availableEditTools(
     )
     .toList();
 
-class const _MissingEditSelections({
-  required final _ScopedVerificationSectionState state,
-  required final ScopedVerificationFormDraft draft,
-  required final Set<String> eligibleIds,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    if (!draft.editToolIds.any((id) => !eligibleIds.contains(id))) {
-      return const SizedBox.shrink();
-    }
-
-    return AuraColumn(
-      children: [
-        const TextLocale(LocaleKeys.verification_missing_selections),
-        AuraButton(
-          onPressed: () =>
-              _clearMissingEditSelections(state, draft, eligibleIds),
-          child: const TextLocale(LocaleKeys.verification_clear_missing),
-          variant: .ghost,
-        ),
-      ],
-      crossAxisAlignment: .start,
-    );
+List<Widget> _missingEditSelections(
+  _ScopedVerificationSectionState state,
+  ScopedVerificationFormDraft draft,
+  Set<String> eligibleIds,
+) {
+  if (!draft.editToolIds.any((id) => !eligibleIds.contains(id))) {
+    return const [];
   }
+
+  return [
+    const TextLocale(LocaleKeys.verification_missing_selections),
+    AuraButton(
+      onPressed: () => _clearMissingEditSelections(state, draft, eligibleIds),
+      child: const TextLocale(LocaleKeys.verification_clear_missing),
+      variant: .ghost,
+    ),
+  ];
 }
 
 void _clearMissingEditSelections(
