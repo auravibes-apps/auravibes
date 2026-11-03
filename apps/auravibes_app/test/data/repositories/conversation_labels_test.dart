@@ -13,28 +13,28 @@ void main() {
   String? _workspaceId;
   String? _otherWorkspaceId;
 
-  AppDatabase get database => _database!;
-  ConversationRepository get repository => _repository!;
-  ConversationLabelsRepository get labelsRepository => _labelsRepository!;
-  String get workspaceId => _workspaceId!;
-  String get otherWorkspaceId => _otherWorkspaceId!;
+  AppDatabase database() => _database!;
+  ConversationRepository repository() => _repository!;
+  ConversationLabelsRepository labelsRepository() => _labelsRepository!;
+  String workspaceId() => _workspaceId!;
+  String otherWorkspaceId() => _otherWorkspaceId!;
 
   setUp(() async {
     _database = AppDatabase(
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
-    _repository = ConversationRepository(database);
-    _labelsRepository = ConversationLabelsRepository(database);
-    _workspaceId = (await database.workspaceDao.insertWorkspace(
+    _repository = ConversationRepository(database());
+    _labelsRepository = ConversationLabelsRepository(database());
+    _workspaceId = (await database().workspaceDao.insertWorkspace(
       .insert(name: 'Workspace A', type: WorkspaceType.local),
     )).id;
-    _otherWorkspaceId = (await database.workspaceDao.insertWorkspace(
+    _otherWorkspaceId = (await database().workspaceDao.insertWorkspace(
       .insert(name: 'Workspace B', type: WorkspaceType.local),
     )).id;
   });
 
   tearDown(() async {
-    await database.close();
+    await database().close();
     _database = null;
     _repository = null;
     _labelsRepository = null;
@@ -45,48 +45,48 @@ void main() {
   test(
     'labels are unique within a workspace and support rename and delete',
     () async {
-      final label = await labelsRepository.createLabel(
-        workspaceId: workspaceId,
+      final label = await labelsRepository().createLabel(
+        workspaceId: workspaceId(),
         name: ' Follow up ',
       );
-      final sameNameInOtherWorkspace = await labelsRepository.createLabel(
-        workspaceId: otherWorkspaceId,
+      final sameNameInOtherWorkspace = await labelsRepository().createLabel(
+        workspaceId: otherWorkspaceId(),
         name: 'follow up',
       );
 
       expect(label.name, 'Follow up');
-      expect(sameNameInOtherWorkspace.workspaceId, otherWorkspaceId);
+      expect(sameNameInOtherWorkspace.workspaceId, otherWorkspaceId());
       await expectLater(
-        labelsRepository.createLabel(
-          workspaceId: workspaceId,
+        labelsRepository().createLabel(
+          workspaceId: workspaceId(),
           name: 'follow up',
         ),
         throwsA(isA<ConversationLabelAlreadyExistsException>()),
       );
 
-      final renamed = await labelsRepository.renameLabel(
-        workspaceId: workspaceId,
+      final renamed = await labelsRepository().renameLabel(
+        workspaceId: workspaceId(),
         labelId: label.id,
         name: 'In progress',
       );
       expect(renamed.name, 'In progress');
       expect(
-        (await labelsRepository.watchLabelsByWorkspace(workspaceId).first).map(
+        (await labelsRepository().watchLabelsByWorkspace(workspaceId()).first).map(
           (item) => item.name,
         ),
         ['In progress'],
       );
 
-      await labelsRepository.deleteLabel(
-        workspaceId: workspaceId,
+      await labelsRepository().deleteLabel(
+        workspaceId: workspaceId(),
         labelId: label.id,
       );
       expect(
-        await labelsRepository.watchLabelsByWorkspace(workspaceId).first,
+        await labelsRepository().watchLabelsByWorkspace(workspaceId()).first,
         isEmpty,
       );
       expect(
-        (await labelsRepository.watchLabelsByWorkspace(otherWorkspaceId).first)
+        (await labelsRepository().watchLabelsByWorkspace(otherWorkspaceId()).first)
             .single
             .name,
         'follow up',
@@ -97,69 +97,69 @@ void main() {
   test(
     'assignments are workspace-scoped and filter before offset paging',
     () async {
-      final urgent = await labelsRepository.createLabel(
-        workspaceId: workspaceId,
+      final urgent = await labelsRepository().createLabel(
+        workspaceId: workspaceId(),
         name: 'Urgent',
       );
-      final ideas = await labelsRepository.createLabel(
-        workspaceId: workspaceId,
+      final ideas = await labelsRepository().createLabel(
+        workspaceId: workspaceId(),
         name: 'Ideas',
       );
-      final otherWorkspaceLabel = await labelsRepository.createLabel(
-        workspaceId: otherWorkspaceId,
+      final otherWorkspaceLabel = await labelsRepository().createLabel(
+        workspaceId: otherWorkspaceId(),
         name: 'Urgent',
       );
-      final older = await database.conversationDao.insertConversation(
+      final older = await database().conversationDao.insertConversation(
         .insert(
-          workspaceId: workspaceId,
+          workspaceId: workspaceId(),
           title: 'Older match',
           updatedAt: Value(DateTime.utc(2026, 11)),
         ),
       );
-      final unlabelled = await database.conversationDao.insertConversation(
+      final unlabelled = await database().conversationDao.insertConversation(
         .insert(
-          workspaceId: workspaceId,
+          workspaceId: workspaceId(),
           title: 'Unlabelled',
           updatedAt: Value(DateTime.utc(2026, 11, 2)),
         ),
       );
-      final newer = await database.conversationDao.insertConversation(
+      final newer = await database().conversationDao.insertConversation(
         .insert(
-          workspaceId: workspaceId,
+          workspaceId: workspaceId(),
           title: 'Newer match',
           updatedAt: Value(DateTime.utc(2026, 11, 3)),
         ),
       );
-      final foreignConversation = await database.conversationDao
+      final foreignConversation = await database().conversationDao
           .insertConversation(
             .insert(
-              workspaceId: otherWorkspaceId,
+              workspaceId: otherWorkspaceId(),
               title: 'Foreign conversation',
             ),
           );
 
-      await labelsRepository.setConversationLabels(
-        workspaceId: workspaceId,
+      await labelsRepository().setConversationLabels(
+        workspaceId: workspaceId(),
         conversationId: older.id,
         labelIds: {urgent.id},
       );
-      await labelsRepository.setConversationLabels(
-        workspaceId: workspaceId,
+      await labelsRepository().setConversationLabels(
+        workspaceId: workspaceId(),
         conversationId: newer.id,
         labelIds: {ideas.id},
       );
       await expectLater(
-        labelsRepository.setConversationLabels(
-          workspaceId: otherWorkspaceId,
+        labelsRepository().setConversationLabels(
+          workspaceId: otherWorkspaceId(),
           conversationId: foreignConversation.id,
           labelIds: {urgent.id},
         ),
         throwsA(isA<ConversationWorkspaceMismatchException>()),
       );
 
-      final page = await labelsRepository
+      final page = await labelsRepository()
           .watchConversationsByWorkspace(
-            workspaceId,
+            workspaceId(),
             labelIds: {urgent.id, ideas.id},
             limit: 1,
             offset: 1,
@@ -168,17 +168,17 @@ void main() {
       expect(page.map((conversation) => conversation.title), ['Older match']);
       expect(page.single.labels.map((label) => label.name), ['Urgent']);
       expect(
-        await labelsRepository
+        await labelsRepository()
             .watchConversationsByWorkspace(
-              otherWorkspaceId,
+              otherWorkspaceId(),
               labelIds: {urgent.id},
             )
             .first,
         isEmpty,
       );
       expect(
-        (await labelsRepository
-                .watchConversationsByWorkspace(otherWorkspaceId)
+        (await labelsRepository()
+                .watchConversationsByWorkspace(otherWorkspaceId())
                 .first)
             .single
             .title,
@@ -192,52 +192,52 @@ void main() {
   test(
     'deleting labels and conversations clears assignments, not conversations',
     () async {
-      final label = await labelsRepository.createLabel(
-        workspaceId: workspaceId,
+      final label = await labelsRepository().createLabel(
+        workspaceId: workspaceId(),
         name: 'Keep the chat',
       );
-      final conversation = await database.conversationDao.insertConversation(
-        .insert(workspaceId: workspaceId, title: 'Keep me'),
+      final conversation = await database().conversationDao.insertConversation(
+        .insert(workspaceId: workspaceId(), title: 'Keep me'),
       );
-      await labelsRepository.setConversationLabels(
-        workspaceId: workspaceId,
+      await labelsRepository().setConversationLabels(
+        workspaceId: workspaceId(),
         conversationId: conversation.id,
         labelIds: {label.id},
       );
 
-      await labelsRepository.deleteLabel(
-        workspaceId: workspaceId,
+      await labelsRepository().deleteLabel(
+        workspaceId: workspaceId(),
         labelId: label.id,
       );
-      expect(await repository.getConversationById(conversation.id), isNotNull);
+      expect(await repository().getConversationById(conversation.id), isNotNull);
       expect(
-        await labelsRepository
-            .watchConversationsByWorkspace(workspaceId, labelIds: {label.id})
+        await labelsRepository()
+            .watchConversationsByWorkspace(workspaceId(), labelIds: {label.id})
             .first,
         isEmpty,
       );
 
-      final secondLabel = await labelsRepository.createLabel(
-        workspaceId: workspaceId,
+      final secondLabel = await labelsRepository().createLabel(
+        workspaceId: workspaceId(),
         name: 'Remove when chat is deleted',
       );
-      await labelsRepository.setConversationLabels(
-        workspaceId: workspaceId,
+      await labelsRepository().setConversationLabels(
+        workspaceId: workspaceId(),
         conversationId: conversation.id,
         labelIds: {secondLabel.id},
       );
-      final _ = await repository.deleteConversation(conversation.id);
-      expect(await repository.getConversationById(conversation.id), isNull);
+      final _ = await repository().deleteConversation(conversation.id);
+      expect(await repository().getConversationById(conversation.id), isNull);
       expect(
-        (await labelsRepository.watchLabelsByWorkspace(workspaceId).first)
+        (await labelsRepository().watchLabelsByWorkspace(workspaceId()).first)
             .single
             .id,
         secondLabel.id,
       );
       expect(
-        await labelsRepository
+        await labelsRepository()
             .watchConversationsByWorkspace(
-              workspaceId,
+              workspaceId(),
               labelIds: {secondLabel.id},
             )
             .first,

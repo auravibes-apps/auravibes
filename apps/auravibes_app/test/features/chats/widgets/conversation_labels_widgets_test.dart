@@ -29,22 +29,22 @@ void main() {
   ConversationLabelsRepository? _repository;
   String? _workspaceId;
 
-  AppDatabase get database => _database!;
-  ConversationLabelsRepository get repository => _repository!;
-  String get workspaceId => _workspaceId!;
+  AppDatabase database() => _database!;
+  ConversationLabelsRepository repository() => _repository!;
+  String workspaceId() => _workspaceId!;
 
   setUp(() async {
     _database = AppDatabase(
       connection: DatabaseConnection(NativeDatabase.memory()),
     );
-    _repository = ConversationLabelsRepository(database);
-    _workspaceId = (await database.workspaceDao.insertWorkspace(
+    _repository = ConversationLabelsRepository(database());
+    _workspaceId = (await database().workspaceDao.insertWorkspace(
       .insert(name: 'Workspace', type: WorkspaceType.local),
     )).id;
   });
 
   tearDown(() async {
-    await database.close();
+    await database().close();
     _database = null;
     _repository = null;
     _workspaceId = null;
@@ -57,10 +57,10 @@ void main() {
   }) => TestableApp(
     child: Scaffold(body: child),
     overrides: [
-      conversationLabelsRepositoryProvider.overrideWithValue(repository),
+      conversationLabelsRepositoryProvider.overrideWithValue(repository()),
       ...overrides,
     ],
-    workspaceId: workspaceId,
+    workspaceId: workspaceId(),
     startLocale: startLocale,
   );
 
@@ -119,12 +119,12 @@ void main() {
   testWidgets('filter supports OR selection and applies selected labels', (
     tester,
   ) async {
-    final urgent = await repository.createLabel(
-      workspaceId: workspaceId,
+    final urgent = await repository().createLabel(
+      workspaceId: workspaceId(),
       name: 'Urgent',
     );
-    final planning = await repository.createLabel(
-      workspaceId: workspaceId,
+    final planning = await repository().createLabel(
+      workspaceId: workspaceId(),
       name: 'Planning',
     );
     Set<String>? applied;
@@ -132,12 +132,12 @@ void main() {
     await pumpSubject(
       tester,
       child: ConversationLabelsToolbar(
-        workspaceId: workspaceId,
+        workspaceId: workspaceId(),
         selectedLabelIds: const {},
         onSelectedLabelIdsChanged: (value) => applied = value,
       ),
       overrides: [
-        conversationLabelsStreamProvider(workspaceId)
+        conversationLabelsStreamProvider(workspaceId())
             .overrideWith((_) => Stream.value([urgent, planning])),
       ],
     );
@@ -167,13 +167,13 @@ void main() {
     await pumpSubject(
       tester,
       child: ConversationLabelsToolbar(
-        workspaceId: workspaceId,
+        workspaceId: workspaceId(),
         selectedLabelIds: const {},
         onSelectedLabelIdsChanged: (_) => fail('No filter change expected'),
       ),
       overrides: [
         conversationLabelsStreamProvider(
-          workspaceId,
+          workspaceId(),
         ).overrideWith((_) => Stream.value(const <ConversationLabelEntity>[])),
       ],
     );
@@ -189,9 +189,9 @@ void main() {
     await _pumpAnimation(tester);
 
     expect(
-      (await (database.select(
-            database.conversationLabels,
-          )..where((label) => label.workspaceId.equals(workspaceId))).get())
+      (await (database().select(
+            database().conversationLabels,
+          )..where((label) => label.workspaceId.equals(workspaceId()))).get())
           .map((label) => label.name)
           .toList(),
       ['Follow up'],
@@ -201,29 +201,29 @@ void main() {
   testWidgets('assignment saves label selection for its conversation', (
     tester,
   ) async {
-    final label = await repository.createLabel(
-      workspaceId: workspaceId,
+    final label = await repository().createLabel(
+      workspaceId: workspaceId(),
       name: 'Important',
     );
-    final row = await database.conversationDao.insertConversation(
-      .insert(workspaceId: workspaceId, title: 'Chat'),
+    final row = await database().conversationDao.insertConversation(
+      .insert(workspaceId: workspaceId(), title: 'Chat'),
     );
 
     await pumpSubject(
       tester,
       child: _AssignmentLauncher(
-        workspaceId: workspaceId,
+        workspaceId: workspaceId(),
         conversation: ConversationEntity(
           id: row.id,
           title: row.title,
-          workspaceId: workspaceId,
+          workspaceId: workspaceId(),
           isPinned: false,
           createdAt: row.createdAt,
           updatedAt: row.updatedAt,
         ),
       ),
       overrides: [
-        conversationLabelsStreamProvider(workspaceId)
+        conversationLabelsStreamProvider(workspaceId())
             .overrideWith((_) => Stream.value([label])),
       ],
     );
@@ -241,8 +241,8 @@ void main() {
     await _pumpAnimation(tester);
     expect(find.byType(AlertDialog), findsNothing);
 
-    final assignments = await (database.select(
-      database.conversationLabelAssignments,
+    final assignments = await (database().select(
+      database().conversationLabelAssignments,
     )..where((assignment) => assignment.conversationId.equals(row.id))).get();
     expect(assignments.map((assignment) => assignment.labelId).toList(), [
       label.id,
@@ -304,10 +304,14 @@ Future<void> _waitForCondition(
   expect(condition(), isTrue);
 }
 
-class const _AssignmentLauncher({
-  required final String workspaceId,
-  required final ConversationEntity conversation,
-}) extends ConsumerWidget {
+class _AssignmentLauncher extends ConsumerWidget {
+  const _AssignmentLauncher({
+    required this.workspaceId,
+    required this.conversation,
+  });
+
+  final String workspaceId;
+  final ConversationEntity conversation;
   @override
   Widget build(BuildContext context, WidgetRef ref) => TextButton(
     onPressed: () => showConversationLabelAssignmentDialog(
