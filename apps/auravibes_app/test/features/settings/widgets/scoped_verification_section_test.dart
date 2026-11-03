@@ -106,10 +106,11 @@ void main() {
   }
 
   Future<void> open(WidgetTester tester, {bool spanish = false}) async {
+    final spanishAccent = String.fromCharCode(243);
     await tester.tap(
       find.text(
         spanish
-            ? 'Configurar verificaci${.fromCharCode(243)}n'
+            ? 'Configurar verificaci${spanishAccent}n'
             : 'Configure verification',
       ),
     );
