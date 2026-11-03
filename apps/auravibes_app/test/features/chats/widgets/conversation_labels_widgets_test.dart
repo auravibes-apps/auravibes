@@ -44,7 +44,7 @@ void main() {
     required Widget child,
     Locale startLocale = const Locale('en'),
   }) => TestableApp(
-    child: Material(child: child),
+    child: Scaffold(body: child),
     workspaceId: workspaceId,
     startLocale: startLocale,
     overrides: [
@@ -62,7 +62,7 @@ void main() {
         buildSubject(child: child, startLocale: startLocale),
       ),
     );
-    await tester.pumpAndSettle();
+    await _pumpAnimation(tester);
   }
 
   testWidgets('label badges expose one localized semantic label', (
@@ -121,13 +121,15 @@ void main() {
     await tester.tap(find.text(LocaleKeys
         .chats_screens_conversation_labels_filter
         .tr()));
-    await tester.pumpAndSettle();
+    await _pumpAnimation(tester);
     await tester.tap(find.text('Urgent'));
+    await tester.pump();
     await tester.tap(find.text('Planning'));
+    await tester.pump();
     await tester.tap(
       find.text(LocaleKeys.chats_screens_conversation_labels_apply.tr()),
     );
-    await tester.pumpAndSettle();
+    await _pumpAnimation(tester);
 
     expect(applied, {urgent.id, planning.id});
   });
@@ -145,12 +147,12 @@ void main() {
     await tester.tap(
       find.text(LocaleKeys.chats_screens_conversation_labels_manage.tr()),
     );
-    await tester.pumpAndSettle();
+    await _pumpAnimation(tester);
     await tester.enterText(find.byType(TextField), 'Follow up');
     await tester.tap(find.byTooltip(
       LocaleKeys.chats_screens_conversation_labels_create.tr(),
     ));
-    await tester.pumpAndSettle();
+    await _pumpAnimation(tester);
 
     expect(
       (await repository.watchLabelsByWorkspace(workspaceId).first)
@@ -186,14 +188,15 @@ void main() {
     );
 
     await tester.tap(find.text('Assign labels'));
-    await tester.pumpAndSettle();
+    await _pumpAnimation(tester);
     await tester.tap(find.text('Important'));
+    await tester.pump();
     await tester.tap(
       find.text(LocaleKeys
           .chats_screens_conversation_labels_save_assignments
           .tr()),
     );
-    await tester.pumpAndSettle();
+    await _pumpAnimation(tester);
 
     final conversation = await repository
         .watchConversationsByWorkspace(workspaceId)
@@ -210,6 +213,11 @@ ConversationLabelEntity _label(String id, String name) =>
       createdAt: DateTime.utc(2026),
       updatedAt: DateTime.utc(2026),
     );
+
+Future<void> _pumpAnimation(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 300));
+}
 
 class const _AssignmentLauncher({
   required final String workspaceId,

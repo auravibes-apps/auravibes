@@ -652,9 +652,9 @@ Widget conversationLabelBadges(List<ConversationLabelEntity> labels) {
   return Semantics(
     key: const ValueKey('conversation-labels-semantics'),
     container: true,
-    label: LocaleKeys.chats_screens_conversation_labels_label_semantics.tr(
-      args: [labelNames],
-    ),
+    label:
+        '${LocaleKeys.chats_screens_conversation_labels_label_semantics.tr()}: '
+        '$labelNames',
     child: ExcludeSemantics(
       child: Wrap(
         spacing: 6,

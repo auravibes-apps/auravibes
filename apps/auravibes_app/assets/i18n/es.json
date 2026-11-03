@@ -519,7 +519,7 @@
       "invalid_name": "Escribe un nombre de etiqueta de 1 a 40 caracteres.",
       "load_error": "No se pudieron cargar las etiquetas de conversaciones.",
       "save_error": "No se pudieron guardar las etiquetas. Inténtalo de nuevo.",
-      "label_semantics": "Etiquetas de conversación: {}"
+      "label_semantics": "Etiquetas de conversación"
     },
     "conversation_search": {
       "title": "Buscar conversaciones",

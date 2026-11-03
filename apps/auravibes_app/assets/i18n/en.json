@@ -519,7 +519,7 @@
       "invalid_name": "Enter a label name with 1 to 40 characters.",
       "load_error": "Could not load conversation labels.",
       "save_error": "Could not save conversation labels. Try again.",
-      "label_semantics": "Conversation labels: {}"
+      "label_semantics": "Conversation labels"
     },
     "conversation_search": {
       "title": "Search conversations",
