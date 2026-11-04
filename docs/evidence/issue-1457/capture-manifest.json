@@ -1,0 +1,38 @@
+{
+  "workflow_run": "https://github.com/auravibes-apps/auravibes/actions/runs/41749343077",
+  "workflow_run_id": 41749343077,
+  "workflow_conclusion_at_capture": "in_progress",
+  "artifact_id": 13284569165,
+  "artifact_digest": "sha256:febf84ef2eb0e035cdcada85c975ae954d97761b5da1ea99bbc63b93ab7a8ae6",
+  "baseline_sha": "c68c7a1ac4caf96b9598bd11ef189d6b80e95df3",
+  "feature_sha": "d0e4db19c946fad2841169bcf880b5aa2a8885c4",
+  "capture_harness": [
+    "apps/auravibes_app/test/widgets/ux_validation_layout_test.dart",
+    "apps/auravibes_app/test/helpers/ux_validation_fixture.dart"
+  ],
+  "same_harness_fixture_and_render_settings_verified": true,
+  "captures": [
+    {
+      "phase": "before",
+      "source_sha": "c68c7a1ac4caf96b9598bd11ef189d6b80e95df3",
+      "png": "before/WorkspaceSettingsRoute-466x678-en-1.0.png",
+      "png_sha256": "47e8e0386f47618f0ce8293a2bf7fb92c32b339defa4474b45c1a7d424b6e835",
+      "sidecar": "before/WorkspaceSettingsRoute-466x678-en-1.0.json",
+      "sidecar_sha256": "8ea2beaf0a097a22f2e5496eb85f6f8cb2f234e0b77134318f7b1b831aecc651"
+    },
+    {
+      "phase": "after",
+      "source_sha": "d0e4db19c946fad2841169bcf880b5aa2a8885c4",
+      "png": "after/WorkspaceSetupPreflightRoute-466x678-en-1.0.png",
+      "png_sha256": "8ddf9532632e0733583370bdefbc14002ed6b30716ad37664173c6e414047f7c",
+      "sidecar": "after/WorkspaceSetupPreflightRoute-466x678-en-1.0.json",
+      "sidecar_sha256": "73a69b6d170411fab3589dcf272c07eb31922b84b81014e752279a6eb684807b"
+    }
+  ],
+  "renderer": "Flutter widget-test Skia on Linux",
+  "viewport": [466, 678],
+  "locale": "en",
+  "theme": "light",
+  "text_scale": 1.0,
+  "native_typography_and_assistive_technology_tested": false
+}

@@ -2332,6 +2332,128 @@ abstract class LocaleKeys {
       'workspace_location.view_members';
   static const workspace_location_view_access =
       'workspace_location.view_access';
+  static const workspace_setup_preflight_title =
+      'workspace_setup_preflight.title';
+  static const workspace_setup_preflight_entry_title =
+      'workspace_setup_preflight.entry_title';
+  static const workspace_setup_preflight_entry_description =
+      'workspace_setup_preflight.entry_description';
+  static const workspace_setup_preflight_open =
+      'workspace_setup_preflight.open';
+  static const workspace_setup_preflight_saved_configuration_only =
+      'workspace_setup_preflight.saved_configuration_only';
+  static const workspace_setup_preflight_refresh_local =
+      'workspace_setup_preflight.refresh_local';
+  static const workspace_setup_preflight_refresh_saved_cloud =
+      'workspace_setup_preflight.refresh_saved_cloud';
+  static const workspace_setup_preflight_copy_summary =
+      'workspace_setup_preflight.copy_summary';
+  static const workspace_setup_preflight_summary_copied =
+      'workspace_setup_preflight.summary_copied';
+  static const workspace_setup_preflight_summary_copy_error =
+      'workspace_setup_preflight.summary_copy_error';
+  static const workspace_setup_preflight_unavailable =
+      'workspace_setup_preflight.unavailable';
+  static const workspace_setup_preflight_check_storage =
+      'workspace_setup_preflight.check.storage';
+  static const workspace_setup_preflight_check_provider =
+      'workspace_setup_preflight.check.provider';
+  static const workspace_setup_preflight_check_model =
+      'workspace_setup_preflight.check.model';
+  static const workspace_setup_preflight_check_mcp =
+      'workspace_setup_preflight.check.mcp';
+  static const workspace_setup_preflight_status_pass =
+      'workspace_setup_preflight.status.pass';
+  static const workspace_setup_preflight_status_warning =
+      'workspace_setup_preflight.status.warning';
+  static const workspace_setup_preflight_status_fail =
+      'workspace_setup_preflight.status.fail';
+  static const workspace_setup_preflight_status_unknown =
+      'workspace_setup_preflight.status.unknown';
+  static const workspace_setup_preflight_outcome_ready =
+      'workspace_setup_preflight.outcome.ready';
+  static const workspace_setup_preflight_outcome_needs_setup =
+      'workspace_setup_preflight.outcome.needs_setup';
+  static const workspace_setup_preflight_outcome_blocked =
+      'workspace_setup_preflight.outcome.blocked';
+  static const workspace_setup_preflight_outcome_unverified =
+      'workspace_setup_preflight.outcome.unverified';
+  static const workspace_setup_preflight_storage_available =
+      'workspace_setup_preflight.storage_available';
+  static const workspace_setup_preflight_storage_unavailable =
+      'workspace_setup_preflight.storage_unavailable';
+  static const workspace_setup_preflight_storage_unverified =
+      'workspace_setup_preflight.storage_unverified';
+  static const workspace_setup_preflight_provider_unverified =
+      'workspace_setup_preflight.provider_unverified';
+  static const workspace_setup_preflight_provider_not_configured =
+      'workspace_setup_preflight.provider_not_configured';
+  static const workspace_setup_preflight_provider_credential_missing_optional =
+      'workspace_setup_preflight.provider_credential_missing_optional';
+  static const workspace_setup_preflight_provider_credential_missing_required =
+      'workspace_setup_preflight.provider_credential_missing_required';
+  static const workspace_setup_preflight_provider_for_model_missing =
+      'workspace_setup_preflight.provider_for_model_missing';
+  static const workspace_setup_preflight_provider_saved =
+      'workspace_setup_preflight.provider_saved';
+  static const workspace_setup_preflight_model_not_selected =
+      'workspace_setup_preflight.model_not_selected';
+  static const workspace_setup_preflight_model_unverified =
+      'workspace_setup_preflight.model_unverified';
+  static const workspace_setup_preflight_model_missing =
+      'workspace_setup_preflight.model_missing';
+  static const workspace_setup_preflight_model_metadata_unavailable =
+      'workspace_setup_preflight.model_metadata_unavailable';
+  static const workspace_setup_preflight_model_metadata_available =
+      'workspace_setup_preflight.model_metadata_available';
+  static const workspace_setup_preflight_model_modalities =
+      'workspace_setup_preflight.model_modalities';
+  static const workspace_setup_preflight_model_modality_unknown =
+      'workspace_setup_preflight.model_modality_unknown';
+  static const workspace_setup_preflight_model_tools_supported =
+      'workspace_setup_preflight.model_tools_supported';
+  static const workspace_setup_preflight_model_tools_unsupported =
+      'workspace_setup_preflight.model_tools_unsupported';
+  static const workspace_setup_preflight_model_reasoning_supported =
+      'workspace_setup_preflight.model_reasoning_supported';
+  static const workspace_setup_preflight_model_reasoning_unsupported =
+      'workspace_setup_preflight.model_reasoning_unsupported';
+  static const workspace_setup_preflight_modality_text =
+      'workspace_setup_preflight.modality.text';
+  static const workspace_setup_preflight_modality_image =
+      'workspace_setup_preflight.modality.image';
+  static const workspace_setup_preflight_modality_audio =
+      'workspace_setup_preflight.modality.audio';
+  static const workspace_setup_preflight_modality_video =
+      'workspace_setup_preflight.modality.video';
+  static const workspace_setup_preflight_mcp_unverified =
+      'workspace_setup_preflight.mcp_unverified';
+  static const workspace_setup_preflight_mcp_not_configured =
+      'workspace_setup_preflight.mcp_not_configured';
+  static const workspace_setup_preflight_mcp_disabled =
+      'workspace_setup_preflight.mcp_disabled';
+  static const workspace_setup_preflight_mcp_not_tested =
+      'workspace_setup_preflight.mcp_not_tested';
+  static const workspace_setup_preflight_mcp_attention =
+      'workspace_setup_preflight.mcp_attention';
+  static const workspace_setup_preflight_mcp_last_test_passed =
+      'workspace_setup_preflight.mcp_last_test_passed';
+  static const workspace_setup_preflight_recovery_add_provider =
+      'workspace_setup_preflight.recovery.add_provider';
+  static const workspace_setup_preflight_recovery_review_provider =
+      'workspace_setup_preflight.recovery.review_provider';
+  static const workspace_setup_preflight_recovery_choose_model =
+      'workspace_setup_preflight.recovery.choose_model';
+  static const workspace_setup_preflight_recovery_open_connections =
+      'workspace_setup_preflight.recovery.open_connections';
+  static const workspace_setup_preflight_summary_overall =
+      'workspace_setup_preflight.summary.overall';
+  static const workspace_setup_preflight_summary_generated_at =
+      'workspace_setup_preflight.summary.generated_at';
+  static const workspace_setup_preflight_summary_app_version =
+      'workspace_setup_preflight.summary.app_version';
+  static const workspace_setup_preflight_summary_unavailable =
+      'workspace_setup_preflight.summary.unavailable';
   static const workspace_management_title = 'workspace_management.title';
   static const workspace_management_copy_id = 'workspace_management.copy_id';
   static const workspace_management_id_copied =
