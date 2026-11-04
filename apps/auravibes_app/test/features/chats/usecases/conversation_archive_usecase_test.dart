@@ -69,12 +69,152 @@ void main() {
       archiveJson: json,
     );
     expect(imported.toolAccessMode, ConversationToolAccessMode.allowAll);
+    final preview = await usecase.previewConversation(
+      conversationId: imported.id,
+    );
     final exported = await usecase.exportConversation(
       conversationId: imported.id,
+      expectedPreview: preview,
     );
     expect(
       ConversationArchiveCodec.decode(exported).toolAccessMode,
       ConversationToolAccessMode.allowAll,
+    );
+  });
+
+  test('previews attachment metadata without reading bytes', () async {
+    final workspace = await database.workspaceDao.insertWorkspace(
+      .insert(name: 'Archive preview test', type: .local),
+    );
+    final conversation = await ConversationRepository(database)
+        .createConversation(
+          .new(title: 'Research notes', workspaceId: workspace.id),
+        );
+    final message = await database.messageDao.insertMessage(
+      .insert(
+        conversationId: conversation.id,
+        content: 'See the attached report',
+        messageType: .text,
+        isUser: true,
+        status: .sent,
+      ),
+    );
+    final _ = await database
+        .into(database.messageAttachments)
+        .insert(
+          MessageAttachmentsCompanion.insert(
+            messageId: message.id,
+            localPath: '/private/account/report.pdf',
+            fileName: '/private/account/report.pdf',
+            displayName: const .new('report.pdf'),
+            mimeType: 'application/pdf',
+            modality: 'file',
+            sizeBytes: 2048,
+          ),
+        );
+
+    final usecase = _usecase(database);
+    final preview = await usecase.previewConversation(
+      conversationId: conversation.id,
+    );
+
+    expect(preview.countAttachments(), 1);
+    expect(preview.conversations.single.title, 'Research notes');
+    final attachment = preview.conversations.single.attachments.single;
+    expect(attachment.fileName, 'report.pdf');
+    expect(attachment.mimeType, 'application/pdf');
+    expect(attachment.sizeBytes, 2048);
+    expect(preview.toString(), isNot(contains('/private/account')));
+
+    final archive = await usecase.exportConversation(
+      conversationId: conversation.id,
+      includeAttachments: false,
+      expectedPreview: preview,
+    );
+    final decoded = jsonDecode(archive) as Map<String, dynamic>;
+    final messages = decoded['messages'] as List<dynamic>;
+    final exportedMessage = messages.single as Map<String, dynamic>;
+    expect(decoded['version'], 2);
+    expect(exportedMessage['content'], 'See the attached report');
+    expect(exportedMessage['attachments'], isEmpty);
+    expect(archive, isNot(contains('report.pdf')));
+  });
+
+  test('exports selected conversations as one archive bundle', () async {
+    final workspace = await database.workspaceDao.insertWorkspace(
+      .insert(name: 'Bulk archive export', type: .local),
+    );
+    final repository = ConversationRepository(database);
+    final firstConversation = await repository.createConversation(
+      .new(title: 'First chat', workspaceId: workspace.id),
+    );
+    final secondConversation = await repository.createConversation(
+      .new(title: 'Second chat', workspaceId: workspace.id),
+    );
+    final conversationIds = [firstConversation.id, secondConversation.id];
+    final usecase = _usecase(database);
+    final preview = await usecase.previewConversations(
+      workspaceId: workspace.id,
+      conversationIds: conversationIds,
+    );
+
+    final exported = await usecase.exportConversations(
+      workspaceId: workspace.id,
+      conversationIds: conversationIds,
+      expectedPreview: preview,
+      includeAttachments: false,
+    );
+    final archives = ConversationArchiveCodec.decodeMany(exported);
+
+    expect(archives.map((archive) => archive.title), [
+      'First chat',
+      'Second chat',
+    ]);
+    expect(archives.every((archive) => archive.messages.isEmpty), isTrue);
+  });
+
+  test('rejects an export when attachments changed after review', () async {
+    final workspace = await database.workspaceDao.insertWorkspace(
+      .insert(name: 'Stale archive preview', type: .local),
+    );
+    final conversation = await ConversationRepository(database)
+        .createConversation(
+          .new(title: 'Reviewed notes', workspaceId: workspace.id),
+        );
+    final message = await database.messageDao.insertMessage(
+      .insert(
+        conversationId: conversation.id,
+        content: 'See the attached report',
+        messageType: .text,
+        isUser: true,
+        status: .sent,
+      ),
+    );
+    final usecase = _usecase(database);
+    final preview = await usecase.previewConversation(
+      conversationId: conversation.id,
+    );
+
+    final _ = await database
+        .into(database.messageAttachments)
+        .insert(
+          MessageAttachmentsCompanion.insert(
+            messageId: message.id,
+            localPath: '/private/account/new-report.pdf',
+            fileName: 'new-report.pdf',
+            displayName: const .new('new-report.pdf'),
+            mimeType: 'application/pdf',
+            modality: 'file',
+            sizeBytes: 2048,
+          ),
+        );
+
+    await expectLater(
+      usecase.exportConversation(
+        conversationId: conversation.id,
+        expectedPreview: preview,
+      ),
+      throwsA(isA<ArchiveExportPreviewChangedException>()),
     );
   });
 
@@ -214,8 +354,12 @@ void main() {
       );
 
       final usecase = _usecase(database);
+      final preview = await usecase.previewConversation(
+        conversationId: source.id,
+      );
       final archiveJson = await usecase.exportConversation(
         conversationId: source.id,
+        expectedPreview: preview,
       );
       final imported = await usecase.importConversation(
         workspaceId: workspace.id,
@@ -320,8 +464,12 @@ void main() {
       );
 
       final usecase = _usecase(database);
+      final preview = await usecase.previewConversation(
+        conversationId: source.id,
+      );
       final archiveJson = await usecase.exportConversation(
         conversationId: source.id,
+        expectedPreview: preview,
       );
       final imported = await usecase.importConversation(
         workspaceId: workspace.id,
@@ -729,8 +877,12 @@ void main() {
       permissionMode: .alwaysDeny,
     );
     final usecase = _usecase(database);
+    final preview = await usecase.previewConversation(
+      conversationId: sourceConversation.id,
+    );
     final encoded = await usecase.exportConversation(
       conversationId: sourceConversation.id,
+      expectedPreview: preview,
     );
     final archive = ConversationArchiveCodec.decode(encoded);
     final imported = (await usecase.importArchive(

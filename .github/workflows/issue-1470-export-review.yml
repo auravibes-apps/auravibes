@@ -1,0 +1,87 @@
+name: Conversation export review evidence
+
+on:
+  push:
+    branches: [codex/issue-1470-export-review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: issue-1470-export-review-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  baseline-capture:
+    name: production archive review before
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    env:
+      BASELINE_SHA: 5b495cc8c6bf88fe1c7830639d14d3ecd2c17490
+    steps:
+      - name: Checkout feature source for the shared capture fixture
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Preserve the revision-independent capture test
+        run: cp apps/auravibes_app/test/widgets/ux_validation_layout_test.dart "$RUNNER_TEMP/ux_validation_layout_test.dart"
+
+      - name: Checkout exact main baseline
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ env.BASELINE_SHA }}
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Capture the production archive review before change
+        working-directory: apps/auravibes_app
+        env:
+          XDG_DATA_HOME: ${{ runner.temp }}/export-review-before-data
+          XDG_CONFIG_HOME: ${{ runner.temp }}/export-review-before-config
+        run: |
+          mkdir -p "$RUNNER_TEMP/export-review-before"
+          cp "$RUNNER_TEMP/ux_validation_layout_test.dart" test/widgets/ux_validation_layout_test.dart
+          python3 ../../tool/validation_lease.py --label export-review-before-capture -- flutter test test/widgets/ux_validation_layout_test.dart --no-pub --plain-name='conversation archive export review capture' --dart-define=EXPORT_REVIEW_CAPTURE_BASELINE=true --dart-define="UX_CAPTURE_DIR=$RUNNER_TEMP/export-review-before" --dart-define="UX_SOURCE_FINGERPRINT=$BASELINE_SHA"
+
+      - name: Upload baseline screenshot and provenance
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: conversation-export-review-before-${{ github.sha }}
+          path: ${{ runner.temp }}/export-review-before/
+          if-no-files-found: error
+          retention-days: 14
+
+  feature-capture:
+    name: production archive review after
+    needs: baseline-capture
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Capture the production archive review after change
+        working-directory: apps/auravibes_app
+        env:
+          XDG_DATA_HOME: ${{ runner.temp }}/export-review-after-data
+          XDG_CONFIG_HOME: ${{ runner.temp }}/export-review-after-config
+        run: |
+          mkdir -p "$RUNNER_TEMP/export-review-after"
+          python3 ../../tool/validation_lease.py --label export-review-after-capture -- flutter test test/widgets/ux_validation_layout_test.dart --no-pub --plain-name='conversation archive export review capture' --dart-define="UX_CAPTURE_DIR=$RUNNER_TEMP/export-review-after" --dart-define="UX_SOURCE_FINGERPRINT=$GITHUB_SHA"
+
+      - name: Upload feature screenshot and provenance
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: conversation-export-review-after-${{ github.sha }}
+          path: ${{ runner.temp }}/export-review-after/
+          if-no-files-found: error
+          retention-days: 14

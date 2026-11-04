@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/chats/models/conversation_archive_export_preview.dart';
 import 'package:auravibes_app/features/chats/models/conversation_list_scope.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_result.dart';
@@ -892,25 +893,57 @@ extension on _ChatTileState {
       _forkChatAndNavigate(this, context);
 
   Future<void> _exportConversationArchive(BuildContext context) async {
-    final shouldExport = await ConversationArchiveExportReviewDialog.show(
-      context,
-      fileName: 'conversation.auravibes.json',
-    );
-    if (!shouldExport || !context.mounted) return;
-
     try {
-      final saved = await _saveConversationArchive();
-      if (!saved || !context.mounted) return;
-      ConversationArchiveFeedback.showExported(context);
+      await _previewAndExportConversationArchive(context);
     } on Object catch (error, stackTrace) {
+      if (!context.mounted) return;
       _reportArchiveExportError(context, error, stackTrace);
     }
   }
 
-  Future<bool> _saveConversationArchive() async {
+  Future<void> _previewAndExportConversationArchive(
+    BuildContext context,
+  ) async {
+    final preview = await ref
+        .read(conversationArchiveUsecaseProvider)
+        .previewConversation(conversationId: widget.chat.id);
+    if (!context.mounted) return;
+
+    final decision = await ConversationArchiveExportReviewDialog.show(
+      context,
+      fileName: 'conversation.auravibes.json',
+      preview: preview,
+    );
+    if (!context.mounted) return;
+    await _saveReviewedConversationArchive(context, decision, preview);
+  }
+
+  Future<void> _saveReviewedConversationArchive(
+    BuildContext context,
+    ({bool includeAttachments})? decision,
+    ConversationArchiveExportPreview preview,
+  ) async {
+    if (decision == null || !context.mounted) return;
+    final saved = await _saveConversationArchive(
+      includeAttachments: decision.includeAttachments,
+      expectedPreview: preview,
+    );
+    if (!saved || !context.mounted) return;
+
+    ConversationArchiveFeedback.showExported(context);
+  }
+
+  Future<bool> _saveConversationArchive({
+    required bool includeAttachments,
+    required ConversationArchiveExportPreview expectedPreview,
+  }) async {
     final archiveJson = await ref
         .read(conversationArchiveUsecaseProvider)
-        .exportConversation(conversationId: widget.chat.id);
+        .exportConversation(
+          conversationId: widget.chat.id,
+          includeAttachments: includeAttachments,
+          expectedPreview: expectedPreview,
+        );
 
     return await ref
         .read(conversationArchiveFileServiceProvider)
@@ -920,9 +953,9 @@ extension on _ChatTileState {
   void _reportArchiveExportError(
     BuildContext context,
     Object error,
-    StackTrace stackTrace,
+    StackTrace _,
   ) {
-    _logger.warning('Failed to export conversation archive', error, stackTrace);
+    _logger.warning('Failed to export conversation archive');
     ConversationArchiveFeedback.showError(context, error);
   }
 
@@ -1236,20 +1269,67 @@ extension on _ChatListBulkActionsState {
   Future<void> _exportSelected(Iterable<ConversationEntity> selected) async {
     if (_isWorking) return;
     final selectedConversations = selected.toList(growable: false);
-    final shouldExport = await ConversationArchiveExportReviewDialog.show(
-      context,
-      fileName: 'conversations.auravibes.json',
-    );
-    if (!shouldExport || !mounted) return;
+    try {
+      await _previewAndReviewSelectedArchive(selectedConversations);
+    } on Object catch (error, stackTrace) {
+      _reportSelectedArchiveError(error, stackTrace);
+    }
+  }
 
-    await _withWorking(() => _exportSelectedArchive(selectedConversations));
+  Future<void> _previewAndReviewSelectedArchive(
+    List<ConversationEntity> selected,
+  ) async {
+    final preview = await _previewSelectedArchive(selected);
+    if (!mounted) return;
+
+    final decision = await _reviewSelectedArchive(preview);
+    await _exportReviewedSelection(selected, decision, preview);
+  }
+
+  Future<ConversationArchiveExportPreview> _previewSelectedArchive(
+    List<ConversationEntity> selected,
+  ) => ref
+      .read(conversationArchiveUsecaseProvider)
+      .previewConversations(
+        workspaceId: widget.workspaceId,
+        conversationIds: [for (final conversation in selected) conversation.id],
+      );
+
+  Future<({bool includeAttachments})?> _reviewSelectedArchive(
+    ConversationArchiveExportPreview preview,
+  ) => ConversationArchiveExportReviewDialog.show(
+    context,
+    fileName: 'conversations.auravibes.json',
+    preview: preview,
+  );
+
+  Future<void> _exportReviewedSelection(
+    List<ConversationEntity> selected,
+    ({bool includeAttachments})? decision,
+    ConversationArchiveExportPreview preview,
+  ) async {
+    if (decision == null || !mounted) return;
+
+    await _withWorking(
+      () => _exportSelectedArchive(
+        selected,
+        includeAttachments: decision.includeAttachments,
+        expectedPreview: preview,
+      ),
+    );
   }
 
   Future<void> _exportSelectedArchive(
-    Iterable<ConversationEntity> selected,
-  ) async {
+    Iterable<ConversationEntity> selected, {
+    required bool includeAttachments,
+    required ConversationArchiveExportPreview expectedPreview,
+  }) async {
     try {
-      final saved = await _createAndSaveSelectedArchive(selected);
+      final saved = await _createAndSaveSelectedArchive(
+        selected,
+        includeAttachments: includeAttachments,
+        expectedPreview: expectedPreview,
+      );
       if (!saved || !mounted) return;
       ConversationArchiveFeedback.showExported(context);
     } on Object catch (error, stackTrace) {
@@ -1258,24 +1338,36 @@ extension on _ChatListBulkActionsState {
   }
 
   Future<bool> _createAndSaveSelectedArchive(
-    Iterable<ConversationEntity> selected,
-  ) async => await _saveSelectedArchive(await _createSelectedArchive(selected));
+    Iterable<ConversationEntity> selected, {
+    required bool includeAttachments,
+    required ConversationArchiveExportPreview expectedPreview,
+  }) async => await _saveSelectedArchive(
+    await _createSelectedArchive(
+      selected,
+      includeAttachments: includeAttachments,
+      expectedPreview: expectedPreview,
+    ),
+  );
 
   Future<String> _createSelectedArchive(
-    Iterable<ConversationEntity> selected,
-  ) => ref
+    Iterable<ConversationEntity> selected, {
+    required bool includeAttachments,
+    required ConversationArchiveExportPreview expectedPreview,
+  }) => ref
       .read(conversationArchiveUsecaseProvider)
       .exportConversations(
         workspaceId: widget.workspaceId,
         conversationIds: [for (final chat in selected) chat.id],
+        includeAttachments: includeAttachments,
+        expectedPreview: expectedPreview,
       );
 
   Future<bool> _saveSelectedArchive(String archiveJson) => ref
       .read(conversationArchiveFileServiceProvider)
       .saveArchiveJson(archiveJson, fileName: 'conversations.auravibes.json');
 
-  void _reportSelectedArchiveError(Object error, StackTrace stackTrace) {
-    _logger.warning('Failed to export conversation archive', error, stackTrace);
+  void _reportSelectedArchiveError(Object error, StackTrace _) {
+    _logger.warning('Failed to export conversation archive');
     if (!mounted) return;
     ConversationArchiveFeedback.showError(context, error);
   }
