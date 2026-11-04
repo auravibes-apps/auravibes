@@ -12,23 +12,17 @@ import 'package:auravibes_app/features/models/providers/workspace_model_selectio
 import 'package:auravibes_app/features/models/widgets/add_model_provider_widget.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_access_provider.dart';
-import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
-import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/native.dart';
-import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter_localizations/flutter_localizations.dart'
-    as sdk_localizations;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:riverpod/misc.dart' as riverpod_misc;
 
 import '../data/database/drift/database_test_utils.dart';
+import '../helpers/test_app.dart';
 
 void main() {
   final database = AppDatabase(connection: NativeDatabase.memory());
@@ -54,23 +48,22 @@ void main() {
     );
     addTearDown(router.dispose);
 
-    final container = _firstChatContainer(
-      database: database,
+    final overrides = [
+      appDatabaseProvider.overrideWithValue(database),
+      routerProvider.overrideWithValue(router),
+      workspaceAccessProvider(workspace.id)
+          .overrideWith((_) async => const (role: 'owner')),
+      chatModelConnectionsProvider(workspace.id)
+          .overrideWith((ref) => Stream.value([])),
+      listModelsGroupedByProviderProvider(workspaceId: workspace.id)
+          .overrideWith((ref) => Stream.value({})),
+    ];
+    await _pumpFirstChatApp(
+      tester: tester,
       workspaceId: workspace.id,
       session: session,
       router: router,
-      extraOverrides: [
-        chatModelConnectionsProvider(workspace.id)
-            .overrideWith((ref) => Stream.value([])),
-        listModelsGroupedByProviderProvider(workspaceId: workspace.id)
-            .overrideWith((ref) => Stream.value({})),
-      ],
-    );
-    addTearDown(container.dispose);
-    await _pumpFirstChatApp(
-      tester: tester,
-      container: container,
-      router: router,
+      overrides: overrides,
     );
     final _ = await tester.pumpAndSettle();
 
@@ -95,7 +88,6 @@ void main() {
       isEmpty,
     );
     expect(tester.takeException(), isNull);
-    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   testWidgets('new chat ignores route extras that are not drafts', (
@@ -117,23 +109,22 @@ void main() {
     );
     addTearDown(router.dispose);
 
-    final container = _firstChatContainer(
-      database: database,
+    final overrides = [
+      appDatabaseProvider.overrideWithValue(database),
+      routerProvider.overrideWithValue(router),
+      workspaceAccessProvider(workspace.id)
+          .overrideWith((_) async => const (role: 'owner')),
+      chatModelConnectionsProvider(workspace.id)
+          .overrideWith((ref) => Stream.value([])),
+      listModelsGroupedByProviderProvider(workspaceId: workspace.id)
+          .overrideWith((ref) => Stream.value({})),
+    ];
+    await _pumpFirstChatApp(
+      tester: tester,
       workspaceId: workspace.id,
       session: session,
       router: router,
-      extraOverrides: [
-        chatModelConnectionsProvider(workspace.id)
-            .overrideWith((ref) => Stream.value([])),
-        listModelsGroupedByProviderProvider(workspaceId: workspace.id)
-            .overrideWith((ref) => Stream.value({})),
-      ],
-    );
-    addTearDown(container.dispose);
-    await _pumpFirstChatApp(
-      tester: tester,
-      container: container,
-      router: router,
+      overrides: overrides,
     );
     final _ = await tester.pumpAndSettle();
     expect(find.byType(NewChatScreen), findsOneWidget);
@@ -145,7 +136,6 @@ void main() {
         .first;
     expect(tester.widget<EditableText>(editable).controller.text, isEmpty);
     expect(tester.takeException(), isNull);
-    await tester.pumpWidget(const SizedBox.shrink());
   });
 
   for (final action in ['save', 'cancel']) {
@@ -172,28 +162,26 @@ void main() {
           initialLocation: direct ? setup.location : chat,
         );
         addTearDown(router.dispose);
-        final container = _firstChatContainer(
-          database: database,
+        final overrides = [
+          appDatabaseProvider.overrideWithValue(database),
+          routerProvider.overrideWithValue(router),
+          workspaceAccessProvider(workspace.id)
+              .overrideWith((_) async => const (role: 'owner')),
+          chatModelConnectionsProvider(workspace.id)
+              .overrideWith((ref) => Stream.value([_connection(workspace.id)])),
+          listModelsGroupedByProviderProvider(workspaceId: workspace.id)
+              .overrideWith(
+                (ref) => Stream.value({
+                  'connection': [_model(workspace.id)],
+                }),
+              ),
+        ];
+        await _pumpFirstChatApp(
+          tester: tester,
           workspaceId: workspace.id,
           session: session,
           router: router,
-          extraOverrides: [
-            chatModelConnectionsProvider(
-              workspace.id,
-            ).overrideWith((ref) => Stream.value([_connection(workspace.id)])),
-            listModelsGroupedByProviderProvider(workspaceId: workspace.id)
-                .overrideWith(
-                  (ref) => Stream.value({
-                    'connection': [_model(workspace.id)],
-                  }),
-                ),
-          ],
-        );
-        addTearDown(container.dispose);
-        await _pumpFirstChatApp(
-          tester: tester,
-          container: container,
-          router: router,
+          overrides: overrides,
         );
         final _ = await tester.pumpAndSettle();
         if (!direct) {
@@ -236,8 +224,6 @@ void main() {
         expect(find.text('Use the model selector below.'), findsOneWidget);
         expect(find.text('Continue to chat to choose a model.'), findsNothing);
         if (!direct) expect(find.text('Keep my draft'), findsOneWidget);
-        await tester.pumpWidget(const SizedBox.shrink());
-        await tester.pump(const Duration(milliseconds: 10));
       });
     }
   }
@@ -264,71 +250,26 @@ WorkspaceModelSelectionWithConnectionEntity _model(String workspaceId) => .new(
   modelsProvider: const .new(id: 'openai', name: 'OpenAI', type: .openai),
 );
 
-ProviderContainer _firstChatContainer({
-  required AppDatabase database,
+Future<void> _pumpFirstChatApp({
+  required WidgetTester tester,
   required String workspaceId,
   required WorkspaceSession session,
   required GoRouter router,
-  required List<riverpod_misc.Override> extraOverrides,
-}) => ProviderContainer(
-  overrides: [
-    appDatabaseProvider.overrideWithValue(database),
-    workspaceSessionProvider(session).overrideWithValue(session),
-    workspaceSessionForRouteProvider(workspaceId)
-        .overrideWithValue(AsyncData(session)),
-    workspaceAccessProvider(workspaceId).overrideWithValue(
-      const AsyncData((role: 'owner')),
-    ),
-    routerProvider.overrideWithValue(router),
-    ...extraOverrides,
-  ],
-  retry: (_, _) => null,
-);
-
-Future<void> _pumpFirstChatApp({
-  required WidgetTester tester,
-  required ProviderContainer container,
-  required GoRouter router,
+  required List<Object> overrides,
 }) async {
-  await tester.pumpWidget(_FirstChatApp(container: container, router: router));
-}
-
-class const _FirstChatApp({
-  required final ProviderContainer container,
-  required final GoRouter router,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => EasyLocalization(
-    child: Builder(
-      builder: (context) => UncontrolledProviderScope(
-        container: container,
-        child: MaterialApp.router(
-          routerConfig: router,
-          builder: (_, child) => AuraThemeScope(
-            theme: .light,
-            child: AuraLegacyMaterialBridge(
-              child: Portal(
-                child: AuraSnackBarHost(
-                  child: child ?? const SizedBox.shrink(),
-                ),
-              ),
-            ),
-          ),
-          locale: context.locale,
-          localizationsDelegates: [
-            ...GlobalMaterialLocalizations.delegates,
-            sdk_localizations.GlobalMaterialLocalizations.delegate,
-            ...context.localizationDelegates,
-          ],
-          supportedLocales: context.supportedLocales,
+  await tester.runAsync(
+    () => tester.pumpWidget(
+      TestableApp(
+        child: AuraThemeScope(
+          theme: .light,
+          child: Portal(child: Router.withConfig(config: router)),
         ),
+        overrides: overrides,
+        workspaceId: workspaceId,
+        workspaceSession: session,
       ),
     ),
-    supportedLocales: const [Locale('en'), Locale('es')],
-    path: 'assets/i18n',
-    fallbackLocale: const Locale('en'),
-    startLocale: const Locale('en'),
-    useOnlyLangCode: true,
-    useFallbackTranslations: true,
   );
+  await tester.pump();
+  await tester.pump();
 }
