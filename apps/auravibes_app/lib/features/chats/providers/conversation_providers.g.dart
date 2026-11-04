@@ -116,13 +116,7 @@ final class ConversationsStreamProvider
         $StreamProvider<List<ConversationEntity>> {
   ConversationsStreamProvider._({
     required ConversationsStreamFamily super.from,
-    required ({
-      String workspaceId,
-      String search,
-      Set<String> labelIds,
-      _ConversationPagination pagination,
-    })
-    super.argument,
+    required ConversationStreamRequest super.argument,
   }) : super(
          retry: null,
          name: r'conversationsStreamProvider',
@@ -138,7 +132,7 @@ final class ConversationsStreamProvider
   String toString() {
     return r'conversationsStreamProvider'
         ''
-        '$argument';
+        '($argument)';
   }
 
   @$internal
@@ -149,21 +143,8 @@ final class ConversationsStreamProvider
 
   @override
   Stream<List<ConversationEntity>> create(Ref ref) {
-    final argument =
-        this.argument
-            as ({
-              String workspaceId,
-              String search,
-              Set<String> labelIds,
-              _ConversationPagination pagination,
-            });
-    return conversationsStream(
-      ref,
-      workspaceId: argument.workspaceId,
-      search: argument.search,
-      labelIds: argument.labelIds,
-      pagination: argument.pagination,
-    );
+    final argument = this.argument as ConversationStreamRequest;
+    return conversationsStream(ref, argument);
   }
 
   @override
@@ -178,18 +159,13 @@ final class ConversationsStreamProvider
 }
 
 String _$conversationsStreamHash() =>
-    r'0e6cdaebb394eab36191031dfaac631c9cece99a';
+    r'c84d898542b011d8e4603055a84683d510465e56';
 
 final class ConversationsStreamFamily extends $Family
     with
         $FunctionalFamilyOverride<
           Stream<List<ConversationEntity>>,
-          ({
-            String workspaceId,
-            String search,
-            Set<String> labelIds,
-            _ConversationPagination pagination,
-          })
+          ConversationStreamRequest
         > {
   ConversationsStreamFamily._()
     : super(
@@ -200,20 +176,8 @@ final class ConversationsStreamFamily extends $Family
         isAutoDispose: true,
       );
 
-  ConversationsStreamProvider call({
-    required String workspaceId,
-    String search = '',
-    Set<String> labelIds = const {},
-    _ConversationPagination pagination = _defaultConversationPagination,
-  }) => ConversationsStreamProvider._(
-    argument: (
-      workspaceId: workspaceId,
-      search: search,
-      labelIds: labelIds,
-      pagination: pagination,
-    ),
-    from: this,
-  );
+  ConversationsStreamProvider call(ConversationStreamRequest request) =>
+      ConversationsStreamProvider._(argument: request, from: this);
 
   @override
   String toString() => r'conversationsStreamProvider';

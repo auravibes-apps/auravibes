@@ -6,9 +6,12 @@ import 'package:auravibes_app/data/repositories/conversation_labels_repository.d
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/conversation_list_query_options.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
+import 'package:auravibes_app/features/chats/models/conversation_list_scope.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
@@ -75,6 +78,7 @@ void main() {
         ),
       ],
       workspaceId: workspaceId,
+      workspaceSession: .new(LocalWorkspaceRef(localWorkspaceId: workspaceId)),
       startLocale: startLocale,
     );
   }
@@ -644,6 +648,258 @@ void main() {
       expect(find.byIcon(Icons.more_vert), findsOneWidget);
     });
 
+    testWidgets('archives, searches, and restores a conversation', (
+      tester,
+    ) async {
+      final database = AppDatabase(
+        connection: DatabaseConnection(NativeDatabase.memory()),
+      );
+      addTearDown(database.close);
+      final workspace = await database.workspaceDao.insertWorkspace(
+        .insert(name: 'Archive UI test', type: WorkspaceType.local),
+      );
+      final conversation = await ConversationRepository(database)
+          .createConversation(
+            .new(title: 'Project research', workspaceId: workspace.id),
+          );
+      final scope = ValueNotifier(ConversationListScope.active);
+      addTearDown(scope.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          workspaceId: workspace.id,
+          content: ValueListenableBuilder<ConversationListScope>(
+            valueListenable: scope,
+            builder: (_, currentScope, _) =>
+                ChatListWidget(workspaceId: workspace.id, scope: currentScope),
+          ),
+          overrides: [
+            appDatabaseProvider.overrideWithValue(database),
+            conversationRepositoryProvider.overrideWithValue(.new(database)),
+            streamingTitleProvider.overrideWith((ref, id) => null),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+        ),
+      );
+      final container = tester
+          .widget<UncontrolledProviderScope>(
+            find.byType(UncontrolledProviderScope),
+          )
+          .container;
+
+      Future<void> waitForConversationVisibility({
+        required bool isVisible,
+      }) async {
+        for (var attempt = 0; attempt < 30; attempt++) {
+          await tester.pump(const Duration(milliseconds: 100));
+          final isSearching = find
+              .byKey(const ValueKey('conversation-searching'))
+              .evaluate()
+              .isNotEmpty;
+          final titleIsVisible = find
+              .text('Project research')
+              .evaluate()
+              .isNotEmpty;
+          if (!isSearching && titleIsVisible == isVisible) return;
+        }
+        fail('Timed out waiting for conversation visibility: $isVisible');
+      }
+
+      await waitForConversationVisibility(isVisible: true);
+
+      final conversationState = container.read(
+        conversationsStreamProvider((
+          workspaceId: workspace.id,
+          search: '',
+          labelIds: const {},
+          scope: ConversationListScope.active,
+          pagination: (limit: 21, offset: 0),
+        )),
+      );
+      expect(
+        find.text('Project research'),
+        findsOneWidget,
+        reason: 'Conversation stream state: $conversationState',
+      );
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Archive'), findsOneWidget);
+      expect(find.text('Export backup'), findsOneWidget);
+      await tester.tap(find.text('Archive'));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(
+        await database.conversationArchiveStateDao.getArchivedConversationIds(
+          workspace.id,
+        ),
+        {conversation.id},
+      );
+      expect(find.text('Project research'), findsNothing);
+      scope.value = ConversationListScope.archived;
+      await tester.pump();
+
+      await waitForConversationVisibility(isVisible: true);
+      expect(find.text('Project research'), findsOneWidget);
+      expect(
+        find.byKey(ValueKey('conversation-selection-${conversation.id}')),
+        findsNothing,
+      );
+      expect(find.text('Delete selected'), findsNothing);
+      await tester.enterText(find.byType(EditableText), 'missing');
+      await tester.pump(const Duration(milliseconds: 301));
+      await waitForConversationVisibility(isVisible: false);
+      expect(find.text('Project research'), findsNothing);
+
+      await tester.enterText(find.byType(EditableText), 'Project');
+      await tester.pump(const Duration(milliseconds: 301));
+      await waitForConversationVisibility(isVisible: true);
+      expect(find.text('Project research'), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.more_vert));
+      for (var attempt = 0; attempt < 5; attempt++) {
+        if (find.text('Restore').evaluate().isNotEmpty) break;
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.text('Restore'), findsOneWidget);
+      expect(find.text('Archive'), findsNothing);
+      await tester.tap(find.text('Restore'));
+      await tester.pump();
+
+      expect(
+        await database.conversationArchiveStateDao.getArchivedConversationIds(
+          workspace.id,
+        ),
+        isEmpty,
+      );
+      await waitForConversationVisibility(isVisible: false);
+      expect(find.text('Project research'), findsNothing);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump(const Duration(milliseconds: 10));
+    });
+
+    testWidgets('archives cloud conversations only in the device database', (
+      tester,
+    ) async {
+      final database = AppDatabase(
+        connection: DatabaseConnection(NativeDatabase.memory()),
+      );
+      addTearDown(database.close);
+      final workspace = await database.workspaceDao.insertWorkspace(
+        .insert(name: 'Cloud archive UI test', type: WorkspaceType.remote),
+      );
+      final conversation = _createConversation(title: 'Shared research')
+          .copyWith(workspaceId: workspace.id);
+      final cloudWorkspace = CloudWorkspaceRef(
+        localWorkspaceId: workspace.id,
+        serverUrl: 'https://example.com',
+        accountId: 'account',
+        cloudWorkspaceId: 7,
+      );
+      final session = WorkspaceSession(cloudWorkspace);
+
+      await pumpAndInit(
+        tester,
+        TestableApp(
+          child: ChatListWidget(workspaceId: workspace.id),
+          overrides: [
+            appDatabaseProvider.overrideWithValue(database),
+            conversationsStreamProvider.overrideWith(
+              (ref, _) => Stream.value([conversation]),
+            ),
+            streamingTitleProvider.overrideWith((ref, id) => null),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+          workspaceId: workspace.id,
+          workspaceSession: session,
+        ),
+      );
+      final _ = await tester.pumpAndSettle();
+
+      final container = tester
+          .widget<UncontrolledProviderScope>(
+            find.byType(UncontrolledProviderScope),
+          )
+          .container;
+      final conversationState = container.read(
+        conversationsStreamProvider((
+          workspaceId: workspace.id,
+          search: '',
+          labelIds: const {},
+          scope: ConversationListScope.active,
+          pagination: (limit: 21, offset: 0),
+        )),
+      );
+      expect(
+        find.byIcon(Icons.more_vert),
+        findsOneWidget,
+        reason: 'Cloud conversation stream state: $conversationState',
+      );
+      await tester.tap(find.byIcon(Icons.more_vert));
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('Archive'), findsOneWidget);
+      expect(find.text('Export backup'), findsNothing);
+      await tester.tap(find.text('Archive'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        await database.conversationArchiveStateDao.getArchivedConversationIds(
+          workspace.id,
+        ),
+        {conversation.id},
+      );
+    });
+
+    testWidgets('opens an archived conversation when its card is tapped', (
+      tester,
+    ) async {
+      final repo = _StubConversationRepository(
+        conversationsStream: .value([
+          _createConversation(title: 'Archived project'),
+        ]),
+      );
+      final router = GoRouter(
+        routes: [
+          GoRoute(path: '/', builder: (_, _) => const SizedBox.shrink()),
+          GoRoute(
+            path: '/workspaces/:workspaceId/chats/:chatId',
+            builder: (_, _) => const SizedBox.shrink(),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await pumpAndInit(
+        tester,
+        buildSubject(
+          workspaceId: 'ws-1',
+          content: InheritedGoRouter(
+            child: const ChatListWidget(workspaceId: 'ws-1', scope: .archived),
+            goRouter: router,
+          ),
+          overrides: [
+            conversationRepositoryProvider.overrideWithValue(repo),
+            streamingTitleProvider.overrideWith((ref, id) => null),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+        ),
+      );
+
+      await tester.tap(find.text('Archived project'));
+      final _ = await tester.pumpAndSettle();
+
+      expect(
+        router.routeInformationProvider.value.uri.path,
+        '/workspaces/ws-1/chats/conv-1',
+      );
+    });
+
     testWidgets('pins a conversation from its options menu', (tester) async {
       final repo = _StubConversationRepository(
         conversationsStream: .value([_createConversation()]),
@@ -1137,7 +1393,7 @@ void main() {
 
       await tester.tap(find.text('Export selected'));
       final _ = await tester.pumpAndSettle();
-      expect(find.text('Review your conversation archive'), findsOneWidget);
+      expect(find.text('Review your conversation backup'), findsOneWidget);
       expect(
         find.text(
           'In the next save dialog, choose where to save '
@@ -1778,19 +2034,26 @@ class _StubConversationRepository({
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
-    String? search,
-    int? limit,
-    int offset = 0,
+    ConversationListQueryOptions options = const (
+      search: '',
+      archivedOnly: false,
+      limit: null,
+      offset: 0,
+    ),
   }) {
-    queries.add((search: search, limit: limit, offset: offset));
+    queries.add((
+      search: options.search,
+      limit: options.limit,
+      offset: options.offset,
+    ));
     final cachedConversations = _cachedConversations;
     if (cachedConversations != null) {
       return Stream.value(
         _page(
           cachedConversations,
-          search: search,
-          limit: limit,
-          offset: offset,
+          search: options.search,
+          limit: options.limit,
+          offset: options.offset,
         ),
       );
     }
@@ -1798,7 +2061,12 @@ class _StubConversationRepository({
     return conversationsStream.map((conversations) {
       _cachedConversations = conversations;
 
-      return _page(conversations, search: search, limit: limit, offset: offset);
+      return _page(
+        conversations,
+        search: options.search,
+        limit: options.limit,
+        offset: options.offset,
+      );
     });
   }
 

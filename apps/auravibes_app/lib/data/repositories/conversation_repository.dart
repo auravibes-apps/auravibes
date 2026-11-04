@@ -9,6 +9,7 @@ import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
 import 'package:auravibes_app/data/repositories/conversation_table_mapper.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_mutation.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/conversation_list_query_options.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_tool_result_sanitizer.dart';
 import 'package:drift/drift.dart';
@@ -96,17 +97,15 @@ class ConversationRepository(
 }) {
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
-    String search = '',
-    int? limit,
-    int offset = 0,
+    ConversationListQueryOptions options = const (
+      search: '',
+      archivedOnly: false,
+      limit: null,
+      offset: 0,
+    ),
   }) {
     return _database.conversationDao
-        .watchConversationsByWorkspace(
-          workspaceId,
-          search: search,
-          limit: limit,
-          offset: offset,
-        )
+        .watchConversationsByWorkspace(workspaceId, options: options)
         .map((rows) => rows.map(_mapToConversation).toList());
   }
 
@@ -400,9 +399,18 @@ extension on ConversationRepository {
   }
 
   Future<bool> _deleteSource(String id) async {
+    final source = await _database.conversationDao.getConversationById(id);
+    if (source == null) return false;
+
     final sourceMessageIds = await _sourceMessageIds(id);
     final deleted = await _database.conversationDao.deleteConversation(id);
-    if (deleted) await _deleteSourceAttachments(sourceMessageIds);
+    if (deleted) {
+      await _database.conversationArchiveStateDao.clearConversationArchive(
+        workspaceId: source.workspaceId,
+        conversationId: id,
+      );
+      await _deleteSourceAttachments(sourceMessageIds);
+    }
 
     return deleted;
   }
@@ -579,12 +587,22 @@ extension on ConversationRepository {
     return _nextForkTitle(title, titles);
   }
 
-  Future<Set<String>> _existingTitles(String workspaceId) async =>
-      (await _database.conversationDao
-              .watchConversationsByWorkspace(workspaceId)
-              .first)
-          .map((conversation) => conversation.title)
-          .toSet();
+  Future<Set<String>> _existingTitles(String workspaceId) async {
+    final active = await _database.conversationDao
+        .watchConversationsByWorkspace(workspaceId)
+        .first;
+    final archived = await _database.conversationDao
+        .watchConversationsByWorkspace(
+          workspaceId,
+          options: (search: '', archivedOnly: true, limit: null, offset: 0),
+        )
+        .first;
+
+    return {
+      ...active,
+      ...archived,
+    }.map((conversation) => conversation.title).toSet();
+  }
 
   String _nextForkTitle(String title, Set<String> titles) {
     for (var suffix = 1; ; suffix++) {

@@ -11,6 +11,7 @@ import 'package:auravibes_app/data/repositories/conversation_labels_repository.d
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/compaction_settings.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/conversation_list_query_options.dart';
 import 'package:auravibes_app/features/browser/models/browser_session_state.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/agent_run_activity_notifier.dart';
@@ -42,9 +43,11 @@ void main() {
       await tester.pumpWidget(
         _ConversationTestScope(
           overrides: [
-            workspaceSessionForRouteProvider.overrideWith(
-              (_, workspaceId) async => WorkspaceSession(
-                LocalWorkspaceRef(localWorkspaceId: workspaceId),
+            workspaceSessionForRouteProvider('workspace-1').overrideWithValue(
+              const AsyncData(
+                WorkspaceSession(
+                  LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+                ),
               ),
             ),
             conversationRepositoryProvider.overrideWithValue(repository),
@@ -74,9 +77,18 @@ void main() {
     await tester.pumpWidget(
       _ConversationTestScope(
         overrides: [
-          workspaceSessionForRouteProvider.overrideWith(
-            (_, workspaceId) async => WorkspaceSession(
-              LocalWorkspaceRef(localWorkspaceId: workspaceId),
+          workspaceSessionForRouteProvider('workspace-1').overrideWithValue(
+            const AsyncData(
+              WorkspaceSession(
+                LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+              ),
+            ),
+          ),
+          workspaceSessionForRouteProvider('workspace-2').overrideWithValue(
+            const AsyncData(
+              WorkspaceSession(
+                LocalWorkspaceRef(localWorkspaceId: 'workspace-2'),
+              ),
             ),
           ),
           conversationRepositoryProvider.overrideWithValue(repository),
@@ -517,11 +529,14 @@ void main() {
             builder: (context) {
               return _ConversationTestScope(
                 overrides: [
-                  workspaceSessionForRouteProvider.overrideWith(
-                    (_, workspaceId) async => WorkspaceSession(
-                      LocalWorkspaceRef(localWorkspaceId: workspaceId),
-                    ),
-                  ),
+                  workspaceSessionForRouteProvider('workspace-1')
+                      .overrideWithValue(
+                        const AsyncData(
+                          WorkspaceSession(
+                            LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+                          ),
+                        ),
+                      ),
                   conversationRepositoryProvider.overrideWithValue(repository),
                 ],
                 child: MaterialApp(
@@ -587,9 +602,13 @@ void main() {
               return Portal(
                 child: _ConversationTestScope(
                   overrides: [
-                    workspaceSessionForRouteProvider.overrideWith(
-                      (_, workspaceId) async => WorkspaceSession(
-                        LocalWorkspaceRef(localWorkspaceId: workspaceId),
+                    workspaceSessionForRouteProvider(
+                      'workspace-1',
+                    ).overrideWithValue(
+                      const AsyncData(
+                        WorkspaceSession(
+                          LocalWorkspaceRef(localWorkspaceId: 'workspace-1'),
+                        ),
                       ),
                     ),
                     conversationRepositoryProvider.overrideWithValue(
@@ -754,12 +773,15 @@ class _SeededConversationRepository(
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
-    String? search,
-    int? limit,
-    int offset = 0,
+    ConversationListQueryOptions options = const (
+      search: '',
+      archivedOnly: false,
+      limit: null,
+      offset: 0,
+    ),
   }) {
     workspaceWatchCalls.add(
-      _WorkspaceWatchCall(workspaceId: workspaceId, limit: limit),
+      _WorkspaceWatchCall(workspaceId: workspaceId, limit: options.limit),
     );
 
     StreamController<List<ConversationEntity>>? controller;
@@ -952,12 +974,15 @@ class _RecordingConversationRepository implements ConversationRepository {
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
-    String? search,
-    int? limit,
-    int offset = 0,
+    ConversationListQueryOptions options = const (
+      search: '',
+      archivedOnly: false,
+      limit: null,
+      offset: 0,
+    ),
   }) {
     workspaceWatchCalls.add(
-      _WorkspaceWatchCall(workspaceId: workspaceId, limit: limit),
+      _WorkspaceWatchCall(workspaceId: workspaceId, limit: options.limit),
     );
 
     StreamController<List<ConversationEntity>>? controller;

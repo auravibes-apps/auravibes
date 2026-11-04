@@ -4,7 +4,10 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/conversation_labels_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/conversation_list_query_options.dart';
+import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_archive_state_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_labels_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
@@ -13,6 +16,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
@@ -31,9 +35,12 @@ class _FakeConversationRepository implements ConversationRepository {
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
-    String? search,
-    int? limit,
-    int offset = 0,
+    ConversationListQueryOptions options = const (
+      search: '',
+      archivedOnly: false,
+      limit: null,
+      offset: 0,
+    ),
   }) => Stream.value(conversationsByWorkspace);
 
   @override
@@ -150,7 +157,13 @@ void main() {
         addTearDown(container.dispose);
 
         final subscription = container.listen(
-          conversationsStreamProvider(workspaceId: 'ws1'),
+          conversationsStreamProvider((
+            workspaceId: 'ws1',
+            search: '',
+            labelIds: const {},
+            scope: .active,
+            pagination: (limit: null, offset: 0),
+          )),
           (_, _) => fail('Unexpected emission before listener disposal'),
         );
         await sessionProviderStarted.future;
@@ -178,7 +191,13 @@ void main() {
       ];
 
       fixture.repository.conversationsByWorkspace = conversations;
-      final provider = conversationsStreamProvider(workspaceId: 'ws1');
+      final provider = conversationsStreamProvider((
+        workspaceId: 'ws1',
+        search: '',
+        labelIds: const {},
+        scope: .active,
+        pagination: (limit: null, offset: 0),
+      ));
       final result = Completer<List<ConversationEntity>>();
       void completeConversations(
         AsyncValue<List<ConversationEntity>>? _,
@@ -237,7 +256,13 @@ void main() {
       }
 
       final subscription = fixture.container.listen(
-        conversationsStreamProvider(workspaceId: 'ws1'),
+        conversationsStreamProvider((
+          workspaceId: 'ws1',
+          search: '',
+          labelIds: const {},
+          scope: .active,
+          pagination: (limit: null, offset: 0),
+        )),
         completeConversations,
         fireImmediately: true,
       );
@@ -262,7 +287,13 @@ void main() {
       ]);
       final container = _cloudContainer(endpoint);
       addTearDown(container.dispose);
-      final provider = conversationsStreamProvider(workspaceId: 'cloud');
+      final provider = conversationsStreamProvider((
+        workspaceId: 'cloud',
+        search: '',
+        labelIds: const {},
+        scope: .active,
+        pagination: (limit: null, offset: 0),
+      ));
       final subscription = container.listen(
         provider,
         (_, next) => next.toString(),
@@ -297,14 +328,26 @@ void main() {
             ),
           ]);
           final container = _cloudContainer(endpoint);
-          final provider = conversationsStreamProvider(workspaceId: 'cloud');
+          final provider = conversationsStreamProvider((
+            workspaceId: 'cloud',
+            search: '',
+            labelIds: const {},
+            scope: .active,
+            pagination: (limit: null, offset: 0),
+          ));
           final subscription = container.listen(
             provider,
             (_, next) => next.toString(),
           );
           try {
             final conversations = await container.read(
-              conversationsStreamProvider(workspaceId: 'cloud').future,
+              conversationsStreamProvider((
+                workspaceId: 'cloud',
+                search: '',
+                labelIds: const {},
+                scope: .active,
+                pagination: (limit: null, offset: 0),
+              )).future,
             );
             expect(conversations.single.taskBrief, savedValue);
             expect(endpoint.requests, hasLength(1));
@@ -330,16 +373,176 @@ void main() {
       final container = _cloudContainer(endpoint);
       addTearDown(container.dispose);
       final subscription = container.listen(
-        conversationsStreamProvider(workspaceId: 'cloud'),
+        conversationsStreamProvider((
+          workspaceId: 'cloud',
+          search: '',
+          labelIds: const {},
+          scope: .active,
+          pagination: (limit: null, offset: 0),
+        )),
         (_, next) => next.toString(),
       );
       addTearDown(subscription.close);
       final conversations = await container.read(
-        conversationsStreamProvider(workspaceId: 'cloud').future,
+        conversationsStreamProvider((
+          workspaceId: 'cloud',
+          search: '',
+          labelIds: const {},
+          scope: .active,
+          pagination: (limit: null, offset: 0),
+        )).future,
       );
 
       expect(conversations.single.taskBrief, 'Cloud user-authored objective.');
     });
+    test(
+      'filters and paginates cloud archive locally after server search',
+      () async {
+        final endpoint = _TestConversationEndpoint([
+          ConversationPage(
+            conversations: [
+              _cloudConversationSummary(id: 'active', title: 'Needle active'),
+              _cloudConversationSummary(
+                id: 'archived-first',
+                title: 'Needle archived first',
+              ),
+            ],
+            nextCursor: 'page-2',
+          ),
+          ConversationPage(
+            conversations: [
+              _cloudConversationSummary(
+                id: 'archived-second',
+                title: 'Needle archived second',
+              ),
+            ],
+          ),
+        ]);
+        final container = _cloudContainer(
+          endpoint,
+          archivedIds: const {'archived-first', 'archived-second'},
+        );
+        addTearDown(container.dispose);
+        final provider = conversationsStreamProvider((
+          workspaceId: 'cloud',
+          search: 'Needle',
+          labelIds: const {},
+          scope: .archived,
+          pagination: (limit: 1, offset: 1),
+        ));
+        final subscription = container.listen(
+          provider,
+          (_, next) => next.toString(),
+        );
+        addTearDown(subscription.close);
+
+        final conversations = await container.read(provider.future);
+
+        expect(conversations.map((conversation) => conversation.id), [
+          'archived-second',
+        ]);
+        expect(endpoint.requests, hasLength(2));
+        expect(endpoint.requests.map((request) => request.search), [
+          'Needle',
+          'Needle',
+        ]);
+        expect(endpoint.requests.map((request) => request.cursor), [
+          null,
+          'page-2',
+        ]);
+      },
+    );
+
+    test(
+      'cloud archive markers update active and archived views locally',
+      () async {
+        final endpoint = _TestConversationEndpoint([
+          ConversationPage(
+            conversations: [_cloudConversationSummary(id: 'active')],
+            nextCursor: 'page-2',
+          ),
+          ConversationPage(
+            conversations: [_cloudConversationSummary(id: 'archived')],
+          ),
+        ]);
+        final database = AppDatabase(
+          connection: DatabaseConnection(NativeDatabase.memory()),
+        );
+        addTearDown(database.close);
+        final _ = await database.workspaceDao.insertWorkspace(
+          .insert(
+            id: const Value('cloud'),
+            name: 'Cloud test workspace',
+            type: WorkspaceType.remote,
+          ),
+        );
+        final container = _cloudContainer(endpoint, database: database);
+        addTearDown(container.dispose);
+        final activeProvider = conversationsStreamProvider((
+          workspaceId: 'cloud',
+          search: '',
+          labelIds: const {},
+          scope: .active,
+          pagination: (limit: null, offset: 0),
+        ));
+        final activeChanged = Completer<List<String>>();
+        final activeSubscription = container.listen(activeProvider, (_, next) {
+          if (next case AsyncData(:final value)) {
+            final ids = value.map((conversation) => conversation.id).toList();
+            if (!activeChanged.isCompleted &&
+                ids.length == 1 &&
+                ids.single == 'active') {
+              activeChanged.complete(ids);
+            }
+          }
+        });
+        addTearDown(activeSubscription.close);
+        expect(
+          (await container.read(activeProvider.future))
+              .map((conversation) => conversation.id),
+          ['active'],
+        );
+
+        await database.conversationArchiveStateDao.setArchived(
+          workspaceId: 'cloud',
+          conversationId: 'archived',
+          isArchived: true,
+        );
+        expect(await activeChanged.future, ['active']);
+
+        final archivedProvider = conversationsStreamProvider((
+          workspaceId: 'cloud',
+          search: '',
+          labelIds: const {},
+          scope: .archived,
+          pagination: (limit: null, offset: 0),
+        ));
+        final archivedRestored = Completer<List<String>>();
+        final archivedSubscription = container.listen(archivedProvider, (
+          _,
+          next,
+        ) {
+          final value = next.asData?.value;
+          if (value != null && value.isEmpty && !archivedRestored.isCompleted) {
+            archivedRestored.complete(const []);
+          }
+        });
+        addTearDown(archivedSubscription.close);
+        expect(
+          (await container.read(archivedProvider.future))
+              .map((conversation) => conversation.id),
+          ['archived'],
+        );
+
+        await database.conversationArchiveStateDao.setArchived(
+          workspaceId: 'cloud',
+          conversationId: 'archived',
+          isArchived: false,
+        );
+        expect(await archivedRestored.future, isEmpty);
+        expect(endpoint.requests, isNotEmpty);
+      },
+    );
   });
 
   group('childConversationsStreamProvider', () {
@@ -583,13 +786,27 @@ void main() {
       addTearDown(container.dispose);
 
       final subscription = container.listen(
-        conversationsStreamProvider(workspaceId: 'ws1'),
+        conversationsStreamProvider((
+          workspaceId: 'ws1',
+          search: '',
+          labelIds: const {},
+          scope: .active,
+          pagination: (limit: null, offset: 0),
+        )),
         (_, next) => next.toString(),
       );
       addTearDown(subscription.close);
 
       await expectLater(
-        container.read(conversationsStreamProvider(workspaceId: 'ws1').future),
+        container.read(
+          conversationsStreamProvider((
+            workspaceId: 'ws1',
+            search: '',
+            labelIds: const {},
+            scope: .active,
+            pagination: (limit: null, offset: 0),
+          )).future,
+        ),
         completes,
       );
     },
@@ -650,7 +867,11 @@ const _cloudWorkspace = CloudWorkspaceRef(
   cloudWorkspaceId: 7,
 );
 
-ProviderContainer _cloudContainer(_TestConversationEndpoint endpoint) {
+ProviderContainer _cloudContainer(
+  _TestConversationEndpoint endpoint, {
+  Set<String> archivedIds = const {},
+  AppDatabase? database,
+}) {
   final client = _TestClient(endpoint);
   final gateway = _TestCloudWorkspaceStateGateway(
     workspace: _cloudWorkspace,
@@ -665,6 +886,10 @@ ProviderContainer _cloudContainer(_TestConversationEndpoint endpoint) {
       cloudWorkspaceStateGatewayForWorkspaceProvider.overrideWith(
         (_, _) async => gateway,
       ),
+      if (database == null)
+        conversationArchiveStateIdsProvider('cloud')
+            .overrideWith((_) => Stream.value(archivedIds)),
+      if (database != null) appDatabaseProvider.overrideWithValue(database),
     ],
   );
 }
@@ -702,11 +927,16 @@ class _TestConversationEndpoint extends Fake implements EndpointConversation {
   @override
   Future<ConversationPage> listPage(ListConversationsRequest request) async {
     requests.add(request);
-    if (requests.length > _pages.length) {
+    final previousPageIndex = request.cursor == null
+        ? -1
+        : _pages.indexWhere((page) => page.nextCursor == request.cursor);
+    final pageIndex = previousPageIndex + 1;
+    if (pageIndex >= _pages.length ||
+        (request.cursor != null && previousPageIndex < 0)) {
       throw StateError('Unexpected conversation page request.');
     }
 
-    return _pages[requests.length - 1];
+    return _pages[pageIndex];
   }
 }
 
@@ -743,11 +973,12 @@ class _TestCloudWorkspaceStateGateway extends Fake
 
 ConversationSummary _cloudConversationSummary({
   required String id,
+  String? title,
   String? parentConversationId,
   String? taskBrief,
 }) => ConversationSummary(
   id: id,
-  title: id,
+  title: title ?? id,
   isPinned: false,
   taskBrief: taskBrief,
   parentConversationId: parentConversationId,

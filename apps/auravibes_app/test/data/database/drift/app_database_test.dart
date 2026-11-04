@@ -87,22 +87,58 @@ void main() {
       },
     );
 
+    test('schema49 migration adds archive table', () async {
+      final sqliteDb = sqlite.sqlite3.openInMemory()
+        ..userVersion = 49
+        ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
+        ..execute('INSERT INTO workspaces VALUES (?)', ['existing'])
+        ..execute(
+          'CREATE TABLE conversations (id TEXT PRIMARY KEY, workspace_id TEXT, '
+          'title TEXT NOT NULL)',
+        )
+        ..execute('INSERT INTO conversations VALUES (?, ?, ?)', [
+          'conversation-1',
+          'existing',
+          'Existing conversation',
+        ]);
+      _createHistorySources(sqliteDb);
+      final database = AppDatabase(connection: NativeDatabase.opened(sqliteDb));
+      addTearDown(database.close);
+
+      expect(
+        await database.select(database.conversationArchiveStates).get(),
+        isEmpty,
+      );
+      final conversation = await database
+          .customSelect(
+            'SELECT title FROM conversations WHERE id = ?',
+            variables: [const Variable<String>('conversation-1')],
+          )
+          .getSingle();
+      expect(conversation.read<String>('title'), 'Existing conversation');
+      expect(sqliteDb.userVersion, 50);
+    });
+
     test(
-      'schema46 migration adds a nullable conversation task brief',
+      'schema46 migration adds task brief and archive state without rewriting '
+      'chats',
       () async {
         final sqliteDb = sqlite.sqlite3.openInMemory()
           ..userVersion = 46
           ..execute('CREATE TABLE workspaces (id TEXT PRIMARY KEY)')
+          ..execute('INSERT INTO workspaces VALUES (?)', ['existing'])
           ..execute('''
           CREATE TABLE conversations (
             id TEXT NOT NULL PRIMARY KEY,
+            workspace_id TEXT,
             title TEXT NOT NULL
           )
         ''')
-          ..execute('INSERT INTO conversations (id, title) VALUES (?, ?)', [
-            'conversation-1',
-            'Existing conversation',
-          ])
+          ..execute(
+            'INSERT INTO conversations (id, workspace_id, title) '
+            'VALUES (?, ?, ?)',
+            ['conversation-1', 'existing', 'Existing conversation'],
+          )
           ..execute('''
           CREATE TABLE workspace_revisions (
             workspace_id TEXT, kind TEXT, resource_id TEXT, revision INTEGER,
@@ -131,6 +167,18 @@ void main() {
         expect(row.read<String>('id'), 'conversation-1');
         expect(row.read<String>('title'), 'Existing conversation');
         expect(row.data['task_brief'], isNull);
+        expect(
+          await database.select(database.conversationArchiveStates).get(),
+          isEmpty,
+        );
+        expect(
+          (await database
+                  .customSelect('SELECT id, title FROM conversations')
+                  .get())
+              .map((row) => row.read<String>('title')),
+          ['Existing conversation'],
+        );
+        expect(sqliteDb.userVersion, 50);
       },
     );
 
@@ -294,6 +342,16 @@ void main() {
       expect(
         await database.select(database.workspaceAgentHookSettings).get(),
         isEmpty,
+      );
+      expect(
+        await database.select(database.conversationArchiveStates).get(),
+        isEmpty,
+      );
+      expect(
+        (await database.customSelect('SELECT id FROM conversations').get()).map(
+          (row) => row.read<String>('id'),
+        ),
+        ['chat'],
       );
       final revision = await database
           .customSelect(

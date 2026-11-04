@@ -49,20 +49,45 @@ class const SidebarConversationsWidget({
       return const SizedBox.shrink();
     }
 
-    final currentChatId = _sidebarCurrentChatIdFromContext(context);
-    final chatListAsync = ref.watch(
-      conversationsStreamProvider(
-        workspaceId: workspaceId,
-        pagination: (limit: limit, offset: 0),
-      ),
-    );
-
-    return _SidebarConversationsContent(
-      chatListAsync: chatListAsync,
+    return _SidebarConversationsWorkspace(
       workspaceId: workspaceId,
-      currentChatId: currentChatId,
+      limit: limit,
     );
   }
+}
+
+class const _SidebarConversationsWorkspace({
+  required final String workspaceId,
+  required final int limit,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => _SidebarConversationsData(
+    workspaceId: workspaceId,
+    currentChatId: _sidebarCurrentChatIdFromContext(context),
+    limit: limit,
+  );
+}
+
+class const _SidebarConversationsData({
+  required final String workspaceId,
+  required final String? currentChatId,
+  required final int limit,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) =>
+      _SidebarConversationsContent(
+        chatListAsync: ref.watch(
+          conversationsStreamProvider((
+            workspaceId: workspaceId,
+            search: '',
+            labelIds: const {},
+            scope: .active,
+            pagination: (limit: limit, offset: 0),
+          )),
+        ),
+        workspaceId: workspaceId,
+        currentChatId: currentChatId,
+      );
 }
 
 String? _sidebarCurrentChatIdFromContext(BuildContext context) =>
@@ -769,7 +794,13 @@ void _showSidebarDeleteSnack(BuildContext context, Object error) {
 
 void _invalidateDeletedConversation(WidgetRef ref, ConversationEntity chat) {
   final _ = ref.invalidate(
-    conversationsStreamProvider(workspaceId: chat.workspaceId),
+    conversationsStreamProvider((
+      workspaceId: chat.workspaceId,
+      search: '',
+      labelIds: const {},
+      scope: .active,
+      pagination: (limit: null, offset: 0),
+    )),
   );
   final _ = ref.invalidate(
     conversationByIdStreamProvider(chat.workspaceId, conversationId: chat.id),
@@ -802,7 +833,13 @@ void _navigateToSidebarFork(
   String forkId,
 ) {
   final _ = ref.invalidate(
-    conversationsStreamProvider(workspaceId: chat.workspaceId),
+    conversationsStreamProvider((
+      workspaceId: chat.workspaceId,
+      search: '',
+      labelIds: const {},
+      scope: .active,
+      pagination: (limit: null, offset: 0),
+    )),
   );
   if (!context.mounted) return;
   ConversationRoute(workspaceId: chat.workspaceId, chatId: forkId).go(context);
@@ -851,7 +888,13 @@ Future<bool> _hasSidebarPinnedCapacity(
   String workspaceId,
 ) async {
   final conversations = await ref.read(
-    conversationsStreamProvider(workspaceId: workspaceId).future,
+    conversationsStreamProvider((
+      workspaceId: workspaceId,
+      search: '',
+      labelIds: const {},
+      scope: .active,
+      pagination: (limit: null, offset: 0),
+    )).future,
   );
 
   return ConversationLimits.hasPinnedCapacity(conversations);
@@ -869,7 +912,15 @@ Future<bool> _toggleSidebarCloudPin(
 
   await _updateSidebarCloudPin(cloud, chat);
   if (context.mounted) {
-    ref.invalidate(conversationsStreamProvider(workspaceId: chat.workspaceId));
+    ref.invalidate(
+      conversationsStreamProvider((
+        workspaceId: chat.workspaceId,
+        search: '',
+        labelIds: const {},
+        scope: .active,
+        pagination: (limit: null, offset: 0),
+      )),
+    );
   }
 
   return true;

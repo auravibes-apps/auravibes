@@ -1,0 +1,149 @@
+import 'dart:ui' show Locale, Size;
+
+import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
+import 'package:auravibes_app/features/chats/screens/archived_conversations_screen.dart';
+import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import '../../../helpers/test_app.dart';
+
+void main() {
+  testWidgets('explains that cloud archiving is device-local', (tester) async {
+    const cloudWorkspace = CloudWorkspaceRef(
+      localWorkspaceId: 'cloud-workspace',
+      serverUrl: 'https://example.com',
+      accountId: 'account',
+      cloudWorkspaceId: 7,
+    );
+    const session = WorkspaceSession(cloudWorkspace);
+
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: ArchivedConversationsScreen(
+            workspaceId: cloudWorkspace.localWorkspaceId,
+          ),
+          overrides: [
+            conversationsStreamProvider(
+              (
+                workspaceId: cloudWorkspace.localWorkspaceId,
+                search: '',
+                labelIds: const {},
+                scope: .archived,
+                pagination: (limit: 21, offset: 0),
+              ),
+            ).overrideWith((ref) => Stream.value(const <ConversationEntity>[])),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+          workspaceId: cloudWorkspace.localWorkspaceId,
+          workspaceSession: session,
+        ),
+      );
+    });
+    await tester.pump();
+    await tester.pump();
+    final _ = await tester.pumpAndSettle();
+    final appException = tester.takeException();
+    expect(
+      appException,
+      isNull,
+      reason: 'The archive screen threw while building: $appException',
+    );
+    expect(find.byType(UncontrolledProviderScope), findsOneWidget);
+    final container = tester
+        .widget<UncontrolledProviderScope>(
+          find.byType(UncontrolledProviderScope),
+        )
+        .container;
+    final routeSession = container.read(
+      workspaceSessionForRouteProvider(cloudWorkspace.localWorkspaceId),
+    );
+    expect(routeSession, isA<AsyncData<WorkspaceSession>>());
+    expect(routeSession.value?.cloud?.cloudWorkspaceId, 7);
+
+    final archiveCallout = find.byType(AuraCallout);
+    expect(
+      archiveCallout,
+      findsOneWidget,
+      reason: 'Cloud route session is $routeSession',
+    );
+    expect(find.text('Archived on this device'), findsOneWidget);
+    expect(
+      find.text(
+        'In cloud workspaces, archiving is saved only in this app on this '
+        'device. Other members and your other devices can still see this '
+        'shared conversation.',
+      ),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('wraps the cloud notice in Spanish at compact width', (
+    tester,
+  ) async {
+    const cloudWorkspace = CloudWorkspaceRef(
+      localWorkspaceId: 'cloud-workspace',
+      serverUrl: 'https://example.com',
+      accountId: 'account',
+      cloudWorkspaceId: 7,
+    );
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(390, 844);
+    tester.platformDispatcher.textScaleFactorTestValue = 1.4;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+    await tester.runAsync(() async {
+      await tester.pumpWidget(
+        TestableApp(
+          child: ArchivedConversationsScreen(
+            workspaceId: cloudWorkspace.localWorkspaceId,
+          ),
+          overrides: [
+            conversationsStreamProvider(
+              (
+                workspaceId: cloudWorkspace.localWorkspaceId,
+                search: '',
+                labelIds: const {},
+                scope: .archived,
+                pagination: (limit: 21, offset: 0),
+              ),
+            ).overrideWith((ref) => Stream.value(const <ConversationEntity>[])),
+            listWorkspaceModelSelectionsProvider.overrideWith(
+              (ref, workspaceId) => Stream.value([]),
+            ),
+          ],
+          workspaceId: cloudWorkspace.localWorkspaceId,
+          workspaceSession: const WorkspaceSession(cloudWorkspace),
+          startLocale: const Locale('es'),
+        ),
+      );
+    });
+    await tester.pump();
+    await tester.pump();
+    final _ = await tester.pumpAndSettle();
+
+    expect(find.text('Archivadas en este dispositivo'), findsOneWidget);
+    final context = tester.element(find.byType(ArchivedConversationsScreen));
+    expect(
+      find.text(
+        LocaleKeys.chats_screens_archived_conversations_cloud_notice.tr(
+          context: context,
+        ),
+      ),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+  });
+}

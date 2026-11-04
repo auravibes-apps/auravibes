@@ -1,20 +1,23 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversation_label_assignments.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversation_labels.dart';
+import 'package:auravibes_app/data/database/drift/tables/conversation_archive_states.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversations.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/conversation_label_entity.dart';
+import 'package:auravibes_app/domain/entities/conversation_list_query_options.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart';
 
 part 'conversation_dao.g.dart';
 
-typedef ConversationLabelQuery = ({
+typedef _ConversationLabelQuery = ({
   String workspaceId,
   String search,
   int? limit,
   int offset,
   Set<String> labelIds,
+  bool archivedOnly,
 });
 
 typedef _ConversationLabelConditions = ({
@@ -33,7 +36,12 @@ typedef ConversationWithLabels = ({
 });
 
 @DriftAccessor(
-  tables: [Conversations, ConversationLabels, ConversationLabelAssignments],
+  tables: [
+    Conversations,
+    ConversationArchiveStates,
+    ConversationLabels,
+    ConversationLabelAssignments,
+  ],
 )
 class ConversationDao(super.attachedDatabase)
     extends DatabaseAccessor<AppDatabase>
@@ -73,16 +81,15 @@ mixin _ConversationDaoReadApi {
 
   Stream<List<ConversationsTable>> watchConversationsByWorkspace(
     String workspaceId, {
-    String search = '',
-    int? limit,
-    int offset = 0,
-  }) => ConversationDaoReadOperations(this as ConversationDao)
-      .watchConversationsByWorkspace(
-        workspaceId,
-        search: search,
-        limit: limit,
-        offset: offset,
-      );
+    ConversationListQueryOptions options = const (
+      search: '',
+      archivedOnly: false,
+      limit: null,
+      offset: 0,
+    ),
+  }) =>
+      ConversationDaoReadOperations(this as ConversationDao)
+          .watchConversationsByWorkspace(workspaceId, options: options);
 
   Stream<List<ConversationsTable>> watchChildConversations(
     String parentConversationId,
@@ -221,12 +228,16 @@ extension ConversationDaoReadOperations on ConversationDao {
 
   Stream<List<ConversationsTable>> watchConversationsByWorkspace(
     String workspaceId, {
-    String search = '',
-    int? limit,
-    int offset = 0,
+    ConversationListQueryOptions options = const (
+      search: '',
+      archivedOnly: false,
+      limit: null,
+      offset: 0,
+    ),
   }) {
-    final query = _buildWorkspaceQuery(workspaceId, search: search);
-    if (limit != null) query.limit(limit, offset: offset);
+    final query = _buildWorkspaceQuery(workspaceId, options);
+    final limit = options.limit;
+    if (limit != null) query.limit(limit, offset: options.offset);
 
     return query.watch();
   }
@@ -244,13 +255,35 @@ extension ConversationDaoReadOperations on ConversationDao {
   }
 
   SimpleSelectStatement<$ConversationsTable, ConversationsTable>
-  _buildWorkspaceQuery(String workspaceId, {String search = ''}) {
+  _buildWorkspaceQuery(
+    String workspaceId,
+    ConversationListQueryOptions options,
+  ) {
     return _orderedConversations(
       (tbl) =>
-          tbl.workspaceId.equals(workspaceId) &
-          tbl.parentConversationId.isNull() &
-          _conversationSearchPredicate(tbl, search),
+          _workspaceAndArchivePredicate(
+            tbl,
+            workspaceId,
+            options.archivedOnly,
+          ) &
+          _conversationSearchPredicate(tbl, options.search),
     );
+  }
+
+  Expression<bool> _workspaceAndArchivePredicate(
+    $ConversationsTable table,
+    String workspaceId,
+    bool archivedOnly,
+  ) {
+    final archivedIds = selectOnly(conversationArchiveStates)
+      ..addColumns([conversationArchiveStates.conversationId])
+      ..where(conversationArchiveStates.workspaceId.equals(workspaceId));
+
+    return table.workspaceId.equals(workspaceId) &
+        table.parentConversationId.isNull() &
+        (archivedOnly
+            ? table.id.isInQuery(archivedIds)
+            : table.id.isNotInQuery(archivedIds));
   }
 
   SimpleSelectStatement<$ConversationsTable, ConversationsTable>
@@ -274,18 +307,18 @@ extension ConversationDaoReadOperations on ConversationDao {
 
 extension ConversationDaoLabelReadOperations on ConversationDao {
   Stream<List<ConversationWithLabels>> watchConversationsWithLabelsByWorkspace(
-    ConversationLabelQuery query,
+    _ConversationLabelQuery query,
   ) => _watchConversationsWithLabels(query);
 
   Stream<List<ConversationWithLabels>> _watchConversationsWithLabels(
-    ConversationLabelQuery query,
+    _ConversationLabelQuery query,
   ) =>
       _buildConversationPageQuery(query)
           .watch()
           .asyncMap((rows) => _loadConversationPage(rows, query.workspaceId));
 
   Selectable<QueryRow> _buildConversationPageQuery(
-    ConversationLabelQuery query,
+    _ConversationLabelQuery query,
   ) {
     final conditions = _conversationLabelConditions(query);
 
@@ -294,6 +327,7 @@ extension ConversationDaoLabelReadOperations on ConversationDao {
       variables: _conversationPageVariables(query, conditions),
       readsFrom: {
         conversations,
+        conversationArchiveStates,
         conversationLabels,
         conversationLabelAssignments,
       },
@@ -301,9 +335,9 @@ extension ConversationDaoLabelReadOperations on ConversationDao {
   }
 
   _ConversationLabelConditions _conversationLabelConditions(
-    ConversationLabelQuery query,
+    _ConversationLabelQuery query,
   ) {
-    final predicates = _baseConversationPredicates();
+    final predicates = _baseConversationPredicates(query);
     final variables = _baseConversationVariables(query);
     _addConversationSearchPredicate(query, predicates, variables);
     _addConversationLabelPredicate(query, predicates, variables);
@@ -395,7 +429,7 @@ ORDER BY page.is_pinned DESC, page.updated_at DESC, page.id DESC
 }
 
 List<Variable> _conversationPageVariables(
-  ConversationLabelQuery query,
+  _ConversationLabelQuery query,
   _ConversationLabelConditions conditions,
 ) {
   final variables = [...conditions.variables];
@@ -408,17 +442,21 @@ List<Variable> _conversationPageVariables(
   return variables;
 }
 
-List<String> _baseConversationPredicates() => [
+List<String> _baseConversationPredicates(_ConversationLabelQuery query) => [
   'c.workspace_id = ?',
   'c.parent_conversation_id IS NULL',
+  'c.id ${query.archivedOnly ? 'IN' : 'NOT IN'} '
+      '(SELECT conversation_id FROM conversation_archive_states '
+      'WHERE workspace_id = ?)',
 ];
 
-List<Variable> _baseConversationVariables(ConversationLabelQuery query) => [
+List<Variable> _baseConversationVariables(_ConversationLabelQuery query) => [
+  Variable<String>(query.workspaceId),
   Variable<String>(query.workspaceId),
 ];
 
 void _addConversationSearchPredicate(
-  ConversationLabelQuery query,
+  _ConversationLabelQuery query,
   List<String> predicates,
   List<Variable> variables,
 ) {
@@ -430,7 +468,7 @@ void _addConversationSearchPredicate(
 }
 
 void _addConversationLabelPredicate(
-  ConversationLabelQuery query,
+  _ConversationLabelQuery query,
   List<String> predicates,
   List<Variable> variables,
 ) {

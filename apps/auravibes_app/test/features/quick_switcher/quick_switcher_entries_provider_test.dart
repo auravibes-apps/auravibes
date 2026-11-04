@@ -39,10 +39,13 @@ void main() {
         workspaceAvailabilityProvider('locked').overrideWith(
           (_) async => const WorkspaceAuthenticationRequired(lockedSession),
         ),
-        conversationsStreamProvider(
+        conversationsStreamProvider((
           workspaceId: 'available',
+          search: '',
+          labelIds: const {},
+          scope: .active,
           pagination: (limit: 10, offset: 0),
-        ).overrideWith(
+        )).overrideWith(
           (_) => Stream.value([
             ConversationEntity(
               id: 'conversation',

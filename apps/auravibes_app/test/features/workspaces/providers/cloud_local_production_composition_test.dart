@@ -85,8 +85,12 @@ void main() {
     );
   });
 
-  test('cloud production composition avoids every local dependency', () async {
+  test('cloud conversation composition keeps chat data cloud-backed', () async {
     final now = DateTime.utc(2026);
+    final database = AppDatabase(
+      connection: DatabaseConnection(NativeDatabase.memory()),
+    );
+    addTearDown(database.close);
     final gateway = _Gateway();
     final client = _Client();
     final conversation = _Conversation();
@@ -163,7 +167,8 @@ void main() {
         workspaceSkillsProvider('mirror-a').overrideWith((_) async => const []),
         workspaceAccessProvider('mirror-a')
             .overrideWith((_) async => (role: 'owner')),
-        appDatabaseProvider.overrideWith((_) => _local('Drift database')),
+        // Cloud archive markers are intentionally stored per device.
+        appDatabaseProvider.overrideWithValue(database),
         conversationRepositoryProvider.overrideWith(
           (_) => _local('conversation repository'),
         ),
@@ -206,7 +211,13 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    final conversations = conversationsStreamProvider(workspaceId: 'mirror-a');
+    final conversations = conversationsStreamProvider((
+      workspaceId: 'mirror-a',
+      search: '',
+      labelIds: const {},
+      scope: .active,
+      pagination: (limit: null, offset: 0),
+    ));
     final messages = chatMessagesByConversationProvider(
       'mirror-a',
       'conversation-a',
@@ -313,7 +324,13 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    final conversations = conversationsStreamProvider(workspaceId: 'local-a');
+    final conversations = conversationsStreamProvider((
+      workspaceId: 'local-a',
+      search: '',
+      labelIds: const {},
+      scope: .active,
+      pagination: (limit: null, offset: 0),
+    ));
     final messages = chatMessagesByConversationProvider(
       'local-a',
       'conversation-a',

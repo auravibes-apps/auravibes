@@ -7,6 +7,7 @@ import 'package:flutter_localizations/flutter_localizations.dart'
     as sdk_localizations;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:riverpod/misc.dart' as riverpod_misc;
 
 /// Creates a testable widget wrapped with EasyLocalization and Riverpod.
 class TestableApp extends StatefulWidget {
@@ -45,24 +46,31 @@ class _TestableAppState extends State<TestableApp> {
   @override
   void initState() {
     super.initState();
-    final session =
-        widget.workspaceSession ??
-        WorkspaceSession(
-          LocalWorkspaceRef(localWorkspaceId: widget.workspaceId),
-        );
-    _container = .new(
-      overrides: [
-        workspaceSessionProvider(session).overrideWithValue(session),
-        workspaceSessionForRouteProvider.overrideWith((_, _) async => session),
-        ...widget.overrides.cast(),
-      ],
-    );
+    _container = _createContainer(widget);
   }
 
   @override
   void dispose() {
     _container?.dispose();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant TestableApp oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.workspaceId == widget.workspaceId &&
+        oldWidget.workspaceSession == widget.workspaceSession &&
+        identical(oldWidget.overrides, widget.overrides)) {
+      return;
+    }
+
+    final oldContainer = _container;
+    _container = _createContainer(widget);
+    if (oldContainer != null) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => oldContainer.dispose(),
+      );
+    }
   }
 
   @override
@@ -102,6 +110,35 @@ class _TestableAppState extends State<TestableApp> {
         useOnlyLangCode: true,
         useFallbackTranslations: true,
       ),
+    );
+  }
+
+  ProviderContainer _createContainer(TestableApp app) {
+    final session =
+        app.workspaceSession ??
+        WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: app.workspaceId));
+    final sessionWorkspaceId = session.workspace.localWorkspaceId;
+    final routeSessionProvider = workspaceSessionForRouteProvider(
+      sessionWorkspaceId,
+    );
+    final hasRouteSessionOverride = app.overrides
+        .whereType<riverpod_misc.Override>()
+        .any((override) => override.origin == routeSessionProvider);
+
+    return .new(
+      overrides: [
+        workspaceSessionProvider(session).overrideWithValue(session),
+        workspaceSessionForRouteProvider.overrideWith((_, localWorkspaceId) {
+          if (localWorkspaceId == sessionWorkspaceId) return session;
+
+          return WorkspaceSession(
+            LocalWorkspaceRef(localWorkspaceId: localWorkspaceId),
+          );
+        }),
+        ...app.overrides.cast(),
+        if (!hasRouteSessionOverride)
+          routeSessionProvider.overrideWithValue(AsyncData(session)),
+      ],
     );
   }
 }

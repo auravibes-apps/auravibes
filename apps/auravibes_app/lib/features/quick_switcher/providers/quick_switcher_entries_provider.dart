@@ -135,10 +135,13 @@ Future<_Captured<List<ConversationEntity>>> _loadConversations(
   Ref ref,
   WorkspaceEntity workspace,
 ) {
-  final provider = conversationsStreamProvider(
+  final provider = conversationsStreamProvider((
     workspaceId: workspace.id,
+    search: '',
+    labelIds: const {},
+    scope: .active,
     pagination: (limit: _recentConversationLimit, offset: 0),
-  );
+  ));
 
   return _capture(ref.watch(provider.future));
 }

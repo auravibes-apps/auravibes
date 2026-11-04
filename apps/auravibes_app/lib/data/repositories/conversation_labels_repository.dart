@@ -32,14 +32,22 @@ class ConversationLabelsRepository(final AppDatabase _database) {
   ) => _labelsByWorkspace(_database, workspaceId).watch().map(_mapLabels);
 
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
-    ConversationLabelQuery query,
-  ) => _database.conversationDao
+    ({
+      String workspaceId,
+      String search,
+      int? limit,
+      int offset,
+      Set<String> labelIds,
+    }) query, {
+    bool archivedOnly = false,
+  }) => _database.conversationDao
       .watchConversationsWithLabelsByWorkspace((
         workspaceId: query.workspaceId,
         search: query.search,
         limit: query.limit,
         offset: query.offset,
         labelIds: query.labelIds,
+        archivedOnly: archivedOnly,
       ))
       .map(_mapConversationsWithLabels);
 
