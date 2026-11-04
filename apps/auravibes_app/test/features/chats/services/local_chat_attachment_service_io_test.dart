@@ -100,6 +100,33 @@ void main() {
   });
 
   test(
+    'removes a partial draft file when a dropped-file write fails',
+    () async {
+      final service = LocalChatAttachmentServiceIo(
+        attachmentWriter: (file, bytes) async {
+          final _ = await file.writeAsBytes(bytes.take(2).toList());
+          throw const FileSystemException('simulated write failure');
+        },
+      );
+
+      await expectLater(
+        service.copyBytesIntoAppStorage(
+          .fromList([1, 2, 3, 4]),
+          fileName: 'report.pdf',
+          displayName: 'report.pdf',
+        ),
+        throwsA(isA<FileSystemException>()),
+      );
+
+      final draftDirectory = Directory(
+        '${tempDirectory.path}/chat_attachments_draft',
+      );
+      expect(draftDirectory.existsSync(), isTrue);
+      expect(draftDirectory.listSync(), isEmpty);
+    },
+  );
+
+  test(
     'createToolResultAttachment stores image with tool call association',
     () async {
       final bytes = Uint8List.fromList([

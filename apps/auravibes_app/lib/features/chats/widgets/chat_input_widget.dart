@@ -171,10 +171,13 @@ class const _ChatInputRecordingHooks({
   required final ObjectRef<Future<MessageAttachmentToCreate?>?> recordingStop,
 });
 
+typedef _ChatInputContext = ({String workspaceId, String? conversationId});
+
 class const _ChatInputHooks({
   required final _ChatInputDraftHooks draft,
   required final _ChatInputRecordingHooks recording,
   required final ObjectRef<LocalChatAttachmentUsecase?> attachmentUsecase,
+  required final ObjectRef<_ChatInputContext> dropContext,
 });
 
 typedef _ChatInputStateRequest = ({
@@ -208,15 +211,28 @@ abstract final class _ChatInputHooksFactory {
     recordingStop: useRef<Future<MessageAttachmentToCreate?>?>(null),
   );
 
-  static _ChatInputHooks hooks(ChatDraft? initialDraft) => _ChatInputHooks(
-    draft: draft(initialDraft),
-    recording: recording(),
-    attachmentUsecase: useRef<LocalChatAttachmentUsecase?>(null),
-  );
+  static _ChatInputHooks hooks(ChatDraft? initialDraft, ChatInputWidget input) {
+    final dropContext =
+        useRef<_ChatInputContext>((
+            workspaceId: input.workspaceId,
+            conversationId: input.conversationId,
+          ))
+          ..value = (
+            workspaceId: input.workspaceId,
+            conversationId: input.conversationId,
+          );
+
+    return _ChatInputHooks(
+      draft: draft(initialDraft),
+      recording: recording(),
+      attachmentUsecase: useRef<LocalChatAttachmentUsecase?>(null),
+      dropContext: dropContext,
+    );
+  }
 
   static _ChatInputState state(WidgetRef ref, ChatInputWidget input) {
     final initialDraft = _initialConversationDraft(ref, input);
-    final hooks = _ChatInputHooksFactory.hooks(initialDraft);
+    final hooks = _ChatInputHooksFactory.hooks(initialDraft, input);
     final actions = _createAndRegisterActions(
       ref: ref,
       hooks: hooks,
@@ -427,8 +443,9 @@ abstract final class _ChatInputCapabilitiesFactory {
   );
 
   static bool _supportsDrop(WorkspaceCapabilities? capabilities) =>
-      (capabilities?.attachments ?? false) &&
-      (!kIsWeb || capabilities == WorkspaceCapabilities.cloud);
+      !kIsWeb &&
+      defaultTargetPlatform == TargetPlatform.macOS &&
+      (capabilities?.attachments ?? false);
 
   static _ChatInputAttachmentCapabilities _createAttachmentCapabilities(
     WorkspaceCapabilities? workspaceCapabilities,
@@ -657,24 +674,38 @@ Future<void> _handleChatInputDrop(
   _ChatInputState state,
   DropResult result,
 ) async {
-  if (!state.capabilities.supportsDrop ||
-      (state.input.disabled && !state.input.acceptDroppedFilesWhenDisabled)) {
-    return;
-  }
+  if (!_canAcceptChatInputDrop(state)) return;
 
-  for (final resultItem in result.items) {
+  final dropContext = state.actions.hooks.dropContext.value;
+  await _addAcceptedDroppedChatFiles(state, result.items, dropContext);
+}
+
+bool _canAcceptChatInputDrop(_ChatInputState state) =>
+    state.capabilities.supportsDrop &&
+    (!state.input.disabled || state.input.acceptDroppedFilesWhenDisabled);
+
+Future<void> _addAcceptedDroppedChatFiles(
+  _ChatInputState state,
+  List<DropResultItem> items,
+  _ChatInputContext dropContext,
+) async {
+  for (final resultItem in items) {
     final item = resultItem.item;
     if (!resultItem.accepted || item is! DropFile) continue;
 
-    await _addDroppedChatFile(state, item);
+    await _addDroppedChatFile(state, item, dropContext);
   }
 }
 
-Future<void> _addDroppedChatFile(_ChatInputState state, DropFile file) async {
+Future<void> _addDroppedChatFile(
+  _ChatInputState state,
+  DropFile file,
+  _ChatInputContext dropContext,
+) async {
   try {
-    await _readAndAttachDroppedChatFile(state, file);
+    await _readAndAttachDroppedChatFile(state, file, dropContext);
   } on DropFileReadException catch (error, stackTrace) {
-    _handleDroppedChatFileReadError(state, error, stackTrace);
+    _handleDroppedChatFileReadError(state, error, stackTrace, dropContext);
   } on Object catch (error, stackTrace) {
     _logger.warning('Failed to attach dropped file', error, stackTrace);
   }
@@ -683,15 +714,19 @@ Future<void> _addDroppedChatFile(_ChatInputState state, DropFile file) async {
 Future<void> _readAndAttachDroppedChatFile(
   _ChatInputState state,
   DropFile file,
+  _ChatInputContext dropContext,
 ) async {
+  if (!state.actions._isCurrentDropContext(dropContext)) return;
+
   final bytes = await file.readAsBytes(
     maxBytes: ChatAttachmentModality.maxChatAttachmentBytes,
   );
-  if (!state.actions.ref.context.mounted) return;
+  if (!state.actions._isCurrentDropContext(dropContext)) return;
 
   await state.actions.addDroppedFile(
     bytes,
     fileName: file.name ?? 'attachment',
+    dropContext: dropContext,
   );
 }
 
@@ -699,13 +734,14 @@ void _handleDroppedChatFileReadError(
   _ChatInputState state,
   DropFileReadException error,
   StackTrace stackTrace,
+  _ChatInputContext dropContext,
 ) {
+  if (!state.actions._isCurrentDropContext(dropContext)) return;
+
   if (error.reason == DropFileReadFailure.maxBytesExceeded) {
-    if (state.actions.ref.context.mounted) {
-      state.actions._showAttachmentError(
-        const ChatAttachmentTooLargeException().localizationKey,
-      );
-    }
+    state.actions._showAttachmentError(
+      const ChatAttachmentTooLargeException().localizationKey,
+    );
 
     return;
   }
@@ -1275,26 +1311,6 @@ extension _ChatInputAttachmentActions on _ChatInputActions {
     }
   }
 
-  Future<void> addDroppedFile(
-    Uint8List bytes, {
-    required String fileName,
-  }) async {
-    try {
-      final displayName = AttachmentDisplayNames.unique(
-        fileName,
-        _draft.attachments.value.map((attachment) => attachment.displayName),
-      );
-      final attachment = await _attachmentUsecase.copyBytesIntoAppStorage(
-        bytes,
-        fileName: fileName,
-        displayName: displayName,
-      );
-      await _addAttachment(attachment);
-    } on ChatAttachmentTooLargeException catch (error) {
-      _showAttachmentError(error.localizationKey);
-    }
-  }
-
   Future<void> _addAttachment(MessageAttachmentToCreate attachment) async {
     if (!ref.context.mounted) {
       await _discardDetachedAttachment(attachment);
@@ -1347,6 +1363,66 @@ extension _ChatInputAttachmentActions on _ChatInputActions {
   void pickFiles() => unawaited(_pickFiles());
 
   void pickImage(ImageSource source) => unawaited(_pickImage(source));
+}
+
+extension _ChatInputDroppedFileActions on _ChatInputActions {
+  bool _isCurrentDropContext(_ChatInputContext dropContext) =>
+      ref.context.mounted && hooks.dropContext.value == dropContext;
+
+  Future<void> addDroppedFile(
+    Uint8List bytes, {
+    required String fileName,
+    required _ChatInputContext dropContext,
+  }) async {
+    if (!_isCurrentDropContext(dropContext)) return;
+
+    final attachment = await _copyDroppedFile(
+      bytes,
+      fileName: fileName,
+      dropContext: dropContext,
+    );
+    if (attachment == null) return;
+
+    await _attachDroppedFile(attachment, dropContext);
+  }
+
+  Future<MessageAttachmentToCreate?> _copyDroppedFile(
+    Uint8List bytes, {
+    required String fileName,
+    required _ChatInputContext dropContext,
+  }) async {
+    try {
+      final displayName = AttachmentDisplayNames.unique(
+        fileName,
+        _draft.attachments.value.map((attachment) => attachment.displayName),
+      );
+
+      return await _attachmentUsecase.copyBytesIntoAppStorage(
+        bytes,
+        fileName: fileName,
+        displayName: displayName,
+      );
+    } on ChatAttachmentTooLargeException catch (error) {
+      if (_isCurrentDropContext(dropContext)) {
+        _showAttachmentError(error.localizationKey);
+      }
+
+      return null;
+    }
+  }
+
+  Future<void> _attachDroppedFile(
+    MessageAttachmentToCreate attachment,
+    _ChatInputContext dropContext,
+  ) async {
+    if (_isCurrentDropContext(dropContext)) {
+      await _addAttachment(attachment);
+
+      return;
+    }
+
+    await _discardDetachedAttachment(attachment);
+  }
 }
 
 extension _ChatInputRecordingActions on _ChatInputActions {

@@ -153,6 +153,7 @@ class _MediaDraftAttachmentService(
   final File recordingFile,
 ) implements LocalChatAttachmentService {
   final String storageNamespace = 'test';
+
   bool recordingActive = false;
   int recordingCancels = 0;
 
