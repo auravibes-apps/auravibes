@@ -26,7 +26,6 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:riverpod/misc.dart' as riverpod_misc;
-import 'package:riverpod/riverpod.dart';
 
 import '../data/database/drift/database_test_utils.dart';
 
@@ -68,7 +67,7 @@ void main() {
     );
     addTearDown(container.dispose);
     await tester.pumpWidget(
-      _firstChatApp(container: container, router: router),
+      _FirstChatApp(container: container, router: router),
     );
     final _ = await tester.pumpAndSettle();
 
@@ -128,7 +127,7 @@ void main() {
     );
     addTearDown(container.dispose);
     await tester.pumpWidget(
-      _firstChatApp(container: container, router: router),
+      _FirstChatApp(container: container, router: router),
     );
     final _ = await tester.pumpAndSettle();
     final editable = find
@@ -185,7 +184,7 @@ void main() {
         );
         addTearDown(container.dispose);
         await tester.pumpWidget(
-          _firstChatApp(container: container, router: router),
+          _FirstChatApp(container: container, router: router),
         );
         final _ = await tester.pumpAndSettle();
         if (!direct) {
@@ -275,39 +274,42 @@ ProviderContainer _firstChatContainer({
   retry: (_, _) => null,
 );
 
-Widget _firstChatApp({
-  required ProviderContainer container,
-  required GoRouter router,
-}) => EasyLocalization(
-  child: Builder(
-    builder: (context) => UncontrolledProviderScope(
-      container: container,
-      child: MaterialApp.router(
-        routerConfig: router,
-        builder: (_, child) => AuraThemeScope(
-          theme: .light,
-          child: AuraLegacyMaterialBridge(
-            child: Portal(
-              child: AuraSnackBarHost(
-                child: child ?? const SizedBox.shrink(),
+class const _FirstChatApp({
+  required final ProviderContainer container,
+  required final GoRouter router,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => EasyLocalization(
+    child: Builder(
+      builder: (context) => UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(
+          routerConfig: router,
+          builder: (_, child) => AuraThemeScope(
+            theme: .light,
+            child: AuraLegacyMaterialBridge(
+              child: Portal(
+                child: AuraSnackBarHost(
+                  child: child ?? const SizedBox.shrink(),
+                ),
               ),
             ),
           ),
+          locale: context.locale,
+          localizationsDelegates: [
+            ...GlobalMaterialLocalizations.delegates,
+            sdk_localizations.GlobalMaterialLocalizations.delegate,
+            ...context.localizationDelegates,
+          ],
+          supportedLocales: context.supportedLocales,
         ),
-        locale: context.locale,
-        localizationsDelegates: [
-          ...GlobalMaterialLocalizations.delegates,
-          sdk_localizations.GlobalMaterialLocalizations.delegate,
-          ...context.localizationDelegates,
-        ],
-        supportedLocales: context.supportedLocales,
       ),
     ),
-  ),
-  supportedLocales: const [Locale('en'), Locale('es')],
-  path: 'assets/i18n',
-  fallbackLocale: const Locale('en'),
-  startLocale: const Locale('en'),
-  useOnlyLangCode: true,
-  useFallbackTranslations: true,
-);
+    supportedLocales: const [Locale('en'), Locale('es')],
+    path: 'assets/i18n',
+    fallbackLocale: const Locale('en'),
+    startLocale: const Locale('en'),
+    useOnlyLangCode: true,
+    useFallbackTranslations: true,
+  );
+}
