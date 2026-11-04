@@ -15,15 +15,20 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_session_pr
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
+import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/native.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'
+    as sdk_localizations;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:riverpod/misc.dart' as riverpod_misc;
 import 'package:riverpod/riverpod.dart';
 
 import '../data/database/drift/database_test_utils.dart';
-import '../helpers/test_app.dart';
 
 void main() {
   final database = AppDatabase(connection: NativeDatabase.memory());
@@ -49,27 +54,21 @@ void main() {
     );
     addTearDown(router.dispose);
 
-    await tester.runAsync(
-      () => tester.pumpWidget(
-        TestableApp(
-          child: AuraThemeScope(
-            theme: .light,
-            child: Portal(child: Router.withConfig(config: router)),
-          ),
-          overrides: [
-            appDatabaseProvider.overrideWithValue(database),
-            workspaceSessionForRouteProvider(workspace.id)
-                .overrideWithValue(AsyncData(session)),
-            routerProvider.overrideWithValue(router),
-            chatModelConnectionsProvider(workspace.id)
-                .overrideWith((ref) => Stream.value([])),
-            listModelsGroupedByProviderProvider(workspaceId: workspace.id)
-                .overrideWith((ref) => Stream.value({})),
-          ],
-          workspaceId: workspace.id,
-          workspaceSession: session,
-        ),
-      ),
+    final container = _firstChatContainer(
+      database: database,
+      workspaceId: workspace.id,
+      session: session,
+      router: router,
+      extraOverrides: [
+        chatModelConnectionsProvider(workspace.id)
+            .overrideWith((ref) => Stream.value([])),
+        listModelsGroupedByProviderProvider(workspaceId: workspace.id)
+            .overrideWith((ref) => Stream.value({})),
+      ],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      _firstChatApp(container: container, router: router),
     );
     final _ = await tester.pumpAndSettle();
 
@@ -115,27 +114,21 @@ void main() {
     );
     addTearDown(router.dispose);
 
-    await tester.runAsync(
-      () => tester.pumpWidget(
-        TestableApp(
-          child: AuraThemeScope(
-            theme: .light,
-            child: Portal(child: Router.withConfig(config: router)),
-          ),
-          overrides: [
-            appDatabaseProvider.overrideWithValue(database),
-            workspaceSessionForRouteProvider(workspace.id)
-                .overrideWithValue(AsyncData(session)),
-            routerProvider.overrideWithValue(router),
-            chatModelConnectionsProvider(workspace.id)
-                .overrideWith((ref) => Stream.value([])),
-            listModelsGroupedByProviderProvider(workspaceId: workspace.id)
-                .overrideWith((ref) => Stream.value({})),
-          ],
-          workspaceId: workspace.id,
-          workspaceSession: session,
-        ),
-      ),
+    final container = _firstChatContainer(
+      database: database,
+      workspaceId: workspace.id,
+      session: session,
+      router: router,
+      extraOverrides: [
+        chatModelConnectionsProvider(workspace.id)
+            .overrideWith((ref) => Stream.value([])),
+        listModelsGroupedByProviderProvider(workspaceId: workspace.id)
+            .overrideWith((ref) => Stream.value({})),
+      ],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      _firstChatApp(container: container, router: router),
     );
     final _ = await tester.pumpAndSettle();
     final editable = find
@@ -173,32 +166,26 @@ void main() {
           initialLocation: direct ? setup.location : chat,
         );
         addTearDown(router.dispose);
-        await tester.runAsync(
-          () => tester.pumpWidget(
-            TestableApp(
-              child: AuraThemeScope(
-                theme: .light,
-                child: Portal(child: Router.withConfig(config: router)),
-              ),
-              overrides: [
-                appDatabaseProvider.overrideWithValue(database),
-                workspaceSessionForRouteProvider(workspace.id)
-                    .overrideWithValue(AsyncData(session)),
-                routerProvider.overrideWithValue(router),
-                chatModelConnectionsProvider(workspace.id).overrideWith(
-                  (ref) => Stream.value([_connection(workspace.id)]),
-                ),
-                listModelsGroupedByProviderProvider(workspaceId: workspace.id)
-                    .overrideWith(
-                      (ref) => Stream.value({
-                        'connection': [_model(workspace.id)],
-                      }),
-                    ),
-              ],
-              workspaceId: workspace.id,
-              workspaceSession: session,
+        final container = _firstChatContainer(
+          database: database,
+          workspaceId: workspace.id,
+          session: session,
+          router: router,
+          extraOverrides: [
+            chatModelConnectionsProvider(workspace.id).overrideWith(
+              (ref) => Stream.value([_connection(workspace.id)]),
             ),
-          ),
+            listModelsGroupedByProviderProvider(workspaceId: workspace.id)
+                .overrideWith(
+                  (ref) => Stream.value({
+                    'connection': [_model(workspace.id)],
+                  }),
+                ),
+          ],
+        );
+        addTearDown(container.dispose);
+        await tester.pumpWidget(
+          _firstChatApp(container: container, router: router),
         );
         final _ = await tester.pumpAndSettle();
         if (!direct) {
@@ -267,4 +254,60 @@ WorkspaceModelSelectionWithConnectionEntity _model(String workspaceId) => .new(
   ),
   modelConnection: _connection(workspaceId),
   modelsProvider: const .new(id: 'openai', name: 'OpenAI', type: .openai),
+);
+
+ProviderContainer _firstChatContainer({
+  required AppDatabase database,
+  required String workspaceId,
+  required WorkspaceSession session,
+  required GoRouter router,
+  required List<riverpod_misc.Override> extraOverrides,
+}) => ProviderContainer(
+  overrides: [
+    appDatabaseProvider.overrideWithValue(database),
+    workspaceSessionProvider(session).overrideWithValue(session),
+    workspaceSessionForRouteProvider(workspaceId).overrideWith(
+      (_) async => session,
+    ),
+    routerProvider.overrideWithValue(router),
+    ...extraOverrides,
+  ],
+  retry: (_, _) => null,
+);
+
+Widget _firstChatApp({
+  required ProviderContainer container,
+  required GoRouter router,
+}) => EasyLocalization(
+  child: Builder(
+    builder: (context) => UncontrolledProviderScope(
+      container: container,
+      child: MaterialApp.router(
+        routerConfig: router,
+        builder: (_, child) => AuraThemeScope(
+          theme: .light,
+          child: AuraLegacyMaterialBridge(
+            child: Portal(
+              child: AuraSnackBarHost(
+                child: child ?? const SizedBox.shrink(),
+              ),
+            ),
+          ),
+        ),
+        locale: context.locale,
+        localizationsDelegates: [
+          ...GlobalMaterialLocalizations.delegates,
+          sdk_localizations.GlobalMaterialLocalizations.delegate,
+          ...context.localizationDelegates,
+        ],
+        supportedLocales: context.supportedLocales,
+      ),
+    ),
+  ),
+  supportedLocales: const [Locale('en'), Locale('es')],
+  path: 'assets/i18n',
+  fallbackLocale: const Locale('en'),
+  startLocale: const Locale('en'),
+  useOnlyLangCode: true,
+  useFallbackTranslations: true,
 );
