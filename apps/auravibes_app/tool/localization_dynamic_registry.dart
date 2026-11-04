@@ -1748,16 +1748,6 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
         occurrence: 1,
       ),
       DynamicTranslationSite(
-        file: 'features/workspaces/widgets/workspace_item_failure.dart',
-        method: 'TextLocale',
-        keyExpression: 'CloudAppErrors.localizationKey(error)',
-      ),
-      DynamicTranslationSite(
-        file: 'features/skills/screens/skills_screen.dart',
-        method: 'TextLocale',
-        keyExpression: 'CloudAppErrors.localizationKey(error)',
-      ),
-      DynamicTranslationSite(
         file: 'features/chats/widgets/background_work_detach_controls.dart',
         method: 'tr',
         keyExpression: 'CloudAppErrors.localizationKey(error)',
@@ -1784,6 +1774,22 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
       ),
     ],
     keys: {..._cloudAppErrorKeys},
+  ),
+
+  LocalizationDynamicRegistry(
+    family: 'workspace-item-failure-keys',
+    sites: [
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_item_failure.dart',
+        method: 'TextLocale',
+        keyExpression: '_fallbackKey(error, fallbackKey)',
+      ),
+    ],
+    keys: {
+      ..._cloudAppErrorKeys,
+      'connection_setup.tools_load_error',
+      'workspace_connected.connections_load_error',
+    },
   ),
 
   LocalizationDynamicRegistry(
@@ -2224,6 +2230,13 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
     ],
     keys: {
       ..._cloudAppErrorKeys,
+      'agents.dependencies_load_error',
+      'agents.detail_load_error',
+      'agents.detail_not_found',
+      'agents.detail_permissions_load_error',
+      'agents.detail_return',
+      'agents.skills_load_error',
+      'connection_setup.tools_load_error',
       'route_state.workspace_loading',
       'route_state.workspace_error',
       'route_state.child_loading',
@@ -2234,6 +2247,9 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
       'route_state.workspace_missing',
       'route_state.invalid_workspace',
       'route_state.sign_in',
+      'skills_resource.load_error',
+      'skills_screen.detail_load_error',
+      'skills_screen.load_error',
     },
   ),
 

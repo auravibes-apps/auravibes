@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:auravibes_app/services/agent_lifecycle_hook_config.dart';
 import 'package:auravibes_app/services/agent_lifecycle_hook_runtime.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
@@ -144,7 +143,8 @@ class _HookProcessOutput(
   void _consume(List<int> chunk, {required bool capture}) {
     if (!isAccepting()) return;
     _outputBytes += chunk.length;
-    if (_outputBytes > maxAgentLifecycleHookOutputBytes) {
+    if (_outputBytes >
+        AgentLifecycleHookRuntimeLimits.maxAgentLifecycleHookOutputBytes) {
       onFailure(.outputLimitExceeded);
 
       return;
@@ -190,7 +190,7 @@ class _HookProcessSupervisor(
 
   Future<int> _waitWithTimers(Future<int> exitCode) async {
     final timeout = Timer(
-      agentLifecycleHookTimeout,
+      AgentLifecycleHookRuntimeLimits.agentLifecycleHookTimeout,
       () => _outcome.fail(.timedOut),
     );
     final cancellation = Timer.periodic(
@@ -214,7 +214,8 @@ class _HookProcessSupervisor(
   Future<int> _waitForExit(Future<int> exitCode) async {
     try {
       return await exitCode.timeout(
-        agentLifecycleHookTimeout + _forcedStopTimeout,
+        AgentLifecycleHookRuntimeLimits.agentLifecycleHookTimeout +
+            _forcedStopTimeout,
         onTimeout: _onExitTimeout,
       );
     } on Object {

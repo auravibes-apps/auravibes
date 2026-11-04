@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:auravibes_app/data/repositories/message_repository.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/entities/sanitize_workspace_tool_result.dart';
+import 'package:auravibes_app/domain/entities/workspace_tool_result_sanitizer.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_tool_call_loader.dart';
@@ -464,7 +464,7 @@ MessageToolCallEntity _toolCallWithResultStatus(
     resultStatus: AgentToolStatusMapper.toResultStatus(status),
   );
 
-  return sanitizeWorkspaceToolResult(
+  return WorkspaceToolResultSanitizer.sanitizeResult(
     _applyToolExecutionOutput(
       withStatus,
       update,

@@ -29,10 +29,10 @@ Future<_HookSourceDigests> _configuredSourceDigests(
 ) async {
   final bytes = await _readBoundedFile(
     .new(canonicalPath),
-    maxAgentLifecycleHookConfigBytes,
+    AgentLifecycleHookConfig.maxAgentLifecycleHookConfigBytes,
     'config_too_large',
   );
-  final config = parseAgentLifecycleHookConfig(utf8.decode(bytes));
+  final config = AgentLifecycleHookConfig.parse(utf8.decode(bytes));
 
   return _HookSourceDigests(canonicalPath, bytes, config);
 }
@@ -87,11 +87,13 @@ class _HookSourceDigests {
   Future<String> _readDigest(File file, String failureCode) async {
     final bytes = await _readBoundedFile(
       file,
-      maxAgentLifecycleHookExecutableBytes,
+      AgentLifecycleHookRuntimeLimits.maxAgentLifecycleHookExecutableBytes,
       failureCode,
     );
     _trustedSourceBytes += bytes.length;
-    if (_trustedSourceBytes > maxAgentLifecycleHookTrustedSourceBytes) {
+    if (_trustedSourceBytes >
+        AgentLifecycleHookRuntimeLimits
+            .maxAgentLifecycleHookTrustedSourceBytes) {
       throw const AgentLifecycleHookConfigException('sources_too_large');
     }
 

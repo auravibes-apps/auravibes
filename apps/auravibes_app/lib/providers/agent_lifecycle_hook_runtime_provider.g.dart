@@ -55,4 +55,4 @@ final class AgentLifecycleHookRuntimeProvider
 }
 
 String _$agentLifecycleHookRuntimeHash() =>
-    r'918646b1fad0da2c2f90711683ba18fe0919f847';
+    r'a2987bd33465b816b92b6902b6d8c9e5c7eb9095';

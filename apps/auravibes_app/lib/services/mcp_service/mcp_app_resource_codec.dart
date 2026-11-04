@@ -2,9 +2,8 @@ import 'dart:convert';
 
 typedef McpAppResource = ({String html, Map<String, Object?> csp});
 
-const int maxMcpAppResourceBytes = 2 * 1024 * 1024;
 const int _maxMcpAppResourceBase64Characters =
-    ((maxMcpAppResourceBytes + 2) ~/ 3) * 4;
+    ((McpAppResourceCodec.maxMcpAppResourceBytes + 2) ~/ 3) * 4;
 const _cspDomainFields = [
   'resourceDomains',
   'connectDomains',
@@ -15,13 +14,17 @@ const _maxCspDomainsPerDirective = 32;
 const _maxCspDomainCharacters = 512;
 final _cspHostPattern = RegExp(r'^[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$');
 
-McpAppResource parseMcpAppResource(
-  Map<String, Object?> result, {
-  required String resourceUri,
-}) {
-  final content = _matchingResourceContent(result, resourceUri);
+abstract final class McpAppResourceCodec {
+  static const int maxMcpAppResourceBytes = 2 * 1024 * 1024;
 
-  return (html: _resourceHtml(content), csp: _resourceCsp(content['_meta']));
+  static McpAppResource parse(
+    Map<String, Object?> result, {
+    required String resourceUri,
+  }) {
+    final content = _matchingResourceContent(result, resourceUri);
+
+    return (html: _resourceHtml(content), csp: _resourceCsp(content['_meta']));
+  }
 }
 
 Map<String, Object?> _matchingResourceContent(
@@ -70,8 +73,8 @@ String _resourceHtml(Map<String, Object?> content) {
 }
 
 String _validatedResourceText(String text) {
-  if (text.length > maxMcpAppResourceBytes ||
-      utf8.encode(text).length > maxMcpAppResourceBytes) {
+  if (text.length > McpAppResourceCodec.maxMcpAppResourceBytes ||
+      utf8.encode(text).length > McpAppResourceCodec.maxMcpAppResourceBytes) {
     throw const FormatException('MCP App resource exceeds size limit.');
   }
 
@@ -83,7 +86,7 @@ String _decodedResourceBlob(String blob) {
     throw const FormatException('MCP App resource exceeds size limit.');
   }
   final bytes = base64Decode(blob);
-  if (bytes.length > maxMcpAppResourceBytes) {
+  if (bytes.length > McpAppResourceCodec.maxMcpAppResourceBytes) {
     throw const FormatException('MCP App resource exceeds size limit.');
   }
 
@@ -116,11 +119,13 @@ List<String> _boundedCspDomains(Object? value) {
   ];
 }
 
-String buildMcpAppHostPage({
-  required String html,
-  required Map<String, Object?> csp,
-  required bool isWeb,
-}) => _renderHostPage(_hostPageData(html, csp, isWeb), isWeb);
+abstract final class McpAppHostPage {
+  static String build({
+    required String html,
+    required Map<String, Object?> csp,
+    required bool isWeb,
+  }) => _renderHostPage(_hostPageData(html, csp, isWeb), isWeb);
+}
 
 typedef _McpAppHostPageData = ({
   String html,
