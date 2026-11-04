@@ -363,12 +363,11 @@ Future<List<_ConversationArchiveExportSnapshot>> _loadConversationSnapshots(
 }) async {
   final snapshots = <_ConversationArchiveExportSnapshot>[];
   for (final id in conversationIds) {
-    snapshots.add(
-      await exporter._loadConversationSnapshot(
-        id,
-        workspaceId: workspaceId,
-      ),
+    final snapshot = await exporter._loadConversationSnapshot(
+      id,
+      workspaceId: workspaceId,
     );
+    snapshots.add(snapshot);
   }
 
   return snapshots;
