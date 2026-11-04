@@ -107,6 +107,30 @@ class ClassifyCiChangesTest(unittest.TestCase):
         self.assertFalse(result["run_code_checks"])
         self.assertFalse(result["run_server_integration"])
 
+    def test_audit_sidecars_skip_code_checks_without_hiding_code_changes(self):
+        sidecar = "docs/audits/example/screenshot.json"
+        self.assertFalse(classify_paths([sidecar])["run_code_checks"])
+        self.assertTrue(
+            classify_paths([sidecar, "apps/auravibes_app/lib/main.dart"])[
+                "run_code_checks"
+            ]
+        )
+        self.assertTrue(
+            classify_paths(["apps/auravibes_app/assets/config.json"])[
+                "run_code_checks"
+            ]
+        )
+        self.assertTrue(
+            classify_paths(["docs/audits/example/assets/config.json"])[
+                "run_code_checks"
+            ]
+        )
+        self.assertTrue(
+            classify_paths(["docs/audits/example/generated/config.json"])[
+                "run_code_checks"
+            ]
+        )
+
 
     def test_dependency_changes_request_resolution_preflight(self):
         for path in (
