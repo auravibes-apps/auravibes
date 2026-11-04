@@ -2061,6 +2061,46 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
   ),
 
   LocalizationDynamicRegistry(
+    family: 'workspace-setup-preflight-check-message-keys',
+    sites: [
+      DynamicTranslationSite(
+        file:
+            'features/workspaces/screens/workspace_setup_preflight_screen.dart',
+        method: 'tr',
+        keyExpression:
+            '(_localizedStorageMessage(key) ?? '
+            '_localizedProviderMessage(key) ?? '
+            '_localizedModelMessage(key) ?? '
+            '_localizedMcpMessage(key) ?? '
+            'LocaleKeys.workspace_setup_preflight_unavailable)',
+      ),
+    ],
+    keys: {
+      'workspace_setup_preflight.storage_available',
+      'workspace_setup_preflight.storage_unavailable',
+      'workspace_setup_preflight.storage_unverified',
+      'workspace_setup_preflight.provider_unverified',
+      'workspace_setup_preflight.provider_not_configured',
+      'workspace_setup_preflight.provider_credential_missing_optional',
+      'workspace_setup_preflight.provider_credential_missing_required',
+      'workspace_setup_preflight.provider_for_model_missing',
+      'workspace_setup_preflight.provider_saved',
+      'workspace_setup_preflight.model_not_selected',
+      'workspace_setup_preflight.model_unverified',
+      'workspace_setup_preflight.model_missing',
+      'workspace_setup_preflight.model_metadata_unavailable',
+      'workspace_setup_preflight.model_metadata_available',
+      'workspace_setup_preflight.mcp_unverified',
+      'workspace_setup_preflight.mcp_not_configured',
+      'workspace_setup_preflight.mcp_disabled',
+      'workspace_setup_preflight.mcp_not_tested',
+      'workspace_setup_preflight.mcp_attention',
+      'workspace_setup_preflight.mcp_last_test_passed',
+      'workspace_setup_preflight.unavailable',
+    },
+  ),
+
+  LocalizationDynamicRegistry(
     family: 'route-title-keys',
     sites: [
       DynamicTranslationSite(

@@ -97,3 +97,78 @@ final class AllWorkspacesProvider
 }
 
 String _$allWorkspacesHash() => r'0d342f5e8712cd6f795014602e6071f03bfce68f';
+
+@ProviderFor(workspaceById)
+final workspaceByIdProvider = WorkspaceByIdFamily._();
+
+final class WorkspaceByIdProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<WorkspaceEntity?>,
+          WorkspaceEntity?,
+          FutureOr<WorkspaceEntity?>
+        >
+    with $FutureModifier<WorkspaceEntity?>, $FutureProvider<WorkspaceEntity?> {
+  WorkspaceByIdProvider._({
+    required WorkspaceByIdFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'workspaceByIdProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$workspaceByIdHash();
+
+  @override
+  String toString() {
+    return r'workspaceByIdProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<WorkspaceEntity?> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<WorkspaceEntity?> create(Ref ref) {
+    final argument = this.argument as String;
+    return workspaceById(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is WorkspaceByIdProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$workspaceByIdHash() => r'afd26c92d0a3db31dfe5e6f9dbafadb92a1c26a4';
+
+final class WorkspaceByIdFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<WorkspaceEntity?>, String> {
+  WorkspaceByIdFamily._()
+    : super(
+        retry: null,
+        name: r'workspaceByIdProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  WorkspaceByIdProvider call(String workspaceId) =>
+      WorkspaceByIdProvider._(argument: workspaceId, from: this);
+
+  @override
+  String toString() => r'workspaceByIdProvider';
+}

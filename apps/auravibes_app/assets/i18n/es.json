@@ -1786,6 +1786,81 @@
     "view_members": "Miembros y acceso",
     "view_access": "Detalles de acceso"
   },
+  "workspace_setup_preflight": {
+    "title": "Configuración del espacio de trabajo",
+    "entry_title": "Revisar la configuración",
+    "entry_description": "Revisa la configuración guardada de este espacio antes de empezar.",
+    "open": "Revisar configuración",
+    "saved_configuration_only": "Se basa en la configuración guardada del espacio. No prueba la conexión con proveedores ni MCP.",
+    "refresh_local": "Actualizar comprobaciones guardadas",
+    "refresh_saved_cloud": "Actualizar configuración guardada en la nube",
+    "copy_summary": "Copiar resumen de soporte",
+    "summary_copied": "Se copió el resumen de configuración sin datos privados",
+    "summary_copy_error": "No se pudo copiar el resumen de configuración.",
+    "unavailable": "Algunos detalles de configuración del espacio no están disponibles.",
+    "check": {
+      "storage": "Almacenamiento del espacio",
+      "provider": "Credenciales del proveedor",
+      "model": "Modelo seleccionado",
+      "mcp": "Conexiones MCP"
+    },
+    "status": {
+      "pass": "Listo",
+      "warning": "Requiere atención",
+      "fail": "Bloqueado",
+      "unknown": "Sin verificar"
+    },
+    "outcome": {
+      "ready": "Listo para empezar",
+      "needs_setup": "Hace falta configurar",
+      "blocked": "La configuración está bloqueada",
+      "unverified": "No se pudo verificar la configuración"
+    },
+    "storage_available": "El almacenamiento guardado del espacio está disponible.",
+    "storage_unavailable": "Falta el registro del espacio o no es válido.",
+    "storage_unverified": "No se verificó la disponibilidad del almacenamiento del espacio.",
+    "provider_unverified": "No está disponible el estado de las credenciales guardadas del proveedor.",
+    "provider_not_configured": "No hay ningún proveedor configurado para este espacio.",
+    "provider_credential_missing_optional": "Hay un proveedor configurado, pero no tiene una credencial guardada. Es opcional hasta que selecciones un modelo.",
+    "provider_credential_missing_required": "El proveedor del modelo seleccionado no tiene una credencial guardada.",
+    "provider_for_model_missing": "El proveedor del modelo seleccionado ya no está configurado en este espacio.",
+    "provider_saved": "Hay una credencial de proveedor guardada. No se leyó su valor.",
+    "model_not_selected": "Elige un modelo antes de iniciar una conversación.",
+    "model_unverified": "No están disponibles los detalles guardados del modelo seleccionado.",
+    "model_missing": "El modelo seleccionado ya no está configurado en este espacio.",
+    "model_metadata_unavailable": "No están disponibles los detalles de capacidad de este modelo.",
+    "model_metadata_available": "Hay detalles de compatibilidad guardados.",
+    "model_modalities": "Entrada: {} · Salida: {}",
+    "model_modality_unknown": "No indicado",
+    "model_tools_supported": "Se indica que admite llamadas a herramientas.",
+    "model_tools_unsupported": "No se indica que admita llamadas a herramientas.",
+    "model_reasoning_supported": "Se indica que admite razonamiento.",
+    "model_reasoning_unsupported": "No se indica que admita razonamiento.",
+    "modality": {
+      "text": "texto",
+      "image": "imagen",
+      "audio": "audio",
+      "video": "video"
+    },
+    "mcp_unverified": "No está disponible el estado guardado de las conexiones MCP.",
+    "mcp_not_configured": "No hay conexiones MCP configuradas. Son opcionales.",
+    "mcp_disabled": "Al menos una conexión MCP configurada está desactivada.",
+    "mcp_not_tested": "Una conexión MCP configurada no tiene un resultado de prueba guardado.",
+    "mcp_attention": "Una prueba MCP guardada requiere atención. No se hizo una prueba nueva.",
+    "mcp_last_test_passed": "La última prueba MCP guardada se completó. No se hizo una prueba nueva.",
+    "recovery": {
+      "add_provider": "Añadir proveedor",
+      "review_provider": "Revisar proveedor",
+      "choose_model": "Elegir modelo",
+      "open_connections": "Revisar conexiones"
+    },
+    "summary": {
+      "overall": "Configuración del espacio",
+      "generated_at": "Generado",
+      "app_version": "Versión de la aplicación",
+      "unavailable": "No disponible"
+    }
+  },
   "workspace_management": {
     "title": "Gestionar Espacios de Trabajo",
     "copy_id": "Copiar ID",
