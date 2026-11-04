@@ -1,5 +1,5 @@
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/entities/sanitize_workspace_tool_result.dart';
+import 'package:auravibes_app/domain/entities/workspace_tool_result_sanitizer.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 
 class const ToolCallApprovalBatchItem({
@@ -64,7 +64,7 @@ class const ToolCallExecutionBatchUpdate({
   );
 
   MessageToolCallEntity applyTo(MessageToolCallEntity toolCall) =>
-      sanitizeWorkspaceToolResult(
+      WorkspaceToolResultSanitizer.sanitizeResult(
         toolCall.copyWith(
           resultStatus: resultStatus,
           responseRaw: responseRaw,

@@ -1,3 +1,5 @@
+import 'package:auravibes_app/i18n/locale_keys.dart';
+
 /// A reviewed finite translation family and the source sites that may use it.
 class LocalizationDynamicRegistry {
   const new({required this.family, required this.sites, this.keys = const {}});
@@ -854,10 +856,15 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
       'cloud_errors.conflict',
       'cloud_errors.permission_denied',
       'workspace_assets.invalid',
+      LocaleKeys.workspace_assets_size_limit_exceeded,
       'workspace_assets.referenced',
       'workspace_assets.unavailable',
       'workspace_items.invalid_folder',
       'workspace_items.invalid_table',
+      LocaleKeys.workspace_items_limit_columns,
+      LocaleKeys.workspace_items_limit_query_page,
+      LocaleKeys.workspace_items_limit_record_batch,
+      LocaleKeys.workspace_items_limit_summary_columns,
       'workspace_items.duplicate_unsupported',
       'workspace_items.reference_incompatible',
       'workspace_csv.invalid_file',
@@ -1741,16 +1748,6 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
         occurrence: 1,
       ),
       DynamicTranslationSite(
-        file: 'features/workspaces/widgets/workspace_item_failure.dart',
-        method: 'TextLocale',
-        keyExpression: 'CloudAppErrors.localizationKey(error)',
-      ),
-      DynamicTranslationSite(
-        file: 'features/skills/screens/skills_screen.dart',
-        method: 'TextLocale',
-        keyExpression: 'CloudAppErrors.localizationKey(error)',
-      ),
-      DynamicTranslationSite(
         file: 'features/chats/widgets/background_work_detach_controls.dart',
         method: 'tr',
         keyExpression: 'CloudAppErrors.localizationKey(error)',
@@ -1780,6 +1777,22 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
   ),
 
   LocalizationDynamicRegistry(
+    family: 'workspace-item-failure-keys',
+    sites: [
+      DynamicTranslationSite(
+        file: 'features/workspaces/widgets/workspace_item_failure.dart',
+        method: 'TextLocale',
+        keyExpression: '_fallbackKey(error, fallbackKey)',
+      ),
+    ],
+    keys: {
+      ..._cloudAppErrorKeys,
+      'connection_setup.tools_load_error',
+      'workspace_connected.connections_load_error',
+    },
+  ),
+
+  LocalizationDynamicRegistry(
     family: 'tool-localized-display-name-keys',
     sites: [
       DynamicTranslationSite(
@@ -1791,12 +1804,6 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
         file: 'features/tools/widgets/tools_group_header.dart',
         method: 'tr',
         keyExpression: 'groupWithTools.localizedDisplayNameKey',
-      ),
-      DynamicTranslationSite(
-        file: 'features/tools/widgets/tools_group_header.dart',
-        method: 'tr',
-        keyExpression: 'groupWithTools.localizedDisplayNameKey',
-        occurrence: 1,
       ),
       DynamicTranslationSite(
         file: 'features/tools/widgets/tools_management_modal.dart',
@@ -2223,6 +2230,13 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
     ],
     keys: {
       ..._cloudAppErrorKeys,
+      'agents.dependencies_load_error',
+      'agents.detail_load_error',
+      'agents.detail_not_found',
+      'agents.detail_permissions_load_error',
+      'agents.detail_return',
+      'agents.skills_load_error',
+      'connection_setup.tools_load_error',
       'route_state.workspace_loading',
       'route_state.workspace_error',
       'route_state.child_loading',
@@ -2233,6 +2247,9 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
       'route_state.workspace_missing',
       'route_state.invalid_workspace',
       'route_state.sign_in',
+      'skills_resource.load_error',
+      'skills_screen.detail_load_error',
+      'skills_screen.load_error',
     },
   ),
 

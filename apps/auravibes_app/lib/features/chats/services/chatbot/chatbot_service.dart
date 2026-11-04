@@ -247,7 +247,11 @@ _generateStreamRequest(_GenerationStreamRequest request) =>
     );
 
 List<Message> _genkitHistory(_SendMessageRequest request) => [
-  ChatMessage.system(toolCallNarrationInstruction),
+  ChatMessage(
+    role: .system,
+    content: toolCallNarrationInstruction,
+    metadata: AgentContextProvenance.applicationPrompt.withMetadata(const {}),
+  ),
   ...request.history,
 ].map(request.service._toGenkitMessage).toList();
 
@@ -318,14 +322,15 @@ _createTitleStream(Genkit ai, _TitleRequest request) {
   return ai.generateStream<Object?, Object?>(
     model: factory.getModelReference(request.chatProvider),
     prompt: conversationTitlePrompt(request.firstMessage),
-    messages: [
-      Message(
-        role: .system,
-        content: [TextPart(text: conversationTitleSystemPrompt)],
-      ),
-    ],
+    messages: [_titleSystemMessage()],
   );
 }
+
+Message _titleSystemMessage() => Message(
+  role: .system,
+  content: [TextPart(text: conversationTitleSystemPrompt)],
+  metadata: AgentContextProvenance.applicationPrompt.withMetadata(const {}),
+);
 
 extension on ChatbotService {
   Stream<ChatResult<ChatMessage>> _streamA2uiMessage(
@@ -496,11 +501,18 @@ extension on ChatbotService {
   );
 
   Role _genkitRole(ChatMessage message) => switch (message.role) {
-    .system => Role.system,
+    .system => _trustedGenkitRole(message),
     .user => Role.user,
     .model => Role.model,
     .tool => Role.tool,
   };
+
+  Role _trustedGenkitRole(ChatMessage message) =>
+      AgentContextProvenance.fromMetadata(
+        Map<String, Object?>.of(message.metadata),
+      ).mayUseSystemRole
+      ? Role.system
+      : Role.user;
 
   List<Part> _genkitContent(ChatMessage message) => message.parts.isEmpty
       ? [TextPart(text: message.content)]

@@ -282,7 +282,7 @@ class const _DatePickerDay({
   required final int day,
 }) extends StatelessWidget {
   String get _label =>
-      picker.input.labels.dayLabelBuilder?.call(day) ?? 'Day $day';
+      picker.input.labels.dayLabelBuilder?.call(day) ?? day.toString();
 
   @override
   Widget build(BuildContext context) {

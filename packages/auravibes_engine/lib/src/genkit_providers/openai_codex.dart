@@ -4,6 +4,7 @@
 
 import 'dart:convert';
 
+import 'package:auravibes_engine/src/context_provenance.dart';
 import 'package:auravibes_engine/src/genkit_providers/chat_completions_provider.dart';
 import 'package:auravibes_engine/src/genkit_providers/media_input.dart';
 import 'package:auravibes_engine/src/provider_failure_recovery.dart';
@@ -129,7 +130,18 @@ List<Map<String, dynamic>> _messageToInput(Message message) {
         .toList();
   }
 
-  final role = message.role == Role.model ? 'assistant' : message.role.value;
+  final role = switch (message.role) {
+    Role.system =>
+      AgentContextProvenance.fromMetadata(
+            message.metadata == null
+                ? null
+                : Map<String, Object?>.of(message.metadata!),
+          ).mayUseSystemRole
+          ? 'system'
+          : 'user',
+    Role.model => 'assistant',
+    _ => message.role.value,
+  };
 
   return [
     {'role': role, 'content': _contentToInput(message.content)},

@@ -29,10 +29,19 @@ typedef _ToolResultAttachmentRequest = ({
   String toolCallId,
 });
 
+@visibleForTesting
+typedef LocalChatAttachmentWriter = Future<void> Function(
+  File file,
+  Uint8List bytes,
+);
+
 class LocalChatAttachmentServiceIo({
   AudioRecorder? recorder,
   final String storageNamespace = 'auravibes_app',
+  @visibleForTesting LocalChatAttachmentWriter? attachmentWriter,
 }) {
+  final LocalChatAttachmentWriter? _attachmentWriter = attachmentWriter;
+
   // Defer platform-channel setup until voice recording is requested.
   AudioRecorder? _recorder = recorder;
   String? _recordingPath;
@@ -125,7 +134,7 @@ Future<MessageAttachmentToCreate> _copyBytesIntoAppStorage(
   _ensureAttachmentSize(request.bytes.length);
   final localPath = await _newAttachmentPath(service, 'attachment');
   final file = File(localPath);
-  await _writeArchiveAttachment(file, request.bytes);
+  await _writeArchiveAttachment(service, file, request.bytes);
   final source = _droppedFileSource(file, request);
 
   return _newAttachment(file, source, request.displayName);
@@ -167,7 +176,7 @@ Future<MessageAttachmentToCreate> _createArchiveAttachment(
   final fileName = _archiveAttachmentFileName(attachment.fileName);
   _ensureAttachmentSize(attachment.bytes.length);
   final localPath = await _newAttachmentPath(service, fileName);
-  await _writeArchiveAttachment(.new(localPath), attachment.bytes);
+  await _writeArchiveAttachment(service, .new(localPath), attachment.bytes);
   final mimeType = _archiveAttachmentMimeType(fileName, attachment);
 
   return _archiveAttachmentToCreate(attachment, localPath, fileName, mimeType);
@@ -180,7 +189,7 @@ Future<MessageAttachmentToCreate> _createToolResultAttachment(
   final fileName = _validateToolResultAttachmentRequest(request);
   final mimeType = _toolResultAttachmentMimeType(request, fileName);
   final localPath = await _newAttachmentPath(service, fileName);
-  await _writeArchiveAttachment(.new(localPath), request.bytes);
+  await _writeArchiveAttachment(service, .new(localPath), request.bytes);
 
   return _toolResultAttachmentEntity(request, fileName, mimeType, localPath);
 }
@@ -265,9 +274,18 @@ String _archiveAttachmentFileName(String value) {
   return fileName;
 }
 
-Future<void> _writeArchiveAttachment(File file, Uint8List bytes) async {
+Future<void> _writeArchiveAttachment(
+  LocalChatAttachmentServiceIo service,
+  File file,
+  Uint8List bytes,
+) async {
   try {
-    final _ = await file.writeAsBytes(bytes, flush: true);
+    final writer = service._attachmentWriter;
+    if (writer == null) {
+      final _ = await file.writeAsBytes(bytes, flush: true);
+    } else {
+      await writer(file, bytes);
+    }
   } on Object {
     await _deletePartialArchiveAttachment(file);
     rethrow;

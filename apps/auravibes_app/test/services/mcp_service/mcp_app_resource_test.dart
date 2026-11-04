@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:auravibes_app/services/mcp_service/mcp_app_resource.dart';
+import 'package:auravibes_app/services/mcp_service/mcp_app_resource_codec.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -22,7 +22,7 @@ void main() {
         },
       ],
     };
-    final resource = parseMcpAppResource(
+    final resource = McpAppResourceCodec.parse(
       result,
       resourceUri: 'ui://weather/view',
     );
@@ -55,7 +55,7 @@ void main() {
       ],
     };
 
-    final resource = parseMcpAppResource(
+    final resource = McpAppResourceCodec.parse(
       result,
       resourceUri: 'ui://weather/view',
     );
@@ -77,7 +77,7 @@ void main() {
         },
       ],
     };
-    final resource = parseMcpAppResource(
+    final resource = McpAppResourceCodec.parse(
       result,
       resourceUri: 'ui://weather/view',
     );
@@ -87,8 +87,12 @@ void main() {
 
   test('rejects oversized text and base64 app resources', () {
     for (final content in [
-      {'text': 'x' * (maxMcpAppResourceBytes + 1)},
-      {'blob': base64Encode(List<int>.filled(maxMcpAppResourceBytes + 1, 120))},
+      {'text': 'x' * (McpAppResourceCodec.maxMcpAppResourceBytes + 1)},
+      {
+        'blob': base64Encode(
+          List<int>.filled(McpAppResourceCodec.maxMcpAppResourceBytes + 1, 120),
+        ),
+      },
     ]) {
       final result = <String, Object?>{
         'contents': [
@@ -100,7 +104,8 @@ void main() {
         ],
       };
       expect(
-        () => parseMcpAppResource(result, resourceUri: 'ui://weather/view'),
+        () =>
+            McpAppResourceCodec.parse(result, resourceUri: 'ui://weather/view'),
         throwsFormatException,
       );
     }
@@ -117,7 +122,7 @@ void main() {
       ],
     };
     expect(
-      () => parseMcpAppResource(
+      () => McpAppResourceCodec.parse(
         mismatchedResult,
         resourceUri: 'ui://weather/view',
       ),
@@ -133,7 +138,7 @@ void main() {
       ],
     };
     expect(
-      () => parseMcpAppResource(
+      () => McpAppResourceCodec.parse(
         unsupportedResult,
         resourceUri: 'ui://weather/view',
       ),
@@ -144,7 +149,7 @@ void main() {
   test('embeds app HTML in a sandboxed native view with declared CSP', () {
     const appHtml =
         '<!doctype html><html><head><title>App</title></head><body>View</body></html>';
-    final page = buildMcpAppHostPage(
+    final page = McpAppHostPage.build(
       html: appHtml,
       csp: const {
         'resourceDomains': ['https://cdn.example.com'],
@@ -171,7 +176,7 @@ void main() {
   });
 
   test('ignores unsafe domains when building app CSP', () {
-    final page = buildMcpAppHostPage(
+    final page = McpAppHostPage.build(
       html: '<p>app</p>',
       csp: const {
         'resourceDomains': [
@@ -199,7 +204,7 @@ void main() {
   });
 
   test('uses a separate sandbox proxy for web hosts', () {
-    final page = buildMcpAppHostPage(
+    final page = McpAppHostPage.build(
       html: '<p>app</p>',
       csp: const {
         'resourceDomains': ['https://cdn.example.com'],

@@ -67,7 +67,7 @@ State the screen's purpose and next useful action in plain language. Show essent
 
 Prefer grouping and hierarchy over nested cards around every field. If details compete with the main task, summarize or move them to a meaningful destination. Preserve information needed for comparison, consent, safety, or recovery; neither a fixed control count nor a universal one-screen/one-question rule measures simplicity.
 
-Reuse current typography, semantic colors, icons, and components. Do not import font bans, randomized layouts, oversized marketing headlines, cinematic reveals, or perpetual animation from website inspiration. Motion should explain feedback or continuity, respect reduced motion, and never delay a frequent task.
+Reuse current typography, semantic colors, icons, and components when they comply with the [visual blacklist](visual-design-rules.md#assessing-generic-looking-ui). Do not import font bans, randomized layouts, oversized marketing headlines, cinematic reveals, or perpetual animation from website inspiration. Motion should explain feedback or continuity, respect reduced motion, and never delay a frequent task.
 
 ## Adaptive behavior: same task, appropriate composition
 

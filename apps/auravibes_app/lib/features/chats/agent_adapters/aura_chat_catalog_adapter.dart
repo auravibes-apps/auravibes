@@ -14,6 +14,7 @@ import 'package:auravibes_app/features/skills/models/available_skill.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/utils/number_formatter.dart';
 import 'package:auravibes_app/utils/string_extensions.dart';
+import 'package:auravibes_app/widgets/aura_date_time_labels.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -956,7 +957,7 @@ Widget _button(CatalogItemContext context) {
       onPressed: href == null
           ? () {}
           : () => unawaited(
-              openChatExternalLink(context.buildContext, href.toString()),
+              ChatExternalLink.open(context.buildContext, href.toString()),
             ),
       child: label != null
           ? AuraRow(
@@ -1123,6 +1124,7 @@ Widget _dateTimeInput(CatalogItemContext context) {
           children: [
             if (label != null) AuraText(child: Text(label)),
             AuraDateTimeInput(
+              labels: AuraDateTimeLabels.forContext(context.buildContext),
               value: _dateTimeValue(value, variant as String?),
               enableDate: variant != 'time',
               enableTime: variant != 'date',

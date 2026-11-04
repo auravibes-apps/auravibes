@@ -1470,6 +1470,7 @@ class const _MessageTextContent({
           isUser: true,
           key: ValueKey(message.id),
           status: status,
+          statusSemanticLabel: _messageStatusLabel(context, status),
         ),
       );
     }
@@ -1512,7 +1513,10 @@ class const _MessageFooter({
         ),
         if (status != AuraMessageDeliveryStatus.sent) ...[
           SizedBox(height: context.auraTheme.fromSpacing(.xs) / 2),
-          AuraMessageStatus(status: status),
+          AuraMessageStatus(
+            status: status,
+            semanticLabel: _messageStatusLabel(context, status),
+          ),
         ],
       ],
     );
@@ -1521,6 +1525,18 @@ class const _MessageFooter({
 
 bool _canForkMessage(MessageEntity message) =>
     !message.isUser && message.status == MessageStatus.sent;
+
+String _messageStatusLabel(
+  BuildContext context,
+  AuraMessageDeliveryStatus status,
+) => (switch (status) {
+  .sending => LocaleKeys.common_message_status_sending,
+  .unfinished => LocaleKeys.common_message_status_unfinished,
+  .sent => LocaleKeys.common_message_status_sent,
+  .delivered => LocaleKeys.common_message_status_delivered,
+  .read => LocaleKeys.common_message_status_read,
+  .error => LocaleKeys.common_message_status_error,
+}).tr(context: context);
 
 class const _MessageActions({
   required final MessageEntity message,
@@ -1838,7 +1854,7 @@ Widget _chatMarkdown({
     child: GptMarkdown(
       content,
       style: style,
-      onLinkTap: (url, _) => unawaited(openChatExternalLink(context, url)),
+      onLinkTap: (url, _) => unawaited(ChatExternalLink.open(context, url)),
     ),
   ),
 );
@@ -1869,7 +1885,10 @@ class const _AiMessageContent({
         ),
         if (showMetadata && status != AuraMessageDeliveryStatus.sent) ...[
           const AuraSizedBox(height: .xs),
-          AuraMessageStatus(status: status),
+          AuraMessageStatus(
+            status: status,
+            semanticLabel: _messageStatusLabel(context, status),
+          ),
         ],
       ],
     );
@@ -1990,7 +2009,7 @@ class const _AssistantActivityRun({
       });
     }
 
-    Future<void> collapseAfterRun() => runAfterMcpAppToolResultsTeardown(
+    Future<void> collapseAfterRun() => McpAppToolResultTeardown.runAfter(
       controllers: appControllersForToolIds(expansionState.expandedToolIds),
       action: () {
         if (!context.mounted) return;
@@ -2154,11 +2173,12 @@ class const _AssistantActivityRun({
                       isLive: current.isLive,
                       traceExpanded: current.traceExpanded,
                       expandedToolGroupIds: current.expandedToolGroupIds,
-                      expandedToolIds: updateActivityRunExpandedIds(
-                        expandedIds: current.expandedToolIds,
-                        id: toolCallId,
-                        isExpanded: shouldExpandToolCall,
-                      ),
+                      expandedToolIds:
+                          ActivityRunExpansionNotifier.updateExpandedIds(
+                            expandedIds: current.expandedToolIds,
+                            id: toolCallId,
+                            isExpanded: shouldExpandToolCall,
+                          ),
                     ),
                   );
                 }),
@@ -2175,7 +2195,7 @@ class const _AssistantActivityRun({
         final shouldExpandToolGroup = !renderedExpansionState
             .expandedToolGroupIds
             .contains(groupId);
-        Future<void> toggleToolGroup() => runAfterMcpAppToolResultsTeardown(
+        Future<void> toggleToolGroup() => McpAppToolResultTeardown.runAfter(
           controllers: shouldExpandToolGroup
               ? const <McpAppToolResultController?>[]
               : [
@@ -2192,11 +2212,12 @@ class const _AssistantActivityRun({
                 return (
                   isLive: current.isLive,
                   traceExpanded: current.traceExpanded,
-                  expandedToolGroupIds: updateActivityRunExpandedIds(
-                    expandedIds: current.expandedToolGroupIds,
-                    id: groupId,
-                    isExpanded: shouldExpandToolGroup,
-                  ),
+                  expandedToolGroupIds:
+                      ActivityRunExpansionNotifier.updateExpandedIds(
+                        expandedIds: current.expandedToolGroupIds,
+                        id: groupId,
+                        isExpanded: shouldExpandToolGroup,
+                      ),
                   expandedToolIds: current.expandedToolIds,
                 );
               });
@@ -2241,7 +2262,7 @@ class const _AssistantActivityRun({
         : LocaleKeys.chats_screens_chat_conversation_activity_tools_count
               .plural(toolCalls.length, context: context);
     final shouldExpandTrace = !renderedExpansionState.traceExpanded;
-    Future<void> toggleTrace() => runAfterMcpAppToolResultsTeardown(
+    Future<void> toggleTrace() => McpAppToolResultTeardown.runAfter(
       controllers: shouldExpandTrace
           ? const <McpAppToolResultController?>[]
           : appControllersForToolIds(renderedExpansionState.expandedToolIds),

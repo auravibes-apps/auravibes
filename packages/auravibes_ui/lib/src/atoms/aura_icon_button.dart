@@ -180,7 +180,7 @@ class const _AuraIconButtonIcon({
   required final IconData? icon,
   required final double size,
   required final Color color,
-  required final String semanticLabel,
+  required final String? semanticLabel,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Icon(
@@ -324,7 +324,7 @@ class const _AuraIconButtonIconContent({
         icon: button.icon,
         size: size,
         color: color,
-        semanticLabel: button.semanticLabel ?? button.tooltip ?? 'Icon button',
+        semanticLabel: button.semanticLabel ?? button.tooltip,
       );
 }
 

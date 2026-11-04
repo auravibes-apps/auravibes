@@ -162,7 +162,7 @@ void main() {
 
       Future<void> expectRedacted() async {
         final history = await messages.getMessagesByConversation(fork.id);
-        final projected = redactWorkspaceToolHistory(history);
+        final projected = WorkspaceHistoryRedaction.redactHistory(history);
         final calls = projected.expand(
           (message) => message.metadata?.toolCalls ?? <MessageToolCallEntity>[],
         );

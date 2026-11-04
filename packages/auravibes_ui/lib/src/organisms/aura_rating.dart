@@ -12,6 +12,7 @@ class AuraRating extends StatelessWidget {
     super.key,
     this.max = 5,
     this.label,
+    this.semanticValue,
   }) : assert(max > 0, 'max must be positive');
 
   /// Selected rating from zero through [max].
@@ -26,6 +27,9 @@ class AuraRating extends StatelessWidget {
   /// Accessible label.
   final String? label;
 
+  /// Optional caller-formatted rating value.
+  final String? semanticValue;
+
   @override
   Widget build(BuildContext context) => _AuraRatingSemantics(
     max: max,
@@ -35,6 +39,7 @@ class AuraRating extends StatelessWidget {
         onChanged != null,
     callback: onChanged,
     label: label,
+    semanticValue: semanticValue,
     color: context.auraColors.warning,
   );
 }
@@ -45,6 +50,7 @@ class const _AuraRatingSemantics({
   required final bool enabled,
   required final ValueChanged<int>? callback,
   required final String? label,
+  required final String? semanticValue,
   required final Color color,
 }) extends StatelessWidget {
   @override
@@ -57,7 +63,7 @@ class const _AuraRatingSemantics({
       color: color,
     ),
     label: label,
-    value: '$selected of $max',
+    value: semanticValue ?? '$selected/$max',
   );
 }
 

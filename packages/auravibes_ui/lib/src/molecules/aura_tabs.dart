@@ -337,8 +337,9 @@ class _AuraTabBarState extends State<_AuraTabBar> {
     final targetSize = auraTheme.interactionSizes.minimumTargetSize;
     final borderRadius = AuraCornerRadiusScope.resolve(context, fallback: .md);
     final title = widget.titles[index];
+    final label = widget.semanticLabels[index] ?? _textSemanticLabel(title);
 
-    return Semantics(
+    return KeyedSubtree(
       key: _tabKeys[index],
       child: IntrinsicWidth(
         child: ConstrainedBox(
@@ -350,19 +351,22 @@ class _AuraTabBarState extends State<_AuraTabBar> {
             clipBehavior: Clip.none,
             children: [
               AuraPressable(
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minWidth: targetSize),
-                  child: SizedBox(
-                    height: targetSize,
-                    child: AuraPadding(
-                      child: Center(
-                        child: AuraText(
-                          child: title,
-                          style: AuraTextStyle.bodySmall,
-                          tint: isSelected ? AuraTint.primary : null,
+                child: ExcludeSemantics(
+                  excluding: label != null,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minWidth: targetSize),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minHeight: targetSize),
+                      child: AuraPadding(
+                        child: Center(
+                          child: AuraText(
+                            child: title,
+                            style: AuraTextStyle.bodySmall,
+                            tint: isSelected ? AuraTint.primary : null,
+                          ),
                         ),
+                        padding: const AuraEdgeInsetsGeometry.horizontal(.md),
                       ),
-                      padding: const AuraEdgeInsetsGeometry.horizontal(.md),
                     ),
                   ),
                 ),
@@ -374,10 +378,9 @@ class _AuraTabBarState extends State<_AuraTabBar> {
                 onPressed: widget.onChanged == null
                     ? null
                     : () => widget.onChanged!(index),
-                semanticLabel:
-                    widget.semanticLabels[index] ??
-                    _textSemanticLabel(title) ??
-                    'Tab',
+                semanticLabel: label,
+                semanticRole: SemanticsRole.tab,
+                selected: isSelected,
               ),
               Positioned(
                 left: 0,
@@ -400,13 +403,6 @@ class _AuraTabBarState extends State<_AuraTabBar> {
           ),
         ),
       ),
-      container: true,
-      excludeSemantics: true,
-      selected: isSelected,
-      label: widget.semanticLabels[index] ?? _textSemanticLabel(title),
-      enabled: widget.onChanged != null,
-      onTap: widget.onChanged == null ? null : () => widget.onChanged!(index),
-      role: SemanticsRole.tab,
     );
   }
 

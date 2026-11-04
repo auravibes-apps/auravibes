@@ -95,5 +95,6 @@ class const _AutomaticNavigationBackButton() extends StatelessWidget {
     icon: Icons.arrow_back,
     onPressed: () => Navigator.of(context).pop(),
     identifier: 'app_navigation_back',
+    tooltip: MaterialLocalizations.of(context).backButtonTooltip,
   );
 }

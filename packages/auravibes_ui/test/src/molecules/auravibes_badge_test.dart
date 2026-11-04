@@ -256,7 +256,9 @@ void main() {
         expect(find.text('$maxCount+'), findsOneWidget);
       });
 
-      testWidgets('applies default semantic label for count', (tester) async {
+      testWidgets('exposes the count when no semantic label is supplied', (
+        tester,
+      ) async {
         const count = 3;
 
         await tester.pumpWidget(
@@ -265,16 +267,8 @@ void main() {
           ),
         );
 
-        final semanticsWidgets = find.byType(Semantics);
-        final targetSemantics = semanticsWidgets.evaluate().firstWhere(
-          (element) =>
-              (element.widget as Semantics).properties.label ==
-              '$count notifications',
-          orElse: () => throw StateError(
-            'No Semantics widget found with label: $count notifications',
-          ),
-        );
-        expect(targetSemantics, isNotNull);
+        expect(find.bySemanticsLabel('$count'), findsOneWidget);
+        expect(find.bySemanticsLabel('$count notifications'), findsNothing);
       });
     });
 
@@ -289,12 +283,14 @@ void main() {
         expect(sizedBox.height, 6);
       });
 
-      testWidgets('applies default semantic label for dot', (tester) async {
+      testWidgets('uses the supplied semantic label for dot', (tester) async {
         await tester.pumpWidget(
-          const MaterialApp(home: Scaffold(body: AuraBadge.dot())),
+          const MaterialApp(
+            home: Scaffold(body: AuraBadge.dot(semanticLabel: 'Online')),
+          ),
         );
 
-        expect(find.bySemanticsLabel('notification indicator'), findsOneWidget);
+        expect(find.bySemanticsLabel('Online'), findsOneWidget);
       });
     });
 

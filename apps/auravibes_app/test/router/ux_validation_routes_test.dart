@@ -293,8 +293,8 @@ void main() {
         find.byType(AuraInput).at(1),
         'Research with shared notes.',
       );
-      await tester.ensureVisible(find.text('Add system prompt'));
-      await tester.tap(find.text('Add system prompt'));
+      await tester.ensureVisible(find.text('Add instructions'));
+      await tester.tap(find.text('Add instructions'));
       await f.settle(tester);
       await tester.enterText(
         find.byType(TextFormField),

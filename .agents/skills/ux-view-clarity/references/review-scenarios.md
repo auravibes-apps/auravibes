@@ -185,3 +185,28 @@ creation container, or selection gesture.
 
 Static consistency review covers these expectations and their exceptions.
 Model execution and current-app rendering of these scenarios remain **not run**.
+
+## Generic-appearance review cards
+
+Use these with the review process above. The cases test explicit and indirect requests, the blacklist, and preserved functionality.
+
+| Request | Expected decision | Reject |
+| --- | --- | --- |
+| Audit this screen for AI slop. Do not edit it. | Uses ux-task-audit and the shared blacklist; cites observed violations and what works, with scoped recommendations. | App edits, an invented user study, or treating a style violation as proved task harm. |
+| Review and unslop this interface. Do not edit it. | Uses ux-task-audit for the review despite the word unslop; reports scoped findings without editing. | Routing to implementation or changing app files. |
+| This dashboard feels like a template. Explain what to improve. | Routes the indirect review to ux-task-audit; reports a visible gradient-text heading as a blacklist observation even without proven task impact. | Ignoring a listed violation because no user impact is proven, or asserting the UI was AI-generated. |
+| Review this task flow and its current screen for visual clarity. | Uses relevant shared checks for the visible scope, including repetitive decoration or unsupported data when evidence shows them. | Waiting for the request to name AI slop or asserting a visual issue from source alone. |
+| This heading has a decorative eyebrow and a subtitle that repeats it. Unslop the screen. | Removes the redundant text within scope while preserving useful context and localized strings at their source. | Keeping the decoration or hard-coding replacement copy in the widget. |
+| A small uppercase eyebrow above the title is the only place that names its parent section. Review it. | Flags the eyebrow and retains its needed context in a compliant heading or body. | Exempting the eyebrow or deleting the only context. |
+| This checkout shows the current step and a warning about an irreversible action. Simplify the copy. | Preserves the actual progress and consequence while removing only redundant wording. | Treating meaningful progress or safety information as decoration. |
+| A form field repeats its label as a placeholder, but its helper explains the required format. Simplify it. | Removes the redundant placeholder while keeping the persistent label and useful helper. | Removing the label or the format constraint to reduce words. |
+| A status dot says Live, but no source or connection behavior can be inspected. Review it. | Flags its state as unverified and identifies the evidence needed to assess it. | Claiming the status is real or fake without evidence. |
+| Simplify a chart with a repetitive title, dense grid, and legend. | Removes redundant display elements only where data, units, series identity, and accessible input paths remain clear. | Hiding necessary values, relying on color or hover alone, or replacing a useful legend with overlapping labels. |
+| Unslop this screen while preserving its controls and behavior. | Uses ux-view-clarity and the shared blacklist; removes applicable violations within scope, preserving existing data, accessibility, and recovery. | An unrequested rebrand, fabricated data, mandatory paid research, or removal of essential controls. |
+| Fix only the button padding; its existing label uses gradient text. | Uses the short path, keeps the edit scoped, and flags the existing blacklist violation separately. | Silently approving the gradient or expanding the padding fix into an unrequested redesign. |
+| The screenshot shows two similar totals; are they fake? No source or data is available. | Notes the apparent similarity and its uncertainty; requests or inspects the data source when available. | Claiming from the screenshot alone that the numbers were invented. |
+| This documented brand requires a purple-to-indigo gradient. Review it for slop. | Flags the blacklisted brand treatment, recommends a compliant alternative, and scopes any broader identity proposal. | Exempting the gradient because it is branded or claiming a usability defect without evidence. |
+| Build a screen using an existing component that adds gradient text. | Flags the shared violation and uses or proposes a compliant treatment within the authorized scope. | Reusing the component's blacklisted treatment solely because it already exists. |
+| This screen uses a solid purple accent and rounded cards. Review it for slop. | Recognizes that neither is on the blacklist by itself. | Treating every purple color or rounded card as a violation. |
+| The focus indicator glows for visibility. Remove glows. | Replaces the glow with a visible, accessible non-glowing focus indicator and verifies the affected states. | Keeping the blacklisted glow or removing focus visibility. |
+| Check the button's WCAG contrast only. | Routes the accessibility-only review to accessibility guidance; does not perform a generic-appearance audit. | Loading a full UX audit solely because the request mentions appearance. |

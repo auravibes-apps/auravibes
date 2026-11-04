@@ -5,4 +5,4 @@ part 'agent_lifecycle_hook_runtime_provider.g.dart';
 
 @Riverpod(keepAlive: true)
 AgentLifecycleHookRuntime agentLifecycleHookRuntime(Ref _) =>
-    createAgentLifecycleHookRuntime();
+    AgentLifecycleHookRuntimeFactory.create();

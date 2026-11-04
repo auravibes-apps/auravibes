@@ -717,6 +717,7 @@ class const _AgentDetailAppBar({required final _AgentDetailScreenState state})
       leading: AuraIconButton(
         icon: Icons.arrow_back,
         onPressed: () => unawaited(state._requestClose()),
+        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
       ),
     );
   }
@@ -745,17 +746,38 @@ class const _AgentDetailBodyContent({
           tools: AsyncData(value: final toolValue),
         ) =>
           _AgentReadyBody(state: state, skills: skillValue, tools: toolValue),
-        (skills: AsyncError(), tools: _) ||
-        (skills: _, tools: AsyncError()) => const _AgentDetailError(),
+        (skills: AsyncError(), tools: _) || (skills: _, tools: AsyncError()) =>
+          _AgentDetailError(state: state, skills: skills, tools: tools),
         _ => const _AgentDetailLoading(),
       };
 }
 
-class const _AgentDetailError() extends StatelessWidget {
+class const _AgentDetailError({
+  required final _AgentDetailScreenState state,
+  required final AsyncValue<List<WorkspaceSkill>> skills,
+  required final AsyncValue<List<WorkspaceToolEntity>> tools,
+}) extends ConsumerWidget {
+  String get _messageKey {
+    if (skills.hasError && tools.hasError) {
+      return LocaleKeys.agents_dependencies_load_error;
+    }
+    if (skills.hasError) return LocaleKeys.agents_skills_load_error;
+
+    return LocaleKeys.connection_setup_tools_load_error;
+  }
+
   @override
-  Widget build(BuildContext context) => const Center(
-    child: AuraText(child: TextLocale(LocaleKeys.agents_skills_load_error)),
+  Widget build(BuildContext context, WidgetRef ref) => RouteRecoveryView(
+    messageKey: _messageKey,
+    onRetry: () => _retry(ref),
+    embedded: true,
   );
+
+  void _retry(WidgetRef ref) {
+    final workspaceId = state.widget.workspaceId;
+    if (skills.hasError) ref.invalidate(workspaceSkillsProvider(workspaceId));
+    if (tools.hasError) ref.invalidate(workspaceToolsProvider(workspaceId));
+  }
 }
 
 class const _AgentDetailLoading() extends StatelessWidget {
@@ -1352,7 +1374,11 @@ class const _AgentEnabledRow({
     return Row(
       children: [
         const Expanded(child: _AgentEnabledDescription()),
-        AuraSwitch(value: value, onChanged: onChanged),
+        AuraSwitch(
+          value: value,
+          onChanged: onChanged,
+          semanticLabel: LocaleKeys.agents_enabled_label.tr(context: context),
+        ),
       ],
     );
   }

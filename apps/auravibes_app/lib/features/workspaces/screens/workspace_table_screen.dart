@@ -75,6 +75,7 @@ class const _RefreshTableButton({
             screen.workspaceId,
             screen.tableId,
           ),
+    tooltip: MaterialLocalizations.of(context).refreshIndicatorSemanticLabel,
   );
 }
 
@@ -498,7 +499,7 @@ class const _NewRecordButton(
     settings.value = false;
     unawaited(
       action.run(
-        () => createEmptyWorkspaceRecord(
+        () => WorkspaceRecordBrowser.createEmptyRecord(
           ref,
           workspaceId: browser.workspaceId,
           table: browser.table,

@@ -22,6 +22,7 @@ import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/feature_destination_app_bar.dart';
 import 'package:auravibes_app/widgets/feature_destinations.dart';
 import 'package:auravibes_app/widgets/management_list_feedback.dart';
+import 'package:auravibes_app/widgets/route_recovery_view.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -428,7 +429,10 @@ class _SkillsScreenAsyncContentData {
     required void Function(WorkspaceSkill skill, ({bool isEnabled}) change)
     onSkillEnabledChanged,
   }) : child = switch (_loadedSkills(skillsAsync)) {
-         null => _SkillsScreenPendingState(skillsAsync: skillsAsync),
+         null => _SkillsScreenPendingState(
+           skillsAsync: skillsAsync,
+           workspaceId: workspaceId,
+         ),
          final skills => _SkillsScreenLoadedContent(
            workspaceId: workspaceId,
            skills: skills,
@@ -454,20 +458,37 @@ List<WorkspaceSkill>? _loadedSkills(
 
 class const _SkillsScreenPendingState({
   required final AsyncValue<List<WorkspaceSkill>> skillsAsync,
-}) extends StatelessWidget {
+  required final String workspaceId,
+}) extends ConsumerWidget {
   @override
-  Widget build(BuildContext context) => switch (skillsAsync) {
+  Widget build(BuildContext context, WidgetRef ref) => switch (skillsAsync) {
     AsyncLoading() => const Center(child: AuraSpinner()),
-    AsyncError(:final error) => _SkillsScreenError(error: error),
+    AsyncError(:final error) => _SkillsScreenError(
+      error: error,
+      onRetry: () => ref.invalidate(workspaceSkillsProvider(workspaceId)),
+    ),
     AsyncData() => const SizedBox.shrink(),
   };
 }
 
-class const _SkillsScreenError({required final Object error})
-    extends StatelessWidget {
+class const _SkillsScreenError({
+  required final Object error,
+  required final VoidCallback onRetry,
+}) extends StatelessWidget {
+  String get _messageKey {
+    final key = CloudAppErrors.localizationKey(error);
+
+    return key == LocaleKeys.cloud_errors_unavailable &&
+            error is! CloudAppException
+        ? LocaleKeys.skills_screen_load_error
+        : key;
+  }
+
   @override
-  Widget build(BuildContext context) => Center(
-    child: AuraText(child: TextLocale(CloudAppErrors.localizationKey(error))),
+  Widget build(BuildContext context) => RouteRecoveryView(
+    messageKey: _messageKey,
+    onRetry: onRetry,
+    embedded: true,
   );
 }
 
@@ -1904,6 +1925,7 @@ class const _SkillTileActions({
           value: skill.isEnabled,
           onChanged: isDeleting ? null : onChanged,
           disabled: isDeleting,
+          semanticLabel: _skillEnabledLabel(context, skill),
         ),
         if (skill.source == SkillSource.user && !isDeleting)
           _SkillTileMenu(onOpen: onOpen, onDelete: onDelete),
@@ -1912,6 +1934,12 @@ class const _SkillTileActions({
     );
   }
 }
+
+String _skillEnabledLabel(BuildContext context, WorkspaceSkill skill) =>
+    LocaleKeys.common_enable_named.tr(
+      context: context,
+      args: [_localizedSkillTitle(context, skill)],
+    );
 
 class const _SkillTileMenu({
   required final VoidCallback onOpen,

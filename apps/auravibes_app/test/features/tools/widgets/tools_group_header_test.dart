@@ -121,6 +121,10 @@ void main() {
     expect(find.text('My MCP Server'), findsOneWidget);
     expect(find.byType(AuraSwitch), findsOneWidget);
     expect(
+      tester.widget<AuraSwitch>(find.byType(AuraSwitch)).semanticLabel,
+      'Enable My MCP Server',
+    );
+    expect(
       find.ancestor(
         of: find.byIcon(Icons.keyboard_arrow_down),
         matching: find.byType(AuraIconButton),
