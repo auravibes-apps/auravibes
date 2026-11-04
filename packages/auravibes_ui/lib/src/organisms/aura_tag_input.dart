@@ -175,7 +175,6 @@ class _AuraTagChip extends StatelessWidget {
                ),
              ],
            ),
-           semanticLabel: tag,
          ),
        );
 

@@ -699,6 +699,7 @@ class const _SkillDetailBackButton({
     return AuraIconButton(
       icon: Icons.arrow_back,
       onPressed: () => state._handleBack(context),
+      tooltip: MaterialLocalizations.of(context).backButtonTooltip,
     );
   }
 }

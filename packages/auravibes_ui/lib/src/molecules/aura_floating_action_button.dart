@@ -160,10 +160,7 @@ class _AuraFabThemeData {
                    ),
              enabled: button.onPressed != null,
              button: true,
-             label:
-                 button.semanticLabel ??
-                 button.tooltip ??
-                 'Floating action button',
+             label: button.semanticLabel ?? button.tooltip ?? button.text,
              onTap: button.onPressed,
            ),
          ),

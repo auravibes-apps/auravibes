@@ -1,5 +1,6 @@
 // ignore_for_file: type=lint, type=warning
 import 'dart:async';
+import 'dart:ui' show SemanticsRole;
 
 import 'package:auravibes_ui/src/atoms/aura_edge_insets_geometry.dart';
 import 'package:auravibes_ui/src/atoms/aura_interaction_scope.dart';
@@ -23,6 +24,8 @@ class AuraPressable extends StatefulWidget {
     this.identifier,
     this.semanticLabel,
     this.isButtonSemantics = false,
+    this.semanticRole,
+    this.selected,
   });
 
   /// Child.
@@ -63,6 +66,12 @@ class AuraPressable extends StatefulWidget {
 
   /// Preserves button semantics when the owning control is disabled.
   final bool isButtonSemantics;
+
+  /// Optional semantic role for specialized controls such as tabs.
+  final SemanticsRole? semanticRole;
+
+  /// Optional persistent selection state.
+  final bool? selected;
 
   @override
   AuraPressableState createState() => AuraPressableState();
@@ -140,6 +149,8 @@ class AuraPressableState extends State<AuraPressable> {
       label: widget.semanticLabel,
       button: widget.isButtonSemantics || widget.semanticLabel != null,
       enabled: false,
+      role: widget.semanticRole,
+      selected: widget.selected,
       identifier: identifier,
       child: content,
     );
@@ -211,6 +222,8 @@ class AuraPressableState extends State<AuraPressable> {
         ),
       ),
       enabled: true,
+      role: widget.semanticRole,
+      selected: widget.selected,
       button: true,
       identifier: identifier,
       label: widget.semanticLabel,

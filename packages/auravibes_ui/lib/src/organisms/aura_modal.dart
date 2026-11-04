@@ -20,7 +20,8 @@ class AuraModal extends StatefulWidget {
     required this.barrierLabel,
     super.key,
     this.barrierDismissible = true,
-    this.semanticLabel = 'Open modal',
+    this.semanticLabel,
+    this.triggerSemanticLabel,
     this.title,
     this.closeLabel,
     this.size = AuraModalSize.medium,
@@ -40,6 +41,9 @@ class AuraModal extends StatefulWidget {
 
   /// An optional accessibility label for the modal route.
   final String? semanticLabel;
+
+  /// Optional caller-provided name for the control that opens the modal.
+  final String? triggerSemanticLabel;
 
   /// Optional title shown above the modal content.
   final Widget? title;
@@ -155,12 +159,15 @@ class _AuraModalDialogData({
 class const _AuraModalDisabledEntry({required final AuraModal widget})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Semantics(
-    child: IgnorePointer(child: widget.entryPointChild),
-    container: true,
-    enabled: false,
-    button: true,
-    label: widget.semanticLabel ?? 'Open modal',
+  Widget build(BuildContext context) => MergeSemantics(
+    child: Semantics(
+      child: IgnorePointer(child: widget.entryPointChild),
+      container: true,
+      excludeSemantics: widget.triggerSemanticLabel != null,
+      enabled: false,
+      button: true,
+      label: widget.triggerSemanticLabel,
+    ),
   );
 }
 
@@ -232,17 +239,19 @@ class const _AuraModalEntrySemantics({
   Widget build(BuildContext context) {
     final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
 
-    return Semantics(
-      child: ConstrainedBox(
-        constraints: .new(minWidth: targetSize, minHeight: targetSize),
-        child: widget.entryPointChild,
+    return MergeSemantics(
+      child: Semantics(
+        child: ConstrainedBox(
+          constraints: .new(minWidth: targetSize, minHeight: targetSize),
+          child: widget.entryPointChild,
+        ),
+        container: true,
+        excludeSemantics: widget.triggerSemanticLabel != null,
+        enabled: true,
+        button: true,
+        label: widget.triggerSemanticLabel,
+        onTap: onShow,
       ),
-      container: true,
-      excludeSemantics: true,
-      enabled: true,
-      button: true,
-      label: 'Open modal',
-      onTap: onShow,
     );
   }
 }

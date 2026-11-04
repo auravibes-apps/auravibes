@@ -1260,6 +1260,8 @@
   },
   "tool_approval": {
     "pending_count": "Aprobación de herramienta {} de {}",
+    "previous": "Aprobación anterior",
+    "next": "Siguiente aprobación",
     "pending_loading": "Cargando las aprobaciones de herramientas pendientes…",
     "pending_refreshing": "Actualizando las aprobaciones de herramientas pendientes…",
     "pending_load_error": "No se pudieron cargar las aprobaciones de herramientas pendientes.",
@@ -1513,6 +1515,14 @@
     "install_error": "No se pudo conectar este servicio. Inténtalo de nuevo.",
     "missing_fields": "Completa todos los campos obligatorios.",
     "unsupported_option": "Esta opción no está disponible en este espacio de trabajo."
+  },
+  "aura_ui": {
+    "day": "Día {}",
+    "rating": "{} de {}",
+    "step_pending": "Pendiente",
+    "step_current": "Actual",
+    "step_complete": "Completado",
+    "step_error": "Error"
   },
   "mcp_apps": {
     "loading": "Cargando resultado interactivo…",

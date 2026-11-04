@@ -1756,6 +1756,8 @@ abstract class LocaleKeys {
   static const tool_confirmation_skip = 'tool_confirmation.skip';
   static const tool_confirmation_stop_all = 'tool_confirmation.stop_all';
   static const tool_approval_pending_count = 'tool_approval.pending_count';
+  static const tool_approval_previous = 'tool_approval.previous';
+  static const tool_approval_next = 'tool_approval.next';
   static const tool_approval_pending_loading = 'tool_approval.pending_loading';
   static const tool_approval_pending_refreshing =
       'tool_approval.pending_refreshing';
@@ -1996,6 +1998,12 @@ abstract class LocaleKeys {
   static const mcp_catalog_missing_fields = 'mcp_catalog.missing_fields';
   static const mcp_catalog_unsupported_option =
       'mcp_catalog.unsupported_option';
+  static const aura_ui_day = 'aura_ui.day';
+  static const aura_ui_rating = 'aura_ui.rating';
+  static const aura_ui_step_pending = 'aura_ui.step_pending';
+  static const aura_ui_step_current = 'aura_ui.step_current';
+  static const aura_ui_step_complete = 'aura_ui.step_complete';
+  static const aura_ui_step_error = 'aura_ui.step_error';
   static const mcp_apps_loading = 'mcp_apps.loading';
   static const mcp_apps_unavailable = 'mcp_apps.unavailable';
   static const mcp_apps_retry = 'mcp_apps.retry';

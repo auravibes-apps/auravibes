@@ -717,6 +717,7 @@ class const _AgentDetailAppBar({required final _AgentDetailScreenState state})
       leading: AuraIconButton(
         icon: Icons.arrow_back,
         onPressed: () => unawaited(state._requestClose()),
+        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
       ),
     );
   }

@@ -124,7 +124,7 @@ class _AuraBadgeBuilt {
   }) : child = _AuraBadgeSemantics(
          label: badge.semanticLabel,
          child: _AuraBadgeSurface(
-           child: badge.child,
+           child: _AuraBadgeSemanticContent(badge: badge),
            size: badge.size,
            foreground: _badgeForegroundColor(badge.variant, colors),
            background: _badgeBackgroundColor(badge.variant, colors),
@@ -137,14 +137,31 @@ class _AuraBadgeBuilt {
   final Widget child;
 }
 
+class const _AuraBadgeSemanticContent({required final AuraBadge badge})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final child = badge.child;
+    if (badge.semanticLabel == null) return child;
+    if (child is Text) return ExcludeSemantics(child: child);
+    if (child is _AuraBadgeText && child.child is Text) {
+      return _AuraBadgeText(
+        child: ExcludeSemantics(child: child.child),
+        style: child.style,
+      );
+    }
+
+    return child;
+  }
+}
+
 class const _AuraBadgeSemantics({
   required final String? label,
   required final Widget child,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => label == null
-      ? child
-      : Semantics(child: child, excludeSemantics: true, label: label);
+  Widget build(BuildContext context) =>
+      label == null ? child : Semantics(child: child, label: label);
 }
 
 class _AuraBadgeSurface extends StatelessWidget {

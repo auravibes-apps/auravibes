@@ -224,23 +224,28 @@ abstract final class _AuraTileContentBuilder {
     required TextStyle textStyle,
   }) {
     final tile = appearance.tile;
-    final leading = tile.leading;
-    final trailing = tile.trailing;
     final child = tile.child;
 
     if (tile.isLoading) {
       return _AuraTileLoading(color: loadingColor);
     }
 
-    return _buildTileContent(child, leading, trailing, textStyle);
+    return _buildTileContent(
+      child,
+      tile,
+      textStyle,
+      appearance.canInteract && tile.semanticLabel != null,
+    );
   }
 
   static Widget _buildTileContent(
     Widget child,
-    Widget? leading,
-    Widget? trailing,
+    AuraTile tile,
     TextStyle textStyle,
+    bool excludeChildSemantics,
   ) {
+    final leading = tile.leading;
+    final trailing = tile.trailing;
     if (_isEmptyTileChild(child) && leading != null && trailing == null) {
       return Center(child: leading);
     }
@@ -250,6 +255,7 @@ abstract final class _AuraTileContentBuilder {
       leading: leading,
       trailing: trailing,
       textStyle: textStyle,
+      excludeChildSemantics: excludeChildSemantics,
     );
   }
 }
@@ -274,6 +280,7 @@ class _AuraTileRow extends StatelessWidget {
     required Widget? leading,
     required Widget? trailing,
     required TextStyle textStyle,
+    required bool excludeChildSemantics,
   }) : _child = Row(
          children: [
            if (leading case final value?) ...[
@@ -282,7 +289,13 @@ class _AuraTileRow extends StatelessWidget {
            ],
            Flexible(
              fit: .tight,
-             child: DefaultTextStyle(style: textStyle, child: child),
+             child: DefaultTextStyle(
+               style: textStyle,
+               child: ExcludeSemantics(
+                 excluding: excludeChildSemantics,
+                 child: child,
+               ),
+             ),
            ),
            if (trailing case final value?) ...[
              const AuraSizedBox(width: .sm),
@@ -398,11 +411,10 @@ class const _AuraTileEnabledSemantics({
     key: _tileIdentifierKey(identifier),
     child: tile,
     container: true,
-    excludeSemantics: true,
     enabled: true,
     button: true,
     identifier: identifier,
-    label: semanticLabel ?? 'Tile',
+    label: semanticLabel,
     onTap: onTap,
   );
 }
