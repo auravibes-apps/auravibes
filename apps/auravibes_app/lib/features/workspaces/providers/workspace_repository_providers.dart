@@ -26,3 +26,7 @@ Stream<List<WorkspaceEntity>> allWorkspaces(Ref ref) {
 
   return repo.watchAllWorkspaces();
 }
+
+@riverpod
+Future<WorkspaceEntity?> workspaceById(Ref ref, String workspaceId) =>
+    ref.watch(workspaceRepositoryProvider).getWorkspaceById(workspaceId);
