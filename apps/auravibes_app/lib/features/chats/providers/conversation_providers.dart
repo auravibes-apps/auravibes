@@ -205,12 +205,14 @@ Stream<List<ConversationEntity>> _localConversationsWithAllLabels(
 
 Stream<List<ConversationEntity>> _watchLocalConversations(
   _ConversationSessionRequest request,
-) => request.ref
-    .watch(conversationRepositoryProvider)
-    .watchConversationsByWorkspace(
-      request.workspaceId,
-      options: _localConversationQueryOptions(request.options),
-    );
+) {
+  final repository = request.ref.watch(conversationRepositoryProvider);
+
+  return repository.watchConversationsByWorkspace(
+    request.workspaceId,
+    options: _localConversationQueryOptions(request.options),
+  );
+}
 
 ConversationListQueryOptions _localConversationQueryOptions(
   _ConversationListOptions options,
@@ -425,11 +427,15 @@ Future<List<ConversationSummary>> _readFilteredCloudConversationSummaries(
   CloudWorkspaceStateGateway gateway,
   CloudWorkspaceRef cloud,
   _ConversationListOptions options,
-) => _filteredCloudConversationPageReader(
-  gateway,
-  cloud,
-  options,
-).read();
+) async {
+  final pageReader = _filteredCloudConversationPageReader(
+    gateway,
+    cloud,
+    options,
+  );
+
+  return pageReader.read();
+}
 
 FilteredCloudConversationPageReader _filteredCloudConversationPageReader(
   CloudWorkspaceStateGateway gateway,
