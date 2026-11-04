@@ -311,7 +311,7 @@ class const _AssignmentLauncher({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => TextButton(
-    onPressed: () => showConversationLabelAssignmentDialog(
+    onPressed: () => ConversationLabelDialogs.showAssignment(
       context,
       workspaceId: workspaceId,
       conversation: conversation,

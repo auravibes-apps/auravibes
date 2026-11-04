@@ -6,6 +6,7 @@ import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/database/drift/enums/messages_table_type.dart';
 import 'package:auravibes_app/data/database/drift/tables/messages.dart';
 import 'package:auravibes_app/data/repositories/attachment_file_store.dart';
+import 'package:auravibes_app/data/repositories/conversation_table_mapper.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_mutation.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
@@ -1178,44 +1179,8 @@ extension on ConversationRepository {
     }
   }
 
-  ConversationEntity _mapToConversation(ConversationsTable conversationTable) {
-    final conversation = _mapConversationCore(conversationTable);
-
-    return conversation.copyWith(
-      forkSourceConversationId: conversationTable.forkSourceConversationId,
-      forkSourceTitle: conversationTable.forkSourceTitle,
-      forkThroughMessageId: conversationTable.forkThroughMessageId,
-      forkMaterializedAt: conversationTable.forkMaterializedAt,
-    );
-  }
-
-  ConversationEntity _mapConversationCore(
-    ConversationsTable conversationTable,
-  ) => _mapConversationFields(conversationTable).copyWith(
-    toolAccessMode: ConversationToolAccessModeStorage.decode(
-      conversationTable.toolAccessMode,
-    ),
-    taskBrief: conversationTable.taskBrief,
-  );
-
-  ConversationEntity _mapConversationFields(
-    ConversationsTable conversationTable,
-  ) {
-    return ConversationEntity(
-      id: conversationTable.id,
-      title: conversationTable.title,
-      workspaceId: conversationTable.workspaceId,
-      isPinned: conversationTable.isPinned,
-      createdAt: conversationTable.createdAt,
-      updatedAt: conversationTable.updatedAt,
-      modelId: conversationTable.modelId,
-      agentId: conversationTable.agentId,
-      reasoningConfiguration: .decode(conversationTable.reasoningConfigJson),
-      parentConversationId: conversationTable.parentConversationId,
-      activeCompactionCheckpointId:
-          conversationTable.activeCompactionCheckpointId,
-    );
-  }
+  ConversationEntity _mapToConversation(ConversationsTable conversationTable) =>
+      ConversationTableMapper.toEntity(conversationTable);
 
   ConversationsCompanion _mapToConversationsCompanion(
     ConversationToCreate conversation,

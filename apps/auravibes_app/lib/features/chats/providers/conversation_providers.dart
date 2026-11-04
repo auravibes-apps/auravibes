@@ -24,6 +24,16 @@ typedef _ConversationListOptions = ({
   _ConversationPagination pagination,
   bool fetchAllPages,
 });
+typedef _ConversationSessionRequest = ({
+  Ref ref,
+  WorkspaceSession session,
+  String workspaceId,
+  _ConversationListOptions options,
+});
+typedef _CloudConversationPageRequest = ({
+  CloudWorkspaceRef cloud,
+  _ConversationListOptions options,
+});
 typedef _ForkedConversationRequest = ({
   String workspaceId,
   String sourceConversationId,
@@ -88,46 +98,52 @@ Stream<List<ConversationEntity>> conversationsStream(
     workspaceSessionForRouteProvider(workspaceId).future,
   );
   if (!ref.mounted) return;
-  yield* _conversationsForSession(ref, session, workspaceId, (
-    search: search,
-    labelIds: labelIds,
-    pagination: pagination,
-    fetchAllPages: false,
+  yield* _conversationsForSession((
+    ref: ref,
+    session: session,
+    workspaceId: workspaceId,
+    options: (
+      search: search,
+      labelIds: labelIds,
+      pagination: pagination,
+      fetchAllPages: false,
+    ),
   ));
 }
 
 Stream<List<ConversationEntity>> _conversationsForSession(
-  Ref ref,
-  WorkspaceSession session,
-  String workspaceId,
-  _ConversationListOptions options,
+  _ConversationSessionRequest request,
 ) {
-  if (session.cloud case final cloud?) {
+  final ref = request.ref;
+  final options = request.options;
+  if (request.session.cloud case final cloud?) {
     return _cloudConversations(ref, cloud, options);
   }
 
   final labelsRepository = ref.watch(conversationLabelsRepositoryProvider);
   if (options.labelIds.isNotEmpty) {
     return labelsRepository.watchConversationsByWorkspace(
-      workspaceId,
-      search: options.search,
-      limit: options.pagination.limit,
-      offset: options.pagination.offset,
-      labelIds: options.labelIds,
+      (
+        workspaceId: request.workspaceId,
+        search: options.search,
+        limit: options.pagination.limit,
+        offset: options.pagination.offset,
+        labelIds: options.labelIds,
+      ),
     );
   }
 
   final conversations = ref
       .watch(conversationRepositoryProvider)
       .watchConversationsByWorkspace(
-        workspaceId,
+        request.workspaceId,
         search: options.search,
         limit: options.pagination.limit,
         offset: options.pagination.offset,
       );
 
   return labelsRepository.withLabels(
-    workspaceId: workspaceId,
+    workspaceId: request.workspaceId,
     conversations: conversations,
   );
 }
@@ -336,19 +352,33 @@ Future<List<ConversationSummary>> _readCloudConversationPage(
   CloudWorkspaceStateGateway gateway,
   CloudWorkspaceRef cloud,
   _ConversationListOptions options,
+) => _readCloudConversationPageForRequest(
+  gateway,
+  (cloud: cloud, options: options),
+);
+
+Future<List<ConversationSummary>> _readCloudConversationPageForRequest(
+  CloudWorkspaceStateGateway gateway,
+  _CloudConversationPageRequest request,
 ) async {
   final page = await gateway.client.conversation.listPage(
+    _cloudConversationPageRequest(request.cloud, request.options),
+  );
+
+  return page.conversations;
+}
+
+ListConversationsRequest _cloudConversationPageRequest(
+  CloudWorkspaceRef cloud,
+  _ConversationListOptions options,
+) =>
     .new(
       workspaceId: cloud.cloudWorkspaceId,
       limit: options.pagination.limit ?? _cloudConversationPageSize,
       search: options.search.isEmpty ? null : options.search,
       offset: options.pagination.offset,
       labelIds: options.labelIds.toList(),
-    ),
-  );
-
-  return page.conversations;
-}
+    );
 
 Future<List<ConversationSummary>> _readAllCloudConversationPages(
   CloudWorkspaceStateGateway gateway,
@@ -448,31 +478,45 @@ ConversationEntity _cloudConversationCore(
 ConversationEntity _cloudConversationFields(
   ConversationSummary conversation,
   String localWorkspaceId,
-) {
-  return ConversationEntity(
+) => _cloudConversationBase(conversation, localWorkspaceId).copyWith(
+  labels: _cloudConversationLabels(conversation.labels, localWorkspaceId),
+  revision: conversation.revision,
+  modelId: conversation.modelId,
+  agentId: conversation.agentId,
+  reasoningConfiguration: .decode(conversation.reasoningConfigJson),
+  parentConversationId: conversation.parentConversationId,
+);
+
+ConversationEntity _cloudConversationBase(
+  ConversationSummary conversation,
+  String localWorkspaceId,
+) =>
+    ConversationEntity(
     id: conversation.id,
     title: conversation.title,
     workspaceId: localWorkspaceId,
     isPinned: conversation.isPinned,
     createdAt: conversation.createdAt,
     updatedAt: conversation.updatedAt,
-    labels:
-        conversation.labels
-            ?.map(
-              (label) => ConversationLabelEntity(
-                id: label.id,
-                workspaceId: localWorkspaceId,
-                name: label.name,
-                createdAt: label.createdAt,
-                updatedAt: label.updatedAt,
-              ),
-            )
-            .toList() ??
-        const [],
-    revision: conversation.revision,
-    modelId: conversation.modelId,
-    agentId: conversation.agentId,
-    reasoningConfiguration: .decode(conversation.reasoningConfigJson),
-    parentConversationId: conversation.parentConversationId,
   );
-}
+
+List<ConversationLabelEntity> _cloudConversationLabels(
+  List<ConversationLabelSummary>? labels,
+  String localWorkspaceId,
+) =>
+    labels
+        ?.map((label) => _cloudConversationLabel(label, localWorkspaceId))
+        .toList() ??
+    const [];
+
+ConversationLabelEntity _cloudConversationLabel(
+  ConversationLabelSummary label,
+  String localWorkspaceId,
+) =>
+    ConversationLabelEntity(
+      id: label.id,
+      workspaceId: localWorkspaceId,
+      name: label.name,
+      createdAt: label.createdAt,
+      updatedAt: label.updatedAt,
+    );

@@ -9,6 +9,24 @@ import 'package:drift/drift.dart';
 
 part 'conversation_dao.g.dart';
 
+typedef ConversationLabelQuery = ({
+  String workspaceId,
+  String search,
+  int? limit,
+  int offset,
+  Set<String> labelIds,
+});
+
+typedef _ConversationLabelConditions = ({
+  List<String> predicates,
+  List<Variable> variables,
+});
+
+typedef ConversationWithLabels = ({
+  ConversationsTable conversation,
+  List<ConversationLabelEntity> labels,
+});
+
 @DriftAccessor(
   tables: [Conversations, ConversationLabels, ConversationLabelAssignments],
 )
@@ -209,55 +227,37 @@ extension ConversationDaoReadOperations on ConversationDao {
   }
 
   Stream<
-    List<
-      ({ConversationsTable conversation, List<ConversationLabelEntity> labels})
-    >
+    List<ConversationWithLabels>
   >
   watchConversationsWithLabelsByWorkspace(
-    String workspaceId, {
-    String search = '',
-    int? limit,
-    int offset = 0,
-    Set<String> labelIds = const {},
-  }) {
-    final normalizedSearch = search.trim();
-    final variables = <Variable>[Variable<String>(workspaceId)];
-    final predicates = <String>[
-      'c.workspace_id = ?',
-      'c.parent_conversation_id IS NULL',
-    ];
-    if (normalizedSearch.isNotEmpty) {
-      predicates.add(r'''c.title LIKE ? ESCAPE '\' ''');
-      variables.add(Variable<String>('%${_escapeLike(normalizedSearch)}%'));
-    }
-    if (labelIds.isNotEmpty) {
-      final placeholders = List.filled(labelIds.length, '?').join(', ');
-      predicates.add('''
-EXISTS (
-        SELECT 1
-        FROM conversation_label_assignments AS filter_assignment
-        INNER JOIN conversation_labels AS filter_label
-          ON filter_label.id = filter_assignment.label_id
-          AND filter_label.workspace_id = filter_assignment.workspace_id
-        WHERE filter_assignment.workspace_id = c.workspace_id
-          AND filter_assignment.conversation_id = c.id
-          AND filter_label.id IN ($placeholders)
-      )''');
-      variables.addAll(labelIds.map(Variable<String>.new));
-    }
-    final pageLimit = limit;
-    if (pageLimit != null) {
+    ConversationLabelQuery query,
+  ) => _watchConversationsWithLabels(query);
+
+  Stream<List<ConversationWithLabels>> _watchConversationsWithLabels(
+    ConversationLabelQuery query,
+  ) =>
+      _buildConversationPageQuery(query).watch().asyncMap(
+        (rows) => _loadConversationPage(rows, query.workspaceId),
+      );
+
+  Selectable<QueryRow> _buildConversationPageQuery(
+    ConversationLabelQuery query,
+  ) {
+    final conditions = _conversationLabelConditions(query);
+    final pageClause = query.limit == null ? '' : 'LIMIT ? OFFSET ?';
+    final variables = [...conditions.variables];
+    if (query.limit case final limit?) {
       variables
-        ..add(Variable<int>(pageLimit))
-        ..add(Variable<int>(offset));
+        ..add(Variable<int>(limit))
+        ..add(Variable<int>(query.offset));
     }
-    final pageClause = pageLimit == null ? '' : 'LIMIT ? OFFSET ?';
-    final query = customSelect(
+
+    return customSelect(
       '''
 WITH page AS (
   SELECT c.id, c.is_pinned, c.updated_at
   FROM conversations AS c
-  WHERE ${predicates.join(' AND ')}
+  WHERE ${conditions.predicates.join(' AND ')}
   ORDER BY c.is_pinned DESC, c.updated_at DESC, c.id DESC
   $pageClause
 )
@@ -272,64 +272,124 @@ ORDER BY page.is_pinned DESC, page.updated_at DESC, page.id DESC
         conversationLabelAssignments,
       },
     );
-
-    return query.watch().asyncMap((rows) async {
-      if (rows.isEmpty) return const [];
-      final conversationIds = rows
-          .map((row) => row.read<String>('id'))
-          .toList();
-      final conversationsById = {
-        for (final conversation in await (select(
-          conversations,
-        )..where((table) => table.id.isIn(conversationIds))).get())
-          conversation.id: conversation,
-      };
-      final assignmentsByConversation =
-          <String, List<ConversationLabelEntity>>{};
-      final labelRows =
-          await (select(conversationLabels).join([
-                innerJoin(
-                  conversationLabelAssignments,
-                  conversationLabelAssignments.labelId.equalsExp(
-                        conversationLabels.id,
-                      ) &
-                      conversationLabelAssignments.workspaceId.equalsExp(
-                        conversationLabels.workspaceId,
-                      ),
-                ),
-              ])..where(
-                conversationLabelAssignments.workspaceId.equals(workspaceId) &
-                    conversationLabelAssignments.conversationId.isIn(
-                      conversationIds,
-                    ),
-              ))
-              .get();
-      for (final row in labelRows) {
-        final assignment = row.readTable(conversationLabelAssignments);
-        final label = row.readTable(conversationLabels);
-        assignmentsByConversation
-            .putIfAbsent(assignment.conversationId, () => [])
-            .add(
-              ConversationLabelEntity(
-                id: label.id,
-                workspaceId: label.workspaceId,
-                name: label.name,
-                createdAt: label.createdAt,
-                updatedAt: label.updatedAt,
-              ),
-            );
-      }
-
-      return [
-        for (final id in conversationIds)
-          if (conversationsById[id] case final conversation?)
-            (
-              conversation: conversation,
-              labels: assignmentsByConversation[id] ?? const [],
-            ),
-      ];
-    });
   }
+
+  _ConversationLabelConditions _conversationLabelConditions(
+    ConversationLabelQuery query,
+  ) {
+    final predicates = <String>[
+      'c.workspace_id = ?',
+      'c.parent_conversation_id IS NULL',
+    ];
+    final variables = <Variable>[Variable<String>(query.workspaceId)];
+    final search = query.search.trim();
+    if (search.isNotEmpty) {
+      predicates.add(r'''c.title LIKE ? ESCAPE '\' ''');
+      variables.add(Variable<String>('%${_escapeLike(search)}%'));
+    }
+    if (query.labelIds.isNotEmpty) {
+      predicates.add(_labelFilterPredicate(query.labelIds.length));
+      variables.addAll(query.labelIds.map(Variable<String>.new));
+    }
+
+    return (predicates: predicates, variables: variables);
+  }
+
+  String _labelFilterPredicate(int labelCount) {
+    final placeholders = List.filled(labelCount, '?').join(', ');
+
+    return '''
+EXISTS (
+        SELECT 1
+        FROM conversation_label_assignments AS filter_assignment
+        INNER JOIN conversation_labels AS filter_label
+          ON filter_label.id = filter_assignment.label_id
+          AND filter_label.workspace_id = filter_assignment.workspace_id
+        WHERE filter_assignment.workspace_id = c.workspace_id
+          AND filter_assignment.conversation_id = c.id
+          AND filter_label.id IN ($placeholders)
+      )''';
+  }
+
+  Future<List<ConversationWithLabels>> _loadConversationPage(
+    List<QueryRow> rows,
+    String workspaceId,
+  ) async {
+    if (rows.isEmpty) return const [];
+    final ids = rows.map((row) => row.read<String>('id')).toList();
+    final conversationsById = await _loadConversations(ids);
+    final labelsByConversation = await _loadLabels(ids, workspaceId);
+
+    return [
+      for (final id in ids)
+        if (conversationsById[id] case final conversation?)
+          (
+            conversation: conversation,
+            labels: labelsByConversation[id] ?? const [],
+          ),
+    ];
+  }
+
+  Future<Map<String, ConversationsTable>> _loadConversations(
+    List<String> ids,
+  ) async => {
+    for (final conversation in await (select(
+      conversations,
+    )..where((table) => table.id.isIn(ids))).get())
+      conversation.id: conversation,
+  };
+
+  Future<Map<String, List<ConversationLabelEntity>>> _loadLabels(
+    List<String> conversationIds,
+    String workspaceId,
+  ) async {
+    final assignmentsByConversation =
+        <String, List<ConversationLabelEntity>>{};
+    final labelRows = await _labelsForConversations(
+      conversationIds,
+      workspaceId,
+    );
+    for (final row in labelRows) {
+      final assignment = row.readTable(conversationLabelAssignments);
+      final label = row.readTable(conversationLabels);
+      assignmentsByConversation
+          .putIfAbsent(assignment.conversationId, () => [])
+          .add(_mapLabel(label));
+    }
+
+    return assignmentsByConversation;
+  }
+
+  Future<List<TypedResult>> _labelsForConversations(
+    List<String> conversationIds,
+    String workspaceId,
+  ) =>
+      (select(conversationLabels).join([
+            innerJoin(
+              conversationLabelAssignments,
+              conversationLabelAssignments.labelId.equalsExp(
+                    conversationLabels.id,
+                  ) &
+                  conversationLabelAssignments.workspaceId.equalsExp(
+                    conversationLabels.workspaceId,
+                  ),
+            ),
+          ])..where(
+            conversationLabelAssignments.workspaceId.equals(workspaceId) &
+                conversationLabelAssignments.conversationId.isIn(
+                  conversationIds,
+                ),
+          ))
+          .get();
+
+  ConversationLabelEntity _mapLabel(ConversationLabelsTable label) =>
+      ConversationLabelEntity(
+        id: label.id,
+        workspaceId: label.workspaceId,
+        name: label.name,
+        createdAt: label.createdAt,
+        updatedAt: label.updatedAt,
+      );
 
   Stream<List<ConversationsTable>> watchChildConversations(
     String parentConversationId,

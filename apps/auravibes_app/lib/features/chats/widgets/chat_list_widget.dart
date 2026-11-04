@@ -680,7 +680,7 @@ extension on _ChatTileState {
 
 extension on _ChatTileState {
   Future<void> _handleAssignLabels(BuildContext context) async {
-    final _ = await showConversationLabelAssignmentDialog(
+    final _ = await ConversationLabelDialogs.showAssignment(
       context,
       workspaceId: widget.workspaceId,
       conversation: widget.chat,
@@ -1792,18 +1792,7 @@ extension on _ChatTileMenu {
 
   List<AuraPopupMenuItem> _menuItems() => [
     _chatTilePinItem(chat, callbacks.onTogglePin),
-    AuraPopupMenuItem(
-      title: const TextLocale(LocaleKeys.chats_screens_chat_conversation_fork),
-      onTap: callbacks.onFork,
-      leading: const AuraIcon(Icons.call_split_outlined),
-    ),
-    AuraPopupMenuItem(
-      title: const TextLocale(
-        LocaleKeys.chats_screens_conversation_labels_assignment_title,
-      ),
-      onTap: callbacks.onAssignLabels,
-      leading: const AuraIcon(Icons.label_outline),
-    ),
+    ..._chatTileConversationItems(callbacks),
     if (onArchiveExport case final onArchiveExport?)
       _chatTileArchiveItem(onArchiveExport),
     ..._chatTileMenuItems(
@@ -1812,6 +1801,23 @@ extension on _ChatTileMenu {
     ),
   ];
 }
+
+List<AuraPopupMenuItem> _chatTileConversationItems(
+  _ChatTileCallbacks callbacks,
+) => [
+  AuraPopupMenuItem(
+    title: const TextLocale(LocaleKeys.chats_screens_chat_conversation_fork),
+    onTap: callbacks.onFork,
+    leading: const AuraIcon(Icons.call_split_outlined),
+  ),
+  AuraPopupMenuItem(
+    title: const TextLocale(
+      LocaleKeys.chats_screens_conversation_labels_assignment_title,
+    ),
+    onTap: callbacks.onAssignLabels,
+    leading: const AuraIcon(Icons.label_outline),
+  ),
+];
 
 AuraPopupMenuItem _chatTilePinItem(
   ConversationEntity chat,

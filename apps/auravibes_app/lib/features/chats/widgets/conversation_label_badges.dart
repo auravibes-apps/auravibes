@@ -16,27 +16,25 @@ class const ConversationLabelBadges({
     final localizedSemanticsLabel = LocaleKeys
         .chats_screens_conversation_labels_label_semantics
         .tr(context: context);
-    final semanticsLabel = '$localizedSemanticsLabel: $labelNames';
 
     return Semantics(
       key: const ValueKey('conversation-labels-semantics'),
-      child: ExcludeSemantics(
-        child: Wrap(
-          spacing: 6,
-          runSpacing: 4,
-          children: [
-            for (final label in labels)
-              AuraBadge.text(
-                child: Text(label.name),
-                key: ValueKey('conversation-label-${label.id}'),
-                variant: .neutral,
-                size: .small,
-              ),
-          ],
-        ),
-      ),
+      child: ExcludeSemantics(child: _labelBadges()),
       container: true,
-      label: semanticsLabel,
+      label: '$localizedSemanticsLabel: $labelNames',
     );
   }
+
+  Widget _labelBadges() => Wrap(
+    spacing: 6,
+    runSpacing: 4,
+    children: [for (final label in labels) _badge(label)],
+  );
+
+  Widget _badge(ConversationLabelEntity label) => AuraBadge.text(
+    child: Text(label.name),
+    key: ValueKey('conversation-label-${label.id}'),
+    variant: .neutral,
+    size: .small,
+  );
 }

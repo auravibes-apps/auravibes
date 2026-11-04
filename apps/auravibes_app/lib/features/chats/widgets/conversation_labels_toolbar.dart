@@ -12,6 +12,12 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
+const _conversationLabelToolbarInset = 16;
+const _conversationLabelToolbarTopInset = 12;
+const _conversationLabelToolbarSpacing = 8;
+const _conversationLabelFilterDialogWidth = 420;
+const _conversationLabelNameMaxLength = 40;
+
 class const ConversationLabelsToolbar({
   required final String workspaceId,
   required final Set<String> selectedLabelIds,
@@ -59,10 +65,14 @@ class _ConversationLabelsToolbarState
     }
 
     return Padding(
-      padding: const EdgeInsets.only(left: 16, top: 12, right: 16),
+      padding: const EdgeInsets.only(
+        left: _conversationLabelToolbarInset,
+        top: _conversationLabelToolbarTopInset,
+        right: _conversationLabelToolbarInset,
+      ),
       child: Wrap(
-        spacing: 8,
-        runSpacing: 8,
+        spacing: _conversationLabelToolbarSpacing,
+        runSpacing: _conversationLabelToolbarSpacing,
         crossAxisAlignment: .center,
         children: [
           AuraButton(
@@ -180,7 +190,7 @@ class _ConversationLabelFilterDialogState
   Widget build(BuildContext context) => AlertDialog(
     title: Text(LocaleKeys.chats_screens_conversation_labels_filter_title.tr()),
     content: SizedBox(
-      width: 420,
+      width: _conversationLabelFilterDialogWidth,
       child: Column(
         mainAxisSize: .min,
         crossAxisAlignment: .stretch,
@@ -422,7 +432,7 @@ class _NewConversationLabelFieldState
             isDense: true,
           ),
           textInputAction: .done,
-          maxLength: 40,
+          maxLength: _conversationLabelNameMaxLength,
           onChanged: _onChanged,
           onSubmitted: _onSubmitted,
           enabled: widget.enabled,
@@ -452,7 +462,7 @@ class _NewConversationLabelFieldState
 
   Future<void> _submit() async {
     final name = _controller.text.trim();
-    if (name.isEmpty || name.length > 40) {
+    if (name.isEmpty || name.length > _conversationLabelNameMaxLength) {
       setState(
         () => _validationError = LocaleKeys
             .chats_screens_conversation_labels_invalid_name
@@ -541,7 +551,7 @@ class _ConversationLabelNameDialogState
       ),
       textInputAction: .done,
       autofocus: true,
-      maxLength: 40,
+      maxLength: _conversationLabelNameMaxLength,
       onSubmitted: (_) => _submit(),
     ),
     actions: [
@@ -558,7 +568,7 @@ class _ConversationLabelNameDialogState
 
   void _submit() {
     final name = _controller.text.trim();
-    if (name.isEmpty || name.length > 40) {
+    if (name.isEmpty || name.length > _conversationLabelNameMaxLength) {
       setState(
         () => _error = LocaleKeys.chats_screens_conversation_labels_invalid_name
             .tr(),
@@ -570,19 +580,22 @@ class _ConversationLabelNameDialogState
   }
 }
 
-Future<Set<String>?> showConversationLabelAssignmentDialog(
-  BuildContext context, {
-  required String workspaceId,
-  required ConversationEntity conversation,
-  required ConversationLabelActions actions,
-}) => showDialog<Set<String>>(
-  context: context,
-  builder: (_) => _ConversationLabelAssignmentDialog(
-    workspaceId: workspaceId,
-    conversation: conversation,
-    actions: actions,
-  ),
-);
+abstract final class ConversationLabelDialogs {
+  static Future<Set<String>?> showAssignment(
+    BuildContext context, {
+    required String workspaceId,
+    required ConversationEntity conversation,
+    required ConversationLabelActions actions,
+  }) =>
+      showDialog<Set<String>>(
+        context: context,
+        builder: (_) => _ConversationLabelAssignmentDialog(
+          workspaceId: workspaceId,
+          conversation: conversation,
+          actions: actions,
+        ),
+      );
+}
 
 class const _ConversationLabelAssignmentDialog({
   required final String workspaceId,
@@ -616,7 +629,7 @@ class _ConversationLabelAssignmentDialogState
         LocaleKeys.chats_screens_conversation_labels_assignment_title.tr(),
       ),
       content: SizedBox(
-        width: 420,
+        width: _conversationLabelFilterDialogWidth,
         child: switch (labels) {
           AsyncData(:final value) when value.isEmpty => Text(
             LocaleKeys.chats_screens_conversation_labels_empty.tr(),

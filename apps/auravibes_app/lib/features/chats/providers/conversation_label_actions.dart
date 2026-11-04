@@ -1,3 +1,4 @@
+import 'package:auravibes_app/data/repositories/conversation_labels_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_label_entity.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_labels_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
@@ -11,13 +12,18 @@ class ConversationLabelActions(final Ref _ref) {
   Future<ConversationLabelEntity> create({
     required String workspaceId,
     required String name,
-  }) async {
-    final cloud = await _cloudWorkspace(workspaceId);
-    if (cloud == null) {
-      return await _ref
-          .read(conversationLabelsRepositoryProvider)
-          .createLabel(workspaceId: workspaceId, name: name);
-    }
+  }) => _withWorkspace(
+    workspaceId,
+    local: (repository) =>
+        repository.createLabel(workspaceId: workspaceId, name: name),
+    cloud: (workspace) => _createCloudLabel(workspace, workspaceId, name),
+  );
+
+  Future<ConversationLabelEntity> _createCloudLabel(
+    ({CloudWorkspaceRef workspace, CloudWorkspaceStateGateway gateway}) cloud,
+    String workspaceId,
+    String name,
+  ) async {
     final labelId = const UuidV7().generate();
     final label = await cloud.gateway.client.conversation.createLabel(
       .new(
@@ -28,20 +34,30 @@ class ConversationLabelActions(final Ref _ref) {
       ),
     );
 
-    return conversationLabelFromCloud(label, workspaceId);
+    return ConversationLabelMapper.fromCloud(label, workspaceId);
   }
 
   Future<ConversationLabelEntity> rename({
     required String workspaceId,
     required String labelId,
     required String name,
-  }) async {
-    final cloud = await _cloudWorkspace(workspaceId);
-    if (cloud == null) {
-      return await _ref
-          .read(conversationLabelsRepositoryProvider)
-          .renameLabel(workspaceId: workspaceId, labelId: labelId, name: name);
-    }
+  }) => _withWorkspace(
+    workspaceId,
+    local: (repository) => repository.renameLabel(
+      workspaceId: workspaceId,
+      labelId: labelId,
+      name: name,
+    ),
+    cloud: (workspace) =>
+        _renameCloudLabel(workspace, workspaceId, labelId, name),
+  );
+
+  Future<ConversationLabelEntity> _renameCloudLabel(
+    ({CloudWorkspaceRef workspace, CloudWorkspaceStateGateway gateway}) cloud,
+    String workspaceId,
+    String labelId,
+    String name,
+  ) async {
     final label = await cloud.gateway.client.conversation.renameLabel(
       .new(
         workspaceId: cloud.workspace.cloudWorkspaceId,
@@ -51,19 +67,23 @@ class ConversationLabelActions(final Ref _ref) {
       ),
     );
 
-    return conversationLabelFromCloud(label, workspaceId);
+    return ConversationLabelMapper.fromCloud(label, workspaceId);
   }
 
   Future<void> delete({
     required String workspaceId,
     required String labelId,
-  }) async {
-    final cloud = await _cloudWorkspace(workspaceId);
-    if (cloud == null) {
-      return await _ref
-          .read(conversationLabelsRepositoryProvider)
-          .deleteLabel(workspaceId: workspaceId, labelId: labelId);
-    }
+  }) => _withWorkspace(
+    workspaceId,
+    local: (repository) =>
+        repository.deleteLabel(workspaceId: workspaceId, labelId: labelId),
+    cloud: (workspace) => _deleteCloudLabel(workspace, labelId),
+  );
+
+  Future<void> _deleteCloudLabel(
+    ({CloudWorkspaceRef workspace, CloudWorkspaceStateGateway gateway}) cloud,
+    String labelId,
+  ) async {
     await cloud.gateway.client.conversation.deleteLabel(
       .new(
         workspaceId: cloud.workspace.cloudWorkspaceId,
@@ -77,17 +97,25 @@ class ConversationLabelActions(final Ref _ref) {
     required String workspaceId,
     required String conversationId,
     required Set<String> labelIds,
-  }) async {
-    final cloud = await _cloudWorkspace(workspaceId);
-    if (cloud == null) {
-      return await _ref
-          .read(conversationLabelsRepositoryProvider)
-          .setConversationLabels(
-            workspaceId: workspaceId,
-            conversationId: conversationId,
-            labelIds: labelIds,
-          );
-    }
+  }) => _withWorkspace(
+    workspaceId,
+    local: (repository) => repository.setConversationLabels(
+      workspaceId: workspaceId,
+      conversationId: conversationId,
+      labelIds: labelIds,
+    ),
+    cloud: (workspace) => _assignCloudLabels(
+      workspace,
+      conversationId,
+      labelIds,
+    ),
+  );
+
+  Future<void> _assignCloudLabels(
+    ({CloudWorkspaceRef workspace, CloudWorkspaceStateGateway gateway}) cloud,
+    String conversationId,
+    Set<String> labelIds,
+  ) async {
     await cloud.gateway.client.conversation.setConversationLabels(
       .new(
         workspaceId: cloud.workspace.cloudWorkspaceId,
@@ -96,6 +124,21 @@ class ConversationLabelActions(final Ref _ref) {
         labelIds: labelIds.toList()..sort(),
       ),
     );
+  }
+
+  Future<T> _withWorkspace<T>(
+    String workspaceId, {
+    required Future<T> Function(ConversationLabelsRepository) local,
+    required Future<T> Function(
+      ({CloudWorkspaceRef workspace, CloudWorkspaceStateGateway gateway}),
+    ) cloud,
+  }) async {
+    final workspace = await _cloudWorkspace(workspaceId);
+    if (workspace == null) {
+      return local(_ref.read(conversationLabelsRepositoryProvider));
+    }
+
+    return cloud(workspace);
   }
 
   Future<({CloudWorkspaceRef workspace, CloudWorkspaceStateGateway gateway})?>
@@ -119,13 +162,16 @@ class ConversationLabelActions(final Ref _ref) {
   }
 }
 
-ConversationLabelEntity conversationLabelFromCloud(
-  ConversationLabelSummary label,
-  String localWorkspaceId,
-) => ConversationLabelEntity(
-  id: label.id,
-  workspaceId: localWorkspaceId,
-  name: label.name,
-  createdAt: label.createdAt,
-  updatedAt: label.updatedAt,
-);
+abstract final class ConversationLabelMapper {
+  static ConversationLabelEntity fromCloud(
+    ConversationLabelSummary label,
+    String localWorkspaceId,
+  ) =>
+      ConversationLabelEntity(
+        id: label.id,
+        workspaceId: localWorkspaceId,
+        name: label.name,
+        createdAt: label.createdAt,
+        updatedAt: label.updatedAt,
+      );
+}
