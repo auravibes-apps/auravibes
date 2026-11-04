@@ -1,17 +1,26 @@
 import 'dart:convert';
 
-const int maxAgentLifecycleHookConfigBytes = 32 * 1024;
-const maxAgentLifecycleHooks = 2;
-const maxAgentLifecycleHookArgs = 16;
-const maxAgentLifecycleHookArgBytes = 2048;
-const maxAgentLifecycleHookSourceFiles = 8;
-const agentLifecycleHookTimeout = Duration(seconds: 5);
-const maxAgentLifecycleHookOutputBytes = 8192;
-
 class const AgentLifecycleHookConfig({
   required final List<AgentLifecycleHookDefinition> hooks,
   final List<String> sourceFiles = const [],
 }) {
+  static const int maxAgentLifecycleHookConfigBytes = 32 * 1024;
+  static const maxAgentLifecycleHooks = 2;
+  static const maxAgentLifecycleHookArgs = 16;
+  static const maxAgentLifecycleHookArgBytes = 2048;
+  static const maxAgentLifecycleHookSourceFiles = 8;
+
+  static AgentLifecycleHookConfig parse(String source) {
+    final decoded = _decodeConfig(source);
+    final rawHooks = decoded['hooks'] as List<Object?>;
+    if (rawHooks.length > AgentLifecycleHookConfig.maxAgentLifecycleHooks) {
+      throw const AgentLifecycleHookConfigException('too_many_hooks');
+    }
+    final sourceFiles = _parseSourceFiles(decoded['sourceFiles']);
+
+    return .new(hooks: _parseHooks(rawHooks), sourceFiles: sourceFiles);
+  }
+
   AgentLifecycleHookDefinition? hookFor(AgentLifecycleHookEvent event) {
     for (final hook in hooks) {
       if (hook.event == event) return hook;
@@ -38,17 +47,6 @@ class AgentLifecycleHookConfigException implements Exception {
   String toString() => code;
 }
 
-AgentLifecycleHookConfig parseAgentLifecycleHookConfig(String source) {
-  final decoded = _decodeConfig(source);
-  final rawHooks = decoded['hooks'] as List<Object?>;
-  if (rawHooks.length > maxAgentLifecycleHooks) {
-    throw const AgentLifecycleHookConfigException('too_many_hooks');
-  }
-  final sourceFiles = _parseSourceFiles(decoded['sourceFiles']);
-
-  return .new(hooks: _parseHooks(rawHooks), sourceFiles: sourceFiles);
-}
-
 Map<String, dynamic> _decodeConfig(String source) {
   _validateConfigSize(source);
   final decoded = _decodeJson(source);
@@ -60,8 +58,10 @@ Map<String, dynamic> _decodeConfig(String source) {
 }
 
 void _validateConfigSize(String source) {
-  if (source.length > maxAgentLifecycleHookConfigBytes ||
-      utf8.encode(source).length > maxAgentLifecycleHookConfigBytes) {
+  if (source.length >
+          AgentLifecycleHookConfig.maxAgentLifecycleHookConfigBytes ||
+      utf8.encode(source).length >
+          AgentLifecycleHookConfig.maxAgentLifecycleHookConfigBytes) {
     throw const AgentLifecycleHookConfigException('config_too_large');
   }
 }
@@ -96,7 +96,8 @@ List<String> _parseSourceFiles(Object? raw) {
 
 List<Object?> _sourceFileList(Object? raw) {
   if (raw == null) return const [];
-  if (raw is! List<Object?> || raw.length > maxAgentLifecycleHookSourceFiles) {
+  if (raw is! List<Object?> ||
+      raw.length > AgentLifecycleHookConfig.maxAgentLifecycleHookSourceFiles) {
     throw const AgentLifecycleHookConfigException('invalid_source_files');
   }
 
@@ -153,7 +154,8 @@ String _parseCommand(Object? raw) {
 }
 
 List<String> _parseArguments(Object? raw) {
-  if (raw is! List<Object?> || raw.length > maxAgentLifecycleHookArgs) {
+  if (raw is! List<Object?> ||
+      raw.length > AgentLifecycleHookConfig.maxAgentLifecycleHookArgs) {
     throw const AgentLifecycleHookConfigException('invalid_hook');
   }
 
@@ -164,7 +166,8 @@ String _parseArgument(Object? raw) {
   if (raw is! String || raw.contains('\u0000')) {
     throw const AgentLifecycleHookConfigException('invalid_hook_argument');
   }
-  if (utf8.encode(raw).length > maxAgentLifecycleHookArgBytes) {
+  if (utf8.encode(raw).length >
+      AgentLifecycleHookConfig.maxAgentLifecycleHookArgBytes) {
     throw const AgentLifecycleHookConfigException('invalid_hook_argument');
   }
 
