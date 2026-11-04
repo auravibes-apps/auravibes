@@ -120,6 +120,7 @@ void main() {
     final archive = await usecase.exportConversation(
       conversationId: conversation.id,
       includeAttachments: false,
+      expectedPreview: preview,
     );
     final decoded = jsonDecode(archive) as Map<String, dynamic>;
     final messages = decoded['messages'] as List<dynamic>;
@@ -128,6 +129,49 @@ void main() {
     expect(exportedMessage['content'], 'See the attached report');
     expect(exportedMessage['attachments'], isEmpty);
     expect(archive, isNot(contains('report.pdf')));
+  });
+
+  test('rejects an export when attachments changed after review', () async {
+    final workspace = await database.workspaceDao.insertWorkspace(
+      .insert(name: 'Stale archive preview', type: .local),
+    );
+    final conversation = await ConversationRepository(database)
+        .createConversation(
+          .new(title: 'Reviewed notes', workspaceId: workspace.id),
+        );
+    final message = await database.messageDao.insertMessage(
+      .insert(
+        conversationId: conversation.id,
+        content: 'See the attached report',
+        messageType: .text,
+        isUser: true,
+        status: .sent,
+      ),
+    );
+    final usecase = _usecase(database);
+    final preview = await usecase.previewConversation(
+      conversationId: conversation.id,
+    );
+
+    await database.into(database.messageAttachments).insert(
+      MessageAttachmentsCompanion.insert(
+        messageId: message.id,
+        localPath: '/private/account/new-report.pdf',
+        fileName: 'new-report.pdf',
+        displayName: const .new('new-report.pdf'),
+        mimeType: 'application/pdf',
+        modality: 'file',
+        sizeBytes: 2048,
+      ),
+    );
+
+    await expectLater(
+      usecase.exportConversation(
+        conversationId: conversation.id,
+        expectedPreview: preview,
+      ),
+      throwsA(isA<ConversationArchiveExportPreviewChangedException>()),
+    );
   });
 
   test(

@@ -696,16 +696,18 @@ extension on _ChatTileState {
       preview: preview,
     );
     if (!context.mounted) return;
-    await _saveReviewedConversationArchive(context, decision);
+    await _saveReviewedConversationArchive(context, decision, preview);
   }
 
   Future<void> _saveReviewedConversationArchive(
     BuildContext context,
     ({bool includeAttachments})? decision,
+    ConversationArchiveExportPreview preview,
   ) async {
     if (decision == null || !context.mounted) return;
     final saved = await _saveConversationArchive(
       includeAttachments: decision.includeAttachments,
+      expectedPreview: preview,
     );
     if (!saved || !context.mounted) return;
 
@@ -714,12 +716,14 @@ extension on _ChatTileState {
 
   Future<bool> _saveConversationArchive({
     required bool includeAttachments,
+    required ConversationArchiveExportPreview expectedPreview,
   }) async {
     final archiveJson = await ref
         .read(conversationArchiveUsecaseProvider)
         .exportConversation(
           conversationId: widget.chat.id,
           includeAttachments: includeAttachments,
+          expectedPreview: expectedPreview,
         );
 
     return await ref
@@ -1002,7 +1006,7 @@ extension on _ChatListBulkActionsState {
     if (!mounted) return;
 
     final decision = await _reviewSelectedArchive(preview);
-    await _exportReviewedSelection(selected, decision);
+    await _exportReviewedSelection(selected, decision, preview);
   }
 
   Future<ConversationArchiveExportPreview> _previewSelectedArchive(
@@ -1025,6 +1029,7 @@ extension on _ChatListBulkActionsState {
   Future<void> _exportReviewedSelection(
     List<ConversationEntity> selected,
     ({bool includeAttachments})? decision,
+    ConversationArchiveExportPreview preview,
   ) async {
     if (decision == null || !mounted) return;
 
@@ -1032,6 +1037,7 @@ extension on _ChatListBulkActionsState {
       () => _exportSelectedArchive(
         selected,
         includeAttachments: decision.includeAttachments,
+        expectedPreview: preview,
       ),
     );
   }
@@ -1039,11 +1045,13 @@ extension on _ChatListBulkActionsState {
   Future<void> _exportSelectedArchive(
     Iterable<ConversationEntity> selected, {
     required bool includeAttachments,
+    required ConversationArchiveExportPreview expectedPreview,
   }) async {
     try {
       final saved = await _createAndSaveSelectedArchive(
         selected,
         includeAttachments: includeAttachments,
+        expectedPreview: expectedPreview,
       );
       if (!saved || !mounted) return;
       ConversationArchiveFeedback.showExported(context);
@@ -1055,22 +1063,26 @@ extension on _ChatListBulkActionsState {
   Future<bool> _createAndSaveSelectedArchive(
     Iterable<ConversationEntity> selected, {
     required bool includeAttachments,
+    required ConversationArchiveExportPreview expectedPreview,
   }) async => await _saveSelectedArchive(
     await _createSelectedArchive(
       selected,
       includeAttachments: includeAttachments,
+      expectedPreview: expectedPreview,
     ),
   );
 
   Future<String> _createSelectedArchive(
     Iterable<ConversationEntity> selected, {
     required bool includeAttachments,
+    required ConversationArchiveExportPreview expectedPreview,
   }) => ref
       .read(conversationArchiveUsecaseProvider)
       .exportConversations(
         workspaceId: widget.workspaceId,
         conversationIds: [for (final chat in selected) chat.id],
         includeAttachments: includeAttachments,
+        expectedPreview: expectedPreview,
       );
 
   Future<bool> _saveSelectedArchive(String archiveJson) => ref

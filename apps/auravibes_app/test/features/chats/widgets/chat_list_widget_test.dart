@@ -97,9 +97,11 @@ void main() {
       final preview = ConversationArchiveExportPreview(
         sourceConversations: [
           ConversationArchivePreviewConversation(
+            conversationId: 'conversation-1',
             title: 'Investigation',
             sourceAttachments: const [
               ConversationArchivePreviewAttachment(
+                attachmentId: 'attachment-1',
                 fileName: 'informe.pdf',
                 mimeType: 'application/pdf',
                 sizeBytes: 2048,
@@ -111,6 +113,7 @@ void main() {
       final emptyPreview = ConversationArchiveExportPreview(
         sourceConversations: [
           ConversationArchivePreviewConversation(
+            conversationId: 'conversation-2',
             title: 'Notas',
             sourceAttachments: const [],
           ),
@@ -1178,9 +1181,11 @@ void main() {
         preview: .new(
           sourceConversations: [
             ConversationArchivePreviewConversation(
+              conversationId: conversations.first.id,
               title: 'Chat One',
               sourceAttachments: const [
                 ConversationArchivePreviewAttachment(
+                  attachmentId: 'attachment-1',
                   fileName: 'research-notes.txt',
                   mimeType: 'text/plain',
                   sizeBytes: 4,
@@ -1188,6 +1193,7 @@ void main() {
               ],
             ),
             ConversationArchivePreviewConversation(
+              conversationId: conversations.last.id,
               title: 'Chat Two',
               sourceAttachments: const [],
             ),
@@ -1288,6 +1294,10 @@ void main() {
       final _ = await tester.pumpAndSettle();
       expect(archiveUsecase.bulkExportCalls, 1);
       expect(archiveUsecase.includeAttachments, [false]);
+      expect(
+        archiveUsecase.expectedPreviews.single,
+        same(archiveUsecase.preview),
+      );
       expect(fileService.saveCalls, 1);
       expect(fileService.offeredJson, isNotNull);
       expect(fileService.savedJson, isNull);
@@ -1311,6 +1321,15 @@ void main() {
 
       expect(archiveUsecase.bulkExportCalls, 2);
       expect(archiveUsecase.includeAttachments, [false, true]);
+      expect(archiveUsecase.expectedPreviews, hasLength(2));
+      expect(
+        archiveUsecase.expectedPreviews.first,
+        same(archiveUsecase.preview),
+      );
+      expect(
+        archiveUsecase.expectedPreviews.last,
+        same(archiveUsecase.preview),
+      );
       expect(fileService.saveCalls, 2);
       expect(fileService.savedFileName, 'conversations.auravibes.json');
       expect(decoded.map((archive) => archive.title), ['Chat One', 'Chat Two']);
@@ -1865,6 +1884,7 @@ class _RecordingConversationArchiveUsecase extends ConversationArchiveUsecase {
       );
   int bulkExportCalls = 0;
   final includeAttachments = <bool>[];
+  final expectedPreviews = <ConversationArchiveExportPreview?>[];
   final ConversationArchiveExportPreview preview;
   final ConversationArchiveUsecase _delegate;
 
@@ -1879,9 +1899,11 @@ class _RecordingConversationArchiveUsecase extends ConversationArchiveUsecase {
     required String workspaceId,
     required List<String> conversationIds,
     bool includeAttachments = true,
+    ConversationArchiveExportPreview? expectedPreview,
   }) {
     bulkExportCalls++;
     this.includeAttachments.add(includeAttachments);
+    expectedPreviews.add(expectedPreview);
 
     return _delegate.exportConversations(
       workspaceId: workspaceId,
