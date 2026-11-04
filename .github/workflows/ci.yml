@@ -1505,6 +1505,7 @@ jobs:
           flutter test test/widgets/ux_validation_layout_test.dart \
             --no-pub \
             --plain-name='production direct route ConversationRoute queued prompts reorder' \
+            --dart-define=UX_EXPECT_REORDER=false \
             --dart-define="UX_CAPTURE_DIR=$CAPTURE_ROOT/before" \
             --dart-define="UX_SOURCE_FINGERPRINT=$BASE_SHA"
 
@@ -1515,6 +1516,7 @@ jobs:
           flutter test test/widgets/ux_validation_layout_test.dart \
             --no-pub \
             --plain-name='production direct route ConversationRoute queued prompts reorder' \
+            --dart-define=UX_EXPECT_REORDER=true \
             --dart-define="UX_CAPTURE_DIR=$CAPTURE_ROOT/after" \
             --dart-define="UX_SOURCE_FINGERPRINT=$HEAD_SHA"
 

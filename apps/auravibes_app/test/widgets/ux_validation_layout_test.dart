@@ -675,6 +675,14 @@ void main() {
       final firstActions = find.byKey(
         const ValueKey('queued-prompt-$firstId-actions'),
       );
+      const expectReorder = bool.fromEnvironment(
+        'UX_EXPECT_REORDER',
+        defaultValue: true,
+      );
+      expect(
+        firstActions,
+        expectReorder ? findsOneWidget : findsNothing,
+      );
       expect(
         tester.getTopLeft(find.text('Outline the plan')).dy,
         lessThan(tester.getTopLeft(find.text('Draft the summary')).dy),
@@ -683,26 +691,16 @@ void main() {
         tester.getTopLeft(find.text('Draft the summary')).dy,
         lessThan(tester.getTopLeft(find.text('Review the result')).dy),
       );
-      if (firstActions.evaluate().isEmpty) {
-        await _capture(
-          tester,
-          'queued-prompts-before',
-          route,
-          locale: 'en',
-          size: size,
-          scale: 1,
-          dark: false,
-        );
-      } else {
-        await _capture(
-          tester,
-          'queued-prompts-before',
-          route,
-          locale: 'en',
-          size: size,
-          scale: 1,
-          dark: false,
-        );
+      await _capture(
+        tester,
+        'queued-prompts-before',
+        route,
+        locale: 'en',
+        size: size,
+        scale: 1,
+        dark: false,
+      );
+      if (expectReorder) {
         final _ = await tester.tap(firstActions);
         final _ = await tester.pumpAndSettle();
         await tester.tap(
