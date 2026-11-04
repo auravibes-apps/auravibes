@@ -1337,10 +1337,10 @@ void main() {
               size: viewport.size,
               scale: 1,
               dark: dark,
-              fixture: expectedFixture,
               controlMeasurements: name == 'AgentsRoute' || name == 'DarkAgents'
                   ? _disabledBadgeMeasurement(tester)
                   : null,
+              fixture: expectedFixture,
               outputDirectory: testOutput?.path,
               onSidecar: (file) {
                 sidecar = file;
