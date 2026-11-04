@@ -35,7 +35,6 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart' hide Column, isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
