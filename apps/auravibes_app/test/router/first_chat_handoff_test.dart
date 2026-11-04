@@ -43,23 +43,21 @@ void main() {
     );
     addTearDown(router.dispose);
 
-    await tester.runAsync(
-      () => tester.pumpWidget(
-        TestableApp(
-          child: AuraThemeScope(
-            theme: .light,
-            child: Portal(child: Router.withConfig(config: router)),
-          ),
-          overrides: [
-            appDatabaseProvider.overrideWithValue(database),
-            routerProvider.overrideWithValue(router),
-            chatModelConnectionsProvider(workspace.id)
-                .overrideWith((ref) => Stream.value([])),
-            listModelsGroupedByProviderProvider(workspaceId: workspace.id)
-                .overrideWith((ref) => Stream.value({})),
-          ],
-          workspaceId: workspace.id,
+    await tester.pumpWidget(
+      TestableApp(
+        child: AuraThemeScope(
+          theme: .light,
+          child: Portal(child: Router.withConfig(config: router)),
         ),
+        overrides: [
+          appDatabaseProvider.overrideWithValue(database),
+          routerProvider.overrideWithValue(router),
+          chatModelConnectionsProvider(workspace.id)
+              .overrideWith((ref) => Stream.value([])),
+          listModelsGroupedByProviderProvider(workspaceId: workspace.id)
+              .overrideWith((ref) => Stream.value({})),
+        ],
+        workspaceId: workspace.id,
       ),
     );
     final _ = await tester.pumpAndSettle();
@@ -103,23 +101,21 @@ void main() {
     );
     addTearDown(router.dispose);
 
-    await tester.runAsync(
-      () => tester.pumpWidget(
-        TestableApp(
-          child: AuraThemeScope(
-            theme: .light,
-            child: Portal(child: Router.withConfig(config: router)),
-          ),
-          overrides: [
-            appDatabaseProvider.overrideWithValue(database),
-            routerProvider.overrideWithValue(router),
-            chatModelConnectionsProvider(workspace.id)
-                .overrideWith((ref) => Stream.value([])),
-            listModelsGroupedByProviderProvider(workspaceId: workspace.id)
-                .overrideWith((ref) => Stream.value({})),
-          ],
-          workspaceId: workspace.id,
+    await tester.pumpWidget(
+      TestableApp(
+        child: AuraThemeScope(
+          theme: .light,
+          child: Portal(child: Router.withConfig(config: router)),
         ),
+        overrides: [
+          appDatabaseProvider.overrideWithValue(database),
+          routerProvider.overrideWithValue(router),
+          chatModelConnectionsProvider(workspace.id)
+              .overrideWith((ref) => Stream.value([])),
+          listModelsGroupedByProviderProvider(workspaceId: workspace.id)
+              .overrideWith((ref) => Stream.value({})),
+        ],
+        workspaceId: workspace.id,
       ),
     );
     final _ = await tester.pumpAndSettle();
@@ -155,28 +151,26 @@ void main() {
           initialLocation: direct ? setup.location : chat,
         );
         addTearDown(router.dispose);
-        await tester.runAsync(
-          () => tester.pumpWidget(
-            TestableApp(
-              child: AuraThemeScope(
-                theme: .light,
-                child: Portal(child: Router.withConfig(config: router)),
-              ),
-              overrides: [
-                appDatabaseProvider.overrideWithValue(database),
-                routerProvider.overrideWithValue(router),
-                chatModelConnectionsProvider(workspace.id).overrideWith(
-                  (ref) => Stream.value([_connection(workspace.id)]),
-                ),
-                listModelsGroupedByProviderProvider(workspaceId: workspace.id)
-                    .overrideWith(
-                      (ref) => Stream.value({
-                        'connection': [_model(workspace.id)],
-                      }),
-                    ),
-              ],
-              workspaceId: workspace.id,
+        await tester.pumpWidget(
+          TestableApp(
+            child: AuraThemeScope(
+              theme: .light,
+              child: Portal(child: Router.withConfig(config: router)),
             ),
+            overrides: [
+              appDatabaseProvider.overrideWithValue(database),
+              routerProvider.overrideWithValue(router),
+              chatModelConnectionsProvider(workspace.id).overrideWith(
+                (ref) => Stream.value([_connection(workspace.id)]),
+              ),
+              listModelsGroupedByProviderProvider(workspaceId: workspace.id)
+                  .overrideWith(
+                    (ref) => Stream.value({
+                      'connection': [_model(workspace.id)],
+                    }),
+                  ),
+            ],
+            workspaceId: workspace.id,
           ),
         );
         final _ = await tester.pumpAndSettle();
