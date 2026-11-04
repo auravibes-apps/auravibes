@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/tools_group_entity.dart';
@@ -62,13 +65,18 @@ class const _Subject({required final Widget child}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return EasyLocalization(
-      child: MaterialApp(
-        home: AuraThemeScope(
-          theme: .light,
-          child: Theme(
-            data: .new(),
-            child: Material(child: child),
+      child: Builder(
+        builder: (context) => MaterialApp(
+          home: AuraThemeScope(
+            theme: .light,
+            child: Theme(
+              data: .new(),
+              child: Material(child: child),
+            ),
           ),
+          locale: context.locale,
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
         ),
       ),
       supportedLocales: const [Locale('en')],
@@ -77,8 +85,18 @@ class const _Subject({required final Widget child}) extends StatelessWidget {
       startLocale: const Locale('en'),
       useOnlyLangCode: true,
       useFallbackTranslations: true,
+      assetLoader: const _TestTranslations(),
     );
   }
+}
+
+class _TestTranslations extends AssetLoader {
+  const new();
+
+  @override
+  Future<Map<String, dynamic>> load(String path, Locale locale) async =>
+      jsonDecode(File('$path/${locale.languageCode}.json').readAsStringSync())
+          as Map<String, dynamic>;
 }
 
 void main() {

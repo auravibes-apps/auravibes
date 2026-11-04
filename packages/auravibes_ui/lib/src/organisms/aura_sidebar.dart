@@ -319,9 +319,9 @@ class _AuraSidebarItemButton extends StatelessWidget {
          child: AuraPressable(
            child: ExcludeSemantics(
              excluding: item.semanticLabel != null,
-             child: _AuraSidebarItemContent(
-               icon: item.icon,
-               label: isExpanded ? item.label : const SizedBox.shrink(),
+             child: _AuraSidebarItemView(
+               item: item,
+               isExpanded: isExpanded,
                selected: selected,
              ),
            ),
@@ -335,7 +335,7 @@ class _AuraSidebarItemButton extends StatelessWidget {
              borderRadius: BorderRadius.all(.circular(borderRadius)),
            ),
            onPressed: onTap,
-           semanticLabel: item.semanticLabel ?? 'Navigation item',
+           semanticLabel: item.semanticLabel,
          ),
          selected: selected,
        );
@@ -353,6 +353,37 @@ class _AuraSidebarItemButton extends StatelessWidget {
 
     return AuraTooltip(message: semanticLabel, child: _child);
   }
+}
+
+class const _AuraSidebarItemView({
+  required final AuraNavigationData item,
+  required final bool isExpanded,
+  required final bool selected,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final content = _AuraSidebarItemContent(
+      icon: item.icon,
+      label: isExpanded ? item.label : const SizedBox.shrink(),
+      selected: selected,
+    );
+    if (isExpanded || item.semanticLabel != null) return content;
+
+    return Stack(
+      children: [
+        content,
+        Positioned.fill(child: _AuraSidebarHiddenLabel(label: item.label)),
+      ],
+    );
+  }
+}
+
+class const _AuraSidebarHiddenLabel({required final Widget label})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+    child: Opacity(opacity: 0, alwaysIncludeSemantics: true, child: label),
+  );
 }
 
 class const _AuraSidebarItemContent({

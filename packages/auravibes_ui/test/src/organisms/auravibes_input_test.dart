@@ -69,6 +69,41 @@ void main() {
       expect(submittedValue, 'Submitted text');
     });
 
+    testWidgets('preserves a focused edit when the error state changes', (
+      tester,
+    ) async {
+      final focus = FocusNode();
+      addTearDown(focus.dispose);
+      final hasError = ValueNotifier(false);
+      addTearDown(hasError.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ValueListenableBuilder(
+              valueListenable: hasError,
+              builder: (context, hasError, child) => AuraInput(
+                error: hasError ? const Text('Required') : null,
+                state: hasError ? .error : .normal,
+                focusNode: focus,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.enterText(find.byType(TextFormField), 'Draft');
+      final _ = await tester.pumpAndSettle();
+      expect(focus.hasFocus, isTrue);
+      expect(find.text('Draft'), findsOneWidget);
+      hasError.value = true;
+      final _ = await tester.pumpAndSettle();
+
+      expect(focus.hasFocus, isTrue);
+      expect(find.text('Draft'), findsOneWidget);
+      expect(find.text('Required'), findsOneWidget);
+    });
+
     testWidgets('next action focuses the following AuraInput', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(

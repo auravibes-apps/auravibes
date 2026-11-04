@@ -347,6 +347,7 @@ class _McpModalHeaderChildren {
         AuraIconButton(
           icon: Icons.close,
           onPressed: () => Navigator.of(context).maybePop(),
+          tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
         ),
       ];
 
@@ -385,7 +386,11 @@ class const _LoadingOverlaySurface({required final Color color})
   Widget build(BuildContext context) => Positioned.fill(
     child: ColoredBox(
       color: color.withValues(alpha: 0.6),
-      child: const Center(child: AuraLoadingOverlay()),
+      child: Center(
+        child: AuraLoadingOverlay(
+          semanticLabel: LocaleKeys.mcp_apps_loading.tr(context: context),
+        ),
+      ),
     ),
   );
 }

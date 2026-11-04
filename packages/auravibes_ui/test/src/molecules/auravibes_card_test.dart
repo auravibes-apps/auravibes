@@ -78,8 +78,8 @@ void main() {
       expect(find.text('Border Card'), findsOneWidget);
       expect(within('border', find.byType(AuraPressable)), findsOneWidget);
       expect(find.text('Glass Card'), findsOneWidget);
-      expect(within('glass', find.byType(BackdropFilter)), findsOneWidget);
-      expect(within('glass', find.byType(ClipRRect)), findsOneWidget);
+      expect(within('glass', find.byType(BackdropFilter)), findsNothing);
+      expect(pressable('glass').decoration, pressable('border').decoration);
 
       expect(pressable('default').decoration, isNotNull);
 

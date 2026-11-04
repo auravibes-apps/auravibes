@@ -418,22 +418,31 @@ class const _WorkspaceHookToggle({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final enabled = view.settings.enabled;
-    final canEnable = status == WorkspaceAgentHookTrustStatus.trusted;
-
     return AuraRow(
       children: [
         const Expanded(child: TextLocale('agent_lifecycle_hooks.enable')),
         AuraSwitch(
-          value: enabled,
-          onChanged: view.busy || (!enabled && !canEnable)
-              ? null
-              : view.callbacks.setEnabled,
+          value: view.settings.enabled,
+          onChanged: _hooksEnabledChanged(view, status),
+          semanticLabel: _hooksEnabledLabel(context),
         ),
       ],
     );
   }
 }
+
+ValueChanged<bool>? _hooksEnabledChanged(
+  _WorkspaceHookSettingsView view,
+  WorkspaceAgentHookTrustStatus status,
+) {
+  final canEnable = status == WorkspaceAgentHookTrustStatus.trusted;
+  if (view.busy || (!view.settings.enabled && !canEnable)) return null;
+
+  return view.callbacks.setEnabled;
+}
+
+String _hooksEnabledLabel(BuildContext context) =>
+    'agent_lifecycle_hooks.enable'.tr(context: context);
 
 class const _WorkspaceHookRecovery() extends StatelessWidget {
   @override

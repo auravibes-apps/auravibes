@@ -1,6 +1,5 @@
 import 'package:auravibes_ui/src/atoms/aura_icon.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
-import 'package:auravibes_ui/src/molecules/aura_card.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart';
 import 'package:flutter/widgets.dart';
@@ -33,10 +32,7 @@ class AuraStat extends StatelessWidget {
   final AuraTint tint;
 
   @override
-  Widget build(BuildContext context) => AuraCard(
-    child: _AuraStatContent(stat: this),
-    tint: tint,
-  );
+  Widget build(BuildContext context) => _AuraStatContent(stat: this);
 }
 
 class const _AuraStatContent({required final AuraStat stat})

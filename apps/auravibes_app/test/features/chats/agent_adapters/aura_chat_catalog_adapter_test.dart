@@ -745,7 +745,7 @@ void main() {
     expect(find.byType(AuraLabeledSlider), findsOneWidget);
     expect(find.text('Score'), findsOneWidget);
     expect(find.text('75.00'), findsOneWidget);
-    expect(tester.getSemantics(find.byType(AuraSlider)).value, '75.0');
+    expect(tester.getSemantics(find.byType(AuraSlider)).value, '75.00');
   });
 
   testWidgets('read-only slider formats a literal value for Spanish', (
@@ -801,6 +801,7 @@ void main() {
     final _ = await tester.pumpAndSettle();
 
     expect(find.text('74,5'), findsOneWidget);
+    expect(tester.getSemantics(find.byType(AuraSlider)).value, '74,5');
     expect(find.text('0,0'), findsOneWidget);
     expect(find.text('100,0'), findsOneWidget);
   });

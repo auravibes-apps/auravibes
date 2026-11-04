@@ -1,7 +1,9 @@
 import 'dart:ui' as ui;
 
 import 'package:auravibes_ui/src/atoms/aura_loading_circle.dart';
+import 'package:auravibes_ui/src/colors/color_contrast.dart';
 import 'package:auravibes_ui/src/organisms/aura_switch.dart';
+import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -208,6 +210,17 @@ void main() {
 
         expect(focusedDecoration.border, isNull);
         expect(focusedDecoration.boxShadow, hasLength(1));
+        final ring =
+            (focusedDecoration.boxShadow ?? fail('Missing focus ring')).single;
+        expect(ring.blurRadius, 0);
+        expect(ring.color.a, 1);
+        expect(
+          ColorContrast.wcagContrastRatio(
+            ring.color,
+            AuraTheme.light.colors.background,
+          ),
+          greaterThanOrEqualTo(3),
+        );
 
         focusableActionDetector.onShowFocusHighlight?.call(false);
         await tester.pump();

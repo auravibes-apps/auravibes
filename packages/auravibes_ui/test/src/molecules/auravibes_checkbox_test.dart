@@ -52,7 +52,7 @@ void main() {
       expect(find.bySemanticsLabel('Accept terms'), findsOneWidget);
     });
 
-    testWidgets('exposes its default semantic label', (tester) async {
+    testWidgets('exposes a caller-provided semantic label', (tester) async {
       await tester.pumpWidget(
         AuraThemeScope(
           theme: .light,
@@ -63,6 +63,7 @@ void main() {
                 onChanged: (_) {
                   return;
                 },
+                semanticLabel: 'Notifications',
               ),
             ),
             theme: .new(),
@@ -70,7 +71,7 @@ void main() {
         ),
       );
 
-      expect(find.bySemanticsLabel('Checkbox'), findsOneWidget);
+      expect(find.bySemanticsLabel('Notifications'), findsOneWidget);
     });
 
     testWidgets('calls onChanged with toggled value when tapped', (
