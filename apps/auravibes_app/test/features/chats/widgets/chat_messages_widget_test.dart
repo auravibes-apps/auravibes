@@ -5402,6 +5402,239 @@ void main() {
     );
 
     testWidgets(
+      'preserves transcript position per conversation across route changes',
+      (tester) async {
+        const conversationIds = [
+          'conversation-a',
+          'conversation-b',
+          'conversation-new',
+        ];
+        final transcripts = <String, Map<String, MessageEntity>>{
+          for (final conversationId in conversationIds)
+            conversationId: {
+              for (var index = 0; index < 20; index++)
+                '$conversationId-message-$index': _createMessage(
+                  id: '$conversationId-message-$index',
+                  conversationId: conversationId,
+                  content: List.filled(
+                    8,
+                    'Message $conversationId $index',
+                  ).join('\n'),
+                ),
+            },
+        };
+        final transcriptRevision = ValueNotifier(0);
+        addTearDown(transcriptRevision.dispose);
+        final messageText = (String conversationId, int index) =>
+            List.filled(8, 'Message $conversationId $index').join('\n');
+
+        Widget chatPage(String conversationId) => ValueListenableBuilder<int>(
+          valueListenable: transcriptRevision,
+          builder: (context, _, _) => ChatPrimaryScrollController(
+            child: Scaffold(
+              body: AuraThemeScope(
+                theme: AuraTheme.light,
+                child: Theme(
+                  data: ThemeData(),
+                  child: AuraLegacyMaterialBridge(
+                    child: Material(
+                      child: ChatMessagesWidget(
+                        workspaceId: 'ws-1',
+                        conversationId: conversationId,
+                        messages: transcripts[conversationId]!.keys.toList(),
+                        messageEntitiesById: transcripts[conversationId],
+                        onOpenToolResult: (_) =>
+                            fail('Unexpected tool result tab'),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+
+        final router = GoRouter(
+          initialLocation: '/chat/conversation-a',
+          routes: [
+            GoRoute(
+              path: '/chat/:conversationId',
+              pageBuilder: (context, state) {
+                final conversationId = state.pathParameters['conversationId']!;
+
+                return NoTransitionPage<void>(
+                  key: state.pageKey,
+                  child: chatPage(conversationId),
+                );
+              },
+            ),
+            GoRoute(
+              path: '/other',
+              pageBuilder: (context, state) => NoTransitionPage<void>(
+                key: state.pageKey,
+                child: const Scaffold(body: Text('Other route')),
+              ),
+            ),
+          ],
+        );
+        addTearDown(router.dispose);
+
+        Future<void> navigate(String location) async {
+          router.go(location);
+          await tester.pumpAndSettle();
+        }
+
+        ScrollableState currentScrollable() =>
+            tester.state<ScrollableState>(find.byType(Scrollable));
+
+        Future<void> scrollToOldestMessage() async {
+          currentScrollable().position.jumpTo(
+            currentScrollable().position.maxScrollExtent,
+          );
+          await tester.pumpAndSettle();
+        }
+
+        void expectMessageVisible(String conversationId, int index) {
+          final content = find.text(messageText(conversationId, index));
+          expect(content, findsOneWidget);
+          expect(
+            tester
+                .getRect(content)
+                .overlaps(tester.getRect(find.byType(ListView))),
+            isTrue,
+            reason: 'Message $conversationId $index should be visible',
+          );
+        }
+
+        await pumpAndInit(
+          tester,
+          TestProviderScope(
+            overrides: [
+              conversationSelectedProvider('conversation-a')
+                  .overrideWithValue('conversation-a'),
+              conversationSelectedProvider('conversation-b')
+                  .overrideWithValue('conversation-b'),
+              conversationSelectedProvider('conversation-new')
+                  .overrideWithValue('conversation-new'),
+              conversationRepositoryProvider.overrideWithValue(
+                _MockConversationRepository(),
+              ),
+              conversationByIdStreamProvider.overrideWith(
+                (ref, request) => Stream<ConversationEntity?>.value(null),
+              ),
+              childConversationsStreamProvider.overrideWith(
+                (ref, request) =>
+                    Stream<List<ConversationEntity>>.value(const []),
+              ),
+              messageConversationByIdProvider.overrideWith(
+                (ref, id) => transcripts[id.conversationId]?[id.messageId],
+              ),
+              isMessageStreamingProvider.overrideWith((ref, id) => false),
+              pendingToolCallsProvider.overrideWith((ref, _) => const []),
+              conversationBusyStateProvider.overrideWith(
+                (ref, _) async => const ConversationBusyState(
+                  isStreaming: false,
+                  hasPendingTools: false,
+                ),
+              ),
+              messageBookmarksProvider.overrideWith(
+                (ref, _) => Stream.value(const []),
+              ),
+              workspaceSessionForRouteProvider('ws-1').overrideWithValue(
+                const AsyncData(
+                  WorkspaceSession(LocalWorkspaceRef(localWorkspaceId: 'ws-1')),
+                ),
+              ),
+              for (final conversationId in conversationIds)
+                conversationBackgroundWorksProvider(conversationId)
+                    .overrideWith((ref) => Stream.value(const [])),
+            ],
+            child: EasyLocalization(
+              child: Builder(
+                builder: (context) => MaterialApp.router(
+                  routerConfig: router,
+                  locale: context.locale,
+                  localizationsDelegates: [
+                    ...GlobalMaterialLocalizations.delegates,
+                    sdk_localizations.GlobalMaterialLocalizations.delegate,
+                    ...context.localizationDelegates,
+                  ],
+                  supportedLocales: context.supportedLocales,
+                ),
+              ),
+              supportedLocales: const [Locale('en'), Locale('es')],
+              path: 'assets/i18n',
+              fallbackLocale: const Locale('en'),
+              startLocale: const Locale('en'),
+              useOnlyLangCode: true,
+              useFallbackTranslations: true,
+            ),
+          ),
+        );
+
+        expectMessageVisible('conversation-a', 19);
+        await scrollToOldestMessage();
+        expectMessageVisible('conversation-a', 0);
+        final conversationAOffset = currentScrollable().position.pixels;
+
+        await navigate('/other');
+        await navigate('/chat/conversation-a');
+        expectMessageVisible('conversation-a', 0);
+        expect(
+          currentScrollable().position.pixels,
+          closeTo(conversationAOffset, 1),
+        );
+
+        await navigate('/chat/conversation-b');
+        expectMessageVisible('conversation-b', 19);
+        await scrollToOldestMessage();
+        expectMessageVisible('conversation-b', 0);
+        final conversationBOffset = currentScrollable().position.pixels;
+
+        await navigate('/chat/conversation-a');
+        expectMessageVisible('conversation-a', 0);
+        expect(
+          currentScrollable().position.pixels,
+          closeTo(conversationAOffset, 1),
+        );
+        await navigate('/chat/conversation-b');
+        expectMessageVisible('conversation-b', 0);
+        expect(
+          currentScrollable().position.pixels,
+          closeTo(conversationBOffset, 1),
+        );
+
+        await navigate('/chat/conversation-new');
+        expectMessageVisible('conversation-new', 19);
+        expect(
+          currentScrollable().position.pixels,
+          closeTo(currentScrollable().position.minScrollExtent, .5),
+        );
+
+        await navigate('/other');
+        await navigate('/chat/conversation-new');
+        expectMessageVisible('conversation-new', 19);
+
+        final newestMessage = _createMessage(
+          id: 'conversation-new-message-20',
+          conversationId: 'conversation-new',
+          content: messageText('conversation-new', 20),
+        );
+        transcripts['conversation-new'] = {
+          ...transcripts['conversation-new']!,
+          newestMessage.id: newestMessage,
+        };
+        transcriptRevision.value++;
+        await tester.pumpAndSettle();
+        expectMessageVisible('conversation-new', 20);
+        expect(
+          currentScrollable().position.pixels,
+          closeTo(currentScrollable().position.minScrollExtent, .5),
+        );
+      },
+    );
+
+    testWidgets(
       'offers background work only while the running tool is eligible',
       (tester) async {
         const toolCall = MessageToolCallEntity(
