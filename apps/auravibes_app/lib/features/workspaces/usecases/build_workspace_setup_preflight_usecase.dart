@@ -60,7 +60,7 @@ WorkspaceSetupPreflightCheck _modelCheck(
   WorkspaceSetupPreflightSnapshot snapshot,
 ) {
   if (snapshot.selectedModelId == null) return _modelNotSelected();
-  if (!snapshot.selectedModelSourceAvailable) return _modelUnverified();
+  if (!snapshot.sourceAvailability.model) return _modelUnverified();
 
   final model = snapshot.selectedModel;
   if (model == null || model.selectionId != snapshot.selectedModelId) {
@@ -132,7 +132,7 @@ WorkspaceSetupPreflightCheck _providerCheck(
   WorkspaceSetupPreflightSnapshot snapshot,
 ) {
   final providers = snapshot.providers;
-  if (!snapshot.providerSourceAvailable || providers == null) {
+  if (!snapshot.sourceAvailability.provider || providers == null) {
     return _providerUnverified();
   }
 
@@ -147,7 +147,7 @@ WorkspaceSetupPreflightCheck _configuredProviderCheck(
     return _optionalProviderCheck(providers);
   }
   if (providers.isEmpty) return _providerForModelMissing();
-  if (!snapshot.selectedModelSourceAvailable) return _providerUnverified();
+  if (!snapshot.sourceAvailability.model) return _providerUnverified();
 
   return _selectedModelProviderCheck(snapshot, providers);
 }
@@ -240,7 +240,7 @@ WorkspaceSetupPreflightCheck _mcpCheck(
   WorkspaceSetupPreflightSnapshot snapshot,
 ) {
   final connections = snapshot.mcpConnections;
-  if (!snapshot.mcpSourceAvailable || connections == null) {
+  if (!snapshot.sourceAvailability.mcp || connections == null) {
     return _mcpUnverified();
   }
 
@@ -332,7 +332,8 @@ WorkspaceSetupPreflightOutcome _outcome(
 
 bool _needsSetup(WorkspaceSetupPreflightSnapshot snapshot) =>
     snapshot.selectedModelId == null ||
-    (snapshot.providerSourceAvailable && snapshot.providers?.isEmpty == true);
+    (snapshot.sourceAvailability.provider &&
+        snapshot.providers?.isEmpty == true);
 
 bool _hasUnverifiedRequiredCheck(List<WorkspaceSetupPreflightCheck> checks) =>
     _requiredChecks(checks).any((check) => check.status == .unknown);

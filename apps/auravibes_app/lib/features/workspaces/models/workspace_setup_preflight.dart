@@ -80,13 +80,7 @@ class const WorkspaceSetupPreflightSnapshot({
   required final List<WorkspaceSetupProviderSnapshot>? providers,
   required final WorkspaceSetupModelSnapshot? selectedModel,
   required final List<WorkspaceSetupMcpSnapshot>? mcpConnections,
-}) {
-  bool get selectedModelSourceAvailable => sourceAvailability.model;
-
-  bool get providerSourceAvailable => sourceAvailability.provider;
-
-  bool get mcpSourceAvailable => sourceAvailability.mcp;
-}
+});
 
 typedef WorkspaceSetupPreflightLabels = ({
   String overallLabel,
