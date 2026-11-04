@@ -9,33 +9,49 @@ class const ConversationLabelBadges({
   super.key,
 }) extends StatelessWidget {
   @override
+  Widget build(BuildContext context) => _ConversationLabelBadgeContent(
+    labels: labels,
+    semanticLabel: LocaleKeys
+        .chats_screens_conversation_labels_label_semantics
+        .tr(context: context),
+  );
+}
+
+class const _ConversationLabelBadgeContent({
+  required final List<ConversationLabelEntity> labels,
+  required final String semanticLabel,
+}) extends StatelessWidget {
+  @override
   Widget build(BuildContext context) {
     if (labels.isEmpty) return const SizedBox.shrink();
 
-    final labelNames = labels.map((label) => label.name).join(', ');
-    final localizedSemanticsLabel = LocaleKeys
-        .chats_screens_conversation_labels_label_semantics
-        .tr(context: context);
-
     return Semantics(
       key: const ValueKey('conversation-labels-semantics'),
-      child: ExcludeSemantics(
-        child: Wrap(
-          spacing: 6,
-          runSpacing: 4,
-          children: [
-            for (final label in labels)
-              AuraBadge.text(
-                child: Text(label.name),
-                key: ValueKey('conversation-label-${label.id}'),
-                variant: .neutral,
-                size: .small,
-              ),
-          ],
-        ),
-      ),
+      child: ExcludeSemantics(child: _ConversationLabelBadgeWrap(labels: labels)),
       container: true,
-      label: '$localizedSemanticsLabel: $labelNames',
+      label: '$semanticLabel: ${_conversationLabelNames(labels)}',
     );
   }
 }
+
+class const _ConversationLabelBadgeWrap({
+  required final List<ConversationLabelEntity> labels,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Wrap(
+    spacing: 6,
+    runSpacing: 4,
+    children: [
+      for (final label in labels)
+        AuraBadge.text(
+          child: Text(label.name),
+          key: ValueKey('conversation-label-${label.id}'),
+          variant: .neutral,
+          size: .small,
+        ),
+    ],
+  );
+}
+
+String _conversationLabelNames(List<ConversationLabelEntity> labels) =>
+    labels.map((label) => label.name).join(', ');

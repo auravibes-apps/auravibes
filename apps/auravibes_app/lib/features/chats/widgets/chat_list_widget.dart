@@ -297,21 +297,22 @@ _ChatListHookState _useChatListHookState(WidgetRef ref, String workspaceId) {
   final results = _useChatListResultsState();
 
   useEffect(() => _clearSelectedChats(results.selectedChats), [workspaceId]);
-  final query = _useChatListQueryState(
-    ref,
-    workspaceId,
-    input.searchText,
-    input.selectedLabelIds.value,
-  );
+  final query = _useChatListQueryState(ref, workspaceId, input);
 
-  return (
-    input: input,
-    results: results,
-    normalizedSearch: query.normalizedSearch,
-    debouncedSearch: query.debouncedSearch,
-    chatListAsync: query.chatListAsync,
-  );
+  return _assembleChatListHookState(input, results, query);
 }
+
+_ChatListHookState _assembleChatListHookState(
+  _ChatListInputState input,
+  _ChatListResultsState results,
+  _ChatListQueryState query,
+) => (
+  input: input,
+  results: results,
+  normalizedSearch: query.normalizedSearch,
+  debouncedSearch: query.debouncedSearch,
+  chatListAsync: query.chatListAsync,
+);
 
 _ChatListInputState _useChatListInputState() => (
   searchController: useTextEditingController(),
@@ -350,10 +351,9 @@ typedef _ChatListQueryState = ({
 _ChatListQueryState _useChatListQueryState(
   WidgetRef ref,
   String workspaceId,
-  ValueNotifier<String> searchText,
-  Set<String> selectedLabelIds,
+  _ChatListInputState input,
 ) {
-  final normalizedSearch = searchText.value.trim();
+  final normalizedSearch = input.searchText.value.trim();
   final debouncedSearch = useDebounced(
     normalizedSearch,
     _conversationSearchDebounce,
@@ -363,7 +363,7 @@ _ChatListQueryState _useChatListQueryState(
     conversationsStreamProvider(
       workspaceId: workspaceId,
       search: databaseSearch,
-      labelIds: selectedLabelIds,
+      labelIds: input.selectedLabelIds.value,
       pagination: (limit: _conversationPageSize + 1, offset: 0),
     ),
   );
@@ -407,14 +407,21 @@ _ChatListSearchData _chatListSearchData(
   return (
     databaseSearch: debouncedSearch ?? '',
     isDebouncing: _isSearchDebouncing(hooks.normalizedSearch, debouncedSearch),
-    hasSearchInput:
-        hooks.input.showSearchInput.value ||
-        hooks.input.selectedLabelIds.value.isNotEmpty ||
-        fetchedChats?.isNotEmpty == true,
-    fetchedHasMore:
-        fetchedChats != null && fetchedChats.length > _conversationPageSize,
+    hasSearchInput: _hasChatSearchInput(hooks, fetchedChats),
+    fetchedHasMore: _fetchedChatPageHasMore(fetchedChats),
   );
 }
+
+bool _hasChatSearchInput(
+  _ChatListHookState hooks,
+  List<ConversationEntity>? fetchedChats,
+) =>
+    hooks.input.showSearchInput.value ||
+    hooks.input.selectedLabelIds.value.isNotEmpty ||
+    fetchedChats?.isNotEmpty == true;
+
+bool _fetchedChatPageHasMore(List<ConversationEntity>? fetchedChats) =>
+    fetchedChats != null && fetchedChats.length > _conversationPageSize;
 
 _ChatListViewState _useChatListState(
   BuildContext context,
@@ -915,27 +922,32 @@ bool _shouldShowArchiveAction(WidgetRef ref, String workspaceId) =>
 class const _ChatListLoaded({required final _ChatListViewState state})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext _) {
-    final viewState = state;
-    if (!viewState.showSearchInput) {
-      return Column(
-        children: [
-          ConversationLabelsToolbar(
-            workspaceId: viewState.workspaceId,
-            selectedLabelIds: viewState.selectedLabelIds.value,
-            onSelectedLabelIdsChanged: (labelIds) {
-              viewState.selectedLabelIds.value = labelIds;
-            },
-          ),
-          Expanded(
-            child: _ChatListEmptyState(workspaceId: viewState.workspaceId),
-          ),
-        ],
-      );
-    }
+  Widget build(BuildContext _) => state.showSearchInput
+      ? _ChatListLoadedBody(state: state)
+      : _ChatListNoSearchState(state: state);
+}
 
-    return _ChatListLoadedBody(state: viewState);
-  }
+class const _ChatListNoSearchState({required final _ChatListViewState state})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Column(
+    children: [
+      _ChatListLabelToolbar(state: state),
+      Expanded(child: _ChatListEmptyState(workspaceId: state.workspaceId)),
+    ],
+  );
+}
+
+class const _ChatListLabelToolbar({required final _ChatListViewState state})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => ConversationLabelsToolbar(
+    workspaceId: state.workspaceId,
+    selectedLabelIds: state.selectedLabelIds.value,
+    onSelectedLabelIdsChanged: (labelIds) {
+      state.selectedLabelIds.value = labelIds;
+    },
+  );
 }
 
 class const _ChatListLoadedBody({required final _ChatListViewState state})
@@ -948,19 +960,22 @@ class const _ChatListLoadedBody({required final _ChatListViewState state})
         selectedChats: state.selectedChats,
         isBulkActionRunning: state.isBulkActionRunning,
       ),
-      ConversationLabelsToolbar(
-        workspaceId: state.workspaceId,
-        selectedLabelIds: state.selectedLabelIds.value,
-        onSelectedLabelIdsChanged: (labelIds) {
-          state.selectedLabelIds.value = labelIds;
-        },
-      ),
+      _ChatListLabelToolbar(state: state),
       _ChatListSearchInput(state: state),
       Expanded(child: _ChatListResults(state: state)),
-      if (state.hasMore && !state.isRefreshing && !state.hasError)
-        _ChatListLoadMore(state: state),
+      _ChatListLoadMoreIfNeeded(state: state),
     ],
   );
+}
+
+class const _ChatListLoadMoreIfNeeded({
+  required final _ChatListViewState state,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) =>
+      state.hasMore && !state.isRefreshing && !state.hasError
+      ? _ChatListLoadMore(state: state)
+      : const SizedBox.shrink();
 }
 
 class const _ChatListBulkActions({

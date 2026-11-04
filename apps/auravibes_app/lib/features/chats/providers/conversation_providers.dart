@@ -87,6 +87,8 @@ Stream<ConversationEntity?> _localConversationById(
     .watchConversationById(conversationId);
 
 @riverpod
+// Riverpod generates the family key from these explicit request fields.
+// ignore: number-of-parameters
 Stream<List<ConversationEntity>> conversationsStream(
   Ref ref, {
   required String workspaceId,

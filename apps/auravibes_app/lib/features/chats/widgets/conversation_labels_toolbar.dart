@@ -57,18 +57,27 @@ class _ConversationLabelsToolbarState
   void _removeStaleSelections(
     AsyncValue<List<ConversationLabelEntity>> labels,
   ) {
-    if (labels is! AsyncData<List<ConversationLabelEntity>>) {
-      return;
-    }
-
-    final availableIds = labels.value.map((label) => label.id).toSet();
-    final validSelection = widget.selectedLabelIds.intersection(availableIds);
-    if (validSelection.length == widget.selectedLabelIds.length) {
+    final selection = _staleSelection(labels);
+    if (selection == null) {
       return;
     }
     WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _updateStaleSelections(validSelection),
+      (_) => _updateStaleSelections(selection),
     );
+  }
+
+  Set<String>? _staleSelection(
+    AsyncValue<List<ConversationLabelEntity>> labels,
+  ) {
+    if (labels is! AsyncData<List<ConversationLabelEntity>>) {
+      return null;
+    }
+    final availableIds = labels.value.map((label) => label.id).toSet();
+    final selection = widget.selectedLabelIds.intersection(availableIds);
+
+    return selection.length == widget.selectedLabelIds.length
+        ? null
+        : selection;
   }
 
   void _updateStaleSelections(Set<String> validSelection) {
@@ -481,57 +490,28 @@ class _ConversationLabelManagementDialogState
   void _onDelete(ConversationLabelEntity label) => unawaited(_delete(label));
 
   Future<void> _rename(ConversationLabelEntity label) async {
-    final name = await _requestRename(label);
+    final name = await _requestConversationLabelRename(context, label);
     if (name == null || name == label.name) {
       return;
     }
-    final _ = await _run(() => _renameLabel(label, name));
+    final _ = await _run(
+      () => _renameConversationLabel(
+        widget.actions,
+        widget.workspaceId,
+        label,
+        name,
+      ),
+    );
   }
-
-  Future<String?> _requestRename(ConversationLabelEntity label) =>
-      _showLabelNameDialog(
-        context,
-        title: LocaleKeys.chats_screens_conversation_labels_rename.tr(),
-        initialName: label.name,
-      );
-
-  Future<Object?> _renameLabel(ConversationLabelEntity label, String name) =>
-      widget.actions.rename(
-        workspaceId: widget.workspaceId,
-        labelId: label.id,
-        name: name,
-      );
 
   Future<void> _delete(ConversationLabelEntity label) async {
-    if (!await _confirmDelete()) {
+    if (!await _confirmConversationLabelDelete(context)) {
       return;
     }
-    final _ = await _run(() => _deleteLabel(label));
-  }
-
-  Future<bool> _confirmDelete() async {
-    final confirmed = await AuraDialogs.confirm(
-      context: context,
-      title: const TextLocale(
-        LocaleKeys.chats_screens_conversation_labels_delete_title,
-      ),
-      message: const TextLocale(
-        LocaleKeys.chats_screens_conversation_labels_delete_message,
-      ),
-      actions: const AuraConfirmDialogActions(
-        confirmLabel: TextLocale(
-          LocaleKeys.chats_screens_conversation_labels_delete,
-        ),
-        cancelLabel: TextLocale(LocaleKeys.common_cancel),
-      ),
-      isDestructive: true,
+    final _ = await _run(
+      () => _deleteConversationLabel(widget.actions, widget.workspaceId, label),
     );
-
-    return confirmed == true;
   }
-
-  Future<Object?> _deleteLabel(ConversationLabelEntity label) =>
-      widget.actions.delete(workspaceId: widget.workspaceId, labelId: label.id);
 
   Future<bool> _run(Future<Object?> Function() operation) async {
     setState(() => _isWorking = true);
@@ -557,6 +537,53 @@ class _ConversationLabelManagementDialogState
     }
   }
 }
+
+Future<String?> _requestConversationLabelRename(
+  BuildContext context,
+  ConversationLabelEntity label,
+) => _showLabelNameDialog(
+  context,
+  title: LocaleKeys.chats_screens_conversation_labels_rename.tr(),
+  initialName: label.name,
+);
+
+Future<bool> _confirmConversationLabelDelete(BuildContext context) async {
+  final confirmed = await AuraDialogs.confirm(
+    context: context,
+    title: const TextLocale(
+      LocaleKeys.chats_screens_conversation_labels_delete_title,
+    ),
+    message: const TextLocale(
+      LocaleKeys.chats_screens_conversation_labels_delete_message,
+    ),
+    actions: const AuraConfirmDialogActions(
+      confirmLabel: TextLocale(
+        LocaleKeys.chats_screens_conversation_labels_delete,
+      ),
+      cancelLabel: TextLocale(LocaleKeys.common_cancel),
+    ),
+    isDestructive: true,
+  );
+
+  return confirmed == true;
+}
+
+Future<Object?> _renameConversationLabel(
+  ConversationLabelActions actions,
+  String workspaceId,
+  ConversationLabelEntity label,
+  String name,
+) => actions.rename(
+  workspaceId: workspaceId,
+  labelId: label.id,
+  name: name,
+);
+
+Future<Object?> _deleteConversationLabel(
+  ConversationLabelActions actions,
+  String workspaceId,
+  ConversationLabelEntity label,
+) => actions.delete(workspaceId: workspaceId, labelId: label.id);
 
 class const _ConversationLabelManagementDialogView({
   required final AsyncValue<List<ConversationLabelEntity>> labels,

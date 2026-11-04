@@ -4,6 +4,7 @@ import 'package:auravibes_app/features/chats/providers/conversation_labels_repos
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state_gateway.dart';
+import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'conversation_labels_provider.g.dart';
@@ -68,13 +69,29 @@ _readCloudConversationLabels(
     .new(workspaceId: cloud.cloudWorkspaceId),
   );
 
-  return (
-    value: labels
-        .map((label) => ConversationLabelMapper.fromCloud(label, workspaceId))
-        .toList(),
-    currentSequence: state.currentSequence,
+  return _cloudConversationLabelSnapshot(
+    labels,
+    workspaceId,
+    state.currentSequence,
   );
 }
+
+({List<ConversationLabelEntity> value, int currentSequence})
+_cloudConversationLabelSnapshot(
+  List<ConversationLabelSummary> labels,
+  String workspaceId,
+  int currentSequence,
+) => (
+  value: _mapCloudConversationLabels(labels, workspaceId),
+  currentSequence: currentSequence,
+);
+
+List<ConversationLabelEntity> _mapCloudConversationLabels(
+  List<ConversationLabelSummary> labels,
+  String workspaceId,
+) => labels
+    .map((label) => ConversationLabelMapper.fromCloud(label, workspaceId))
+    .toList();
 
 @Riverpod(keepAlive: true)
 ConversationLabelActions conversationLabelActions(Ref ref) =>

@@ -14,10 +14,22 @@ typedef _ConversationLabelAssignment = ({
   Set<String> labelIds,
 });
 
+typedef _ConversationLabelInsert = ({
+  String workspaceId,
+  String name,
+  String normalizedName,
+});
+
+typedef _ConversationLabelDuplicateName = ({
+  String workspaceId,
+  String labelId,
+  String normalizedName,
+});
+
 class ConversationLabelsRepository(final AppDatabase _database) {
   Stream<List<ConversationLabelEntity>> watchLabelsByWorkspace(
     String workspaceId,
-  ) => _labelsByWorkspace(workspaceId).watch().map(_mapLabels);
+  ) => _labelsByWorkspace(_database, workspaceId).watch().map(_mapLabels);
 
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     ConversationLabelQuery query,
@@ -29,59 +41,46 @@ class ConversationLabelsRepository(final AppDatabase _database) {
         offset: query.offset,
         labelIds: query.labelIds,
       ))
-      .map(
-        (rows) => rows
-            .map(
-              (row) => ConversationTableMapper.toEntity(
-                row.conversation,
-                labels: row.labels,
-              ),
-            )
-            .toList(),
-      );
+      .map(_mapConversationsWithLabels);
 
   Stream<List<ConversationEntity>> withLabels({
     required String workspaceId,
     required Stream<List<ConversationEntity>> conversations,
   }) => Rx.combineLatest2(
     conversations,
-    _watchLabelAssignmentsByWorkspace(workspaceId),
-    (conversations, labelsByConversation) => [
-      for (final conversation in conversations)
-        conversation.copyWith(
-          labels: labelsByConversation[conversation.id] ?? const [],
-        ),
-    ],
+    _watchLabelAssignmentsByWorkspace(_database, workspaceId),
+    _applyLabelAssignments,
   );
 
   Future<ConversationLabelEntity> createLabel({
     required String workspaceId,
     required String name,
-  }) {
-    final normalized = _normalizeName(name);
-
-    return _database.transaction(
-      () => _createLabelInTransaction(workspaceId, normalized),
-    );
-  }
+  }) => _database.transaction(
+    () => _createLabelInTransaction(
+      _database,
+      workspaceId,
+      _normalizeName(name),
+    ),
+  );
 
   Future<ConversationLabelEntity> renameLabel({
     required String workspaceId,
     required String labelId,
     required String name,
-  }) {
-    final normalized = _normalizeName(name);
-
-    return _database.transaction(
-      () => _renameLabelInTransaction(workspaceId, labelId, normalized),
-    );
-  }
+  }) => _database.transaction(
+    () => _renameLabelInTransaction(
+      _database,
+      workspaceId,
+      labelId,
+      _normalizeName(name),
+    ),
+  );
 
   Future<void> deleteLabel({
     required String workspaceId,
     required String labelId,
   }) => _database.transaction(
-    () => _deleteLabelInTransaction(workspaceId, labelId),
+    () => _deleteLabelInTransaction(_database, workspaceId, labelId),
   );
 
   Future<void> setConversationLabels({
@@ -89,237 +88,347 @@ class ConversationLabelsRepository(final AppDatabase _database) {
     required String conversationId,
     required Set<String> labelIds,
   }) => _database.transaction(
-    () => _setConversationLabelsInTransaction((
-      workspaceId: workspaceId,
-      conversationId: conversationId,
-      labelIds: labelIds,
-    )),
+    () => _setConversationLabelsInTransaction(
+      _database,
+      (
+        workspaceId: workspaceId,
+        conversationId: conversationId,
+        labelIds: labelIds,
+      ),
+    ),
   );
 }
 
-extension on ConversationLabelsRepository {
-  SimpleSelectStatement<$ConversationLabelsTable, ConversationLabelsTable>
-  _labelsByWorkspace(String workspaceId) =>
-      _database.select(_database.conversationLabels)
-        ..where((label) => label.workspaceId.equals(workspaceId))
-        ..orderBy([(label) => OrderingTerm.asc(label.normalizedName)]);
+SimpleSelectStatement<$ConversationLabelsTable, ConversationLabelsTable>
+_labelsByWorkspace(AppDatabase database, String workspaceId) =>
+    database.select(database.conversationLabels)
+      ..where((label) => label.workspaceId.equals(workspaceId))
+      ..orderBy([(label) => OrderingTerm.asc(label.normalizedName)]);
 
-  List<ConversationLabelEntity> _mapLabels(
-    List<ConversationLabelsTable> rows,
-  ) => rows.map(_mapLabel).toList();
+List<ConversationLabelEntity> _mapLabels(
+  List<ConversationLabelsTable> rows,
+) => rows.map(_mapLabel).toList();
 
-  Future<ConversationLabelEntity> _createLabelInTransaction(
-    String workspaceId,
-    String name,
-  ) async {
-    final normalizedName = name.toLowerCase();
-    final existing = await _labelByNormalizedName(workspaceId, normalizedName);
-    if (existing != null) {
-      throw const ConversationLabelAlreadyExistsException();
-    }
-    final now = DateTime.now().toUtc();
-    final inserted = await _database
-        .into(_database.conversationLabels)
-        .insertReturning(
-          ConversationLabelsCompanion.insert(
-            createdAt: .new(now),
-            updatedAt: .new(now),
-            workspaceId: workspaceId,
-            name: name,
-            normalizedName: normalizedName,
-          ),
-        );
+List<ConversationEntity> _mapConversationsWithLabels(
+  List<ConversationWithLabels> rows,
+) => rows
+    .map(
+      (row) => ConversationTableMapper.toEntity(
+        row.conversation,
+        labels: row.labels,
+      ),
+    )
+    .toList();
 
-    return _mapLabel(inserted);
+List<ConversationEntity> _applyLabelAssignments(
+  List<ConversationEntity> conversations,
+  Map<String, List<ConversationLabelEntity>> labelsByConversation,
+) => [
+  for (final conversation in conversations)
+    conversation.copyWith(
+      labels: labelsByConversation[conversation.id] ?? const [],
+    ),
+];
+
+Future<ConversationLabelEntity> _createLabelInTransaction(
+  AppDatabase database,
+  String workspaceId,
+  String name,
+) async {
+  final normalizedName = name.toLowerCase();
+  await _ensureCreateNameAvailable(database, workspaceId, normalizedName);
+  final inserted = await _insertLabel(
+    database,
+    (
+      workspaceId: workspaceId,
+      name: name,
+      normalizedName: normalizedName,
+    ),
+  );
+
+  return _mapLabel(inserted);
+}
+
+Future<void> _ensureCreateNameAvailable(
+  AppDatabase database,
+  String workspaceId,
+  String normalizedName,
+) async {
+  final existing = await _labelByNormalizedName(
+    database,
+    workspaceId,
+    normalizedName,
+  );
+  if (existing != null) {
+    throw const ConversationLabelAlreadyExistsException();
   }
+}
 
-  Future<ConversationLabelsTable?> _labelByNormalizedName(
-    String workspaceId,
-    String normalizedName,
-  ) =>
-      (_database.select(_database.conversationLabels)..where(
-            (label) =>
-                label.workspaceId.equals(workspaceId) &
-                label.normalizedName.equals(normalizedName),
-          ))
-          .getSingleOrNull();
+Future<ConversationLabelsTable?> _labelByNormalizedName(
+  AppDatabase database,
+  String workspaceId,
+  String normalizedName,
+) => (database.select(database.conversationLabels)..where(
+  (label) =>
+      label.workspaceId.equals(workspaceId) &
+      label.normalizedName.equals(normalizedName),
+)).getSingleOrNull();
 
-  Future<ConversationLabelEntity> _renameLabelInTransaction(
-    String workspaceId,
-    String labelId,
-    String name,
-  ) async {
-    final _ = await _requireLabel(workspaceId, labelId);
-    await _ensureLabelNameAvailable(workspaceId, labelId, name.toLowerCase());
-    await _updateLabelName(labelId, name);
+Future<ConversationLabelsTable> _insertLabel(
+  AppDatabase database,
+  _ConversationLabelInsert label,
+) {
+  final now = DateTime.now().toUtc();
 
-    return _mapLabel(await _labelById(labelId));
-  }
-
-  Future<ConversationLabelsTable> _requireLabel(
-    String workspaceId,
-    String labelId,
-  ) async {
-    final label =
-        await (_database.select(_database.conversationLabels)..where(
-              (row) =>
-                  row.id.equals(labelId) & row.workspaceId.equals(workspaceId),
-            ))
-            .getSingleOrNull();
-    if (label == null) {
-      throw const ConversationWorkspaceMismatchException();
-    }
-
-    return label;
-  }
-
-  Future<ConversationLabelsTable> _labelById(String labelId) =>
-      (_database.select(
-        _database.conversationLabels,
-      )..where((row) => row.id.equals(labelId))).getSingle();
-
-  Future<void> _ensureLabelNameAvailable(
-    String workspaceId,
-    String labelId,
-    String normalizedName,
-  ) async {
-    final duplicate =
-        await (_database.select(_database.conversationLabels)..where(
-              (row) =>
-                  row.workspaceId.equals(workspaceId) &
-                  row.normalizedName.equals(normalizedName) &
-                  row.id.isNotIn({labelId}),
-            ))
-            .getSingleOrNull();
-    if (duplicate != null) {
-      throw const ConversationLabelAlreadyExistsException();
-    }
-  }
-
-  Future<void> _updateLabelName(String labelId, String name) async {
-    final updatedRows =
-        await (_database.update(
-          _database.conversationLabels,
-        )..where((row) => row.id.equals(labelId))).write(
-          ConversationLabelsCompanion(
-            updatedAt: .new(DateTime.now().toUtc()),
-            name: .new(name),
-            normalizedName: .new(name.toLowerCase()),
-          ),
-        );
-    if (updatedRows != 1) {
-      throw const ConversationWorkspaceMismatchException();
-    }
-  }
-
-  Future<void> _deleteLabelInTransaction(
-    String workspaceId,
-    String labelId,
-  ) async {
-    final _ = await _requireLabel(workspaceId, labelId);
-    // Deleting zero or more assignments is valid cleanup in this transaction.
-    // ignore: avoid_ignoring_return_values
-    final _ = await (_database.delete(
-      _database.conversationLabelAssignments,
-    )..where((row) => row.labelId.equals(labelId))).go();
-    final deletedLabels = await (_database.delete(
-      _database.conversationLabels,
-    )..where((row) => row.id.equals(labelId))).go();
-    if (deletedLabels != 1) {
-      throw const ConversationWorkspaceMismatchException();
-    }
-  }
-
-  Future<void> _setConversationLabelsInTransaction(
-    _ConversationLabelAssignment assignment,
-  ) async {
-    await _requireConversation(
-      assignment.workspaceId,
-      assignment.conversationId,
-    );
-    final labels = await _labelsForAssignment(assignment);
-    await _clearConversationLabels(assignment);
-    await _insertConversationLabels(assignment, labels);
-  }
-
-  Future<void> _requireConversation(
-    String workspaceId,
-    String conversationId,
-  ) async {
-    final conversation =
-        await (_database.select(_database.conversations)..where(
-              (row) =>
-                  row.id.equals(conversationId) &
-                  row.workspaceId.equals(workspaceId),
-            ))
-            .getSingleOrNull();
-    if (conversation == null) {
-      throw const ConversationWorkspaceMismatchException();
-    }
-  }
-
-  Future<List<ConversationLabelsTable>> _labelsForAssignment(
-    _ConversationLabelAssignment assignment,
-  ) async {
-    final labels = assignment.labelIds.isEmpty
-        ? const <ConversationLabelsTable>[]
-        : await (_database.select(_database.conversationLabels)..where(
-                (row) =>
-                    row.workspaceId.equals(assignment.workspaceId) &
-                    row.id.isIn(assignment.labelIds),
-              ))
-              .get();
-    if (labels.length != assignment.labelIds.length) {
-      throw const ConversationWorkspaceMismatchException();
-    }
-
-    return labels;
-  }
-
-  Future<void> _clearConversationLabels(
-    _ConversationLabelAssignment assignment,
-  ) async {
-    // The deleted count is intentionally irrelevant when replacing assignments.
-    // ignore: avoid_ignoring_return_values
-    final _ =
-        await (_database.delete(_database.conversationLabelAssignments)..where(
-              (row) =>
-                  row.workspaceId.equals(assignment.workspaceId) &
-                  row.conversationId.equals(assignment.conversationId),
-            ))
-            .go();
-  }
-
-  Future<void> _insertConversationLabels(
-    _ConversationLabelAssignment assignment,
-    List<ConversationLabelsTable> labels,
-  ) async {
-    for (final label in labels) {
-      final _ = await _database
-          .into(_database.conversationLabelAssignments)
-          .insert(
-            ConversationLabelAssignmentsCompanion.insert(
-              workspaceId: assignment.workspaceId,
-              conversationId: assignment.conversationId,
-              labelId: label.id,
-            ),
-          );
-    }
-  }
-
-  ConversationLabelEntity _mapLabel(ConversationLabelsTable label) =>
-      ConversationLabelEntity(
-        id: label.id,
-        workspaceId: label.workspaceId,
-        name: label.name,
-        createdAt: label.createdAt,
-        updatedAt: label.updatedAt,
+  return database
+      .into(database.conversationLabels)
+      .insertReturning(
+        ConversationLabelsCompanion.insert(
+          createdAt: .new(now),
+          updatedAt: .new(now),
+          workspaceId: label.workspaceId,
+          name: label.name,
+          normalizedName: label.normalizedName,
+        ),
       );
+}
 
-  Stream<Map<String, List<ConversationLabelEntity>>>
-  _watchLabelAssignmentsByWorkspace(String workspaceId) => _database
-      .customSelect(
-        '''
+Future<ConversationLabelEntity> _renameLabelInTransaction(
+  AppDatabase database,
+  String workspaceId,
+  String labelId,
+  String name,
+) async {
+  final _ = await _requireLabel(database, workspaceId, labelId);
+  await _ensureRenameNameAvailable(
+    database,
+    workspaceId,
+    labelId,
+    name.toLowerCase(),
+  );
+  await _updateLabelName(database, labelId, name);
+
+  return _mapLabel(await _labelById(database, labelId));
+}
+
+Future<ConversationLabelsTable> _requireLabel(
+  AppDatabase database,
+  String workspaceId,
+  String labelId,
+) async {
+  final label = await _labelForWorkspace(database, workspaceId, labelId);
+  if (label == null) {
+    throw const ConversationWorkspaceMismatchException();
+  }
+
+  return label;
+}
+
+Future<ConversationLabelsTable?> _labelForWorkspace(
+  AppDatabase database,
+  String workspaceId,
+  String labelId,
+) => (database.select(database.conversationLabels)..where(
+  (row) => row.id.equals(labelId) & row.workspaceId.equals(workspaceId),
+)).getSingleOrNull();
+
+Future<ConversationLabelsTable> _labelById(
+  AppDatabase database,
+  String labelId,
+) => (database.select(
+  database.conversationLabels,
+)..where((row) => row.id.equals(labelId))).getSingle();
+
+Future<void> _ensureRenameNameAvailable(
+  AppDatabase database,
+  String workspaceId,
+  String labelId,
+  String normalizedName,
+) async {
+  final duplicate = await _duplicateLabelName(
+    database,
+    (
+      workspaceId: workspaceId,
+      labelId: labelId,
+      normalizedName: normalizedName,
+    ),
+  );
+  if (duplicate != null) {
+    throw const ConversationLabelAlreadyExistsException();
+  }
+}
+
+Future<ConversationLabelsTable?> _duplicateLabelName(
+  AppDatabase database,
+  _ConversationLabelDuplicateName request,
+) => (database.select(database.conversationLabels)..where(
+  (row) =>
+      row.workspaceId.equals(request.workspaceId) &
+      row.normalizedName.equals(request.normalizedName) &
+      row.id.isNotIn({request.labelId}),
+)).getSingleOrNull();
+
+Future<void> _updateLabelName(
+  AppDatabase database,
+  String labelId,
+  String name,
+) async {
+  final updatedRows = await _writeLabelName(database, labelId, name);
+  if (updatedRows != 1) {
+    throw const ConversationWorkspaceMismatchException();
+  }
+}
+
+Future<int> _writeLabelName(
+  AppDatabase database,
+  String labelId,
+  String name,
+) => (database.update(
+  database.conversationLabels,
+)..where((row) => row.id.equals(labelId))).write(
+  ConversationLabelsCompanion(
+    updatedAt: .new(DateTime.now().toUtc()),
+    name: .new(name),
+    normalizedName: .new(name.toLowerCase()),
+  ),
+);
+
+Future<void> _deleteLabelInTransaction(
+  AppDatabase database,
+  String workspaceId,
+  String labelId,
+) async {
+  final _ = await _requireLabel(database, workspaceId, labelId);
+  final _ = await _deleteLabelAssignments(database, labelId);
+  final deletedLabels = await _deleteLabelRow(database, labelId);
+  if (deletedLabels != 1) {
+    throw const ConversationWorkspaceMismatchException();
+  }
+}
+
+Future<int> _deleteLabelAssignments(AppDatabase database, String labelId) =>
+    (database.delete(
+      database.conversationLabelAssignments,
+    )..where((row) => row.labelId.equals(labelId))).go();
+
+Future<int> _deleteLabelRow(AppDatabase database, String labelId) =>
+    (database.delete(
+      database.conversationLabels,
+    )..where((row) => row.id.equals(labelId))).go();
+
+Future<void> _setConversationLabelsInTransaction(
+  AppDatabase database,
+  _ConversationLabelAssignment assignment,
+) async {
+  await _requireConversation(
+    database,
+    assignment.workspaceId,
+    assignment.conversationId,
+  );
+  final labels = await _labelsForAssignment(database, assignment);
+  await _clearConversationLabels(database, assignment);
+  await _insertConversationLabels(database, assignment, labels);
+}
+
+Future<void> _requireConversation(
+  AppDatabase database,
+  String workspaceId,
+  String conversationId,
+) async {
+  final conversation = await _conversationForWorkspace(
+    database,
+    workspaceId,
+    conversationId,
+  );
+  if (conversation == null) {
+    throw const ConversationWorkspaceMismatchException();
+  }
+}
+
+Future<ConversationsTable?> _conversationForWorkspace(
+  AppDatabase database,
+  String workspaceId,
+  String conversationId,
+) => (database.select(database.conversations)..where(
+  (row) => row.id.equals(conversationId) & row.workspaceId.equals(workspaceId),
+)).getSingleOrNull();
+
+Future<List<ConversationLabelsTable>> _labelsForAssignment(
+  AppDatabase database,
+  _ConversationLabelAssignment assignment,
+) async {
+  final labels = await _loadLabelsForAssignment(database, assignment);
+  if (labels.length != assignment.labelIds.length) {
+    throw const ConversationWorkspaceMismatchException();
+  }
+
+  return labels;
+}
+
+Future<List<ConversationLabelsTable>> _loadLabelsForAssignment(
+  AppDatabase database,
+  _ConversationLabelAssignment assignment,
+) {
+  if (assignment.labelIds.isEmpty) {
+    return Future.value(const <ConversationLabelsTable>[]);
+  }
+
+  return (database.select(database.conversationLabels)..where(
+    (row) =>
+        row.workspaceId.equals(assignment.workspaceId) &
+        row.id.isIn(assignment.labelIds),
+  )).get();
+}
+
+Future<void> _clearConversationLabels(
+  AppDatabase database,
+  _ConversationLabelAssignment assignment,
+) async {
+  // The deleted count is intentionally irrelevant when replacing assignments.
+  // ignore: avoid_ignoring_return_values
+  final _ = await (database.delete(
+    database.conversationLabelAssignments,
+  )..where(
+    (row) =>
+        row.workspaceId.equals(assignment.workspaceId) &
+        row.conversationId.equals(assignment.conversationId),
+  )).go();
+}
+
+Future<void> _insertConversationLabels(
+  AppDatabase database,
+  _ConversationLabelAssignment assignment,
+  List<ConversationLabelsTable> labels,
+) async {
+  for (final label in labels) {
+    final _ = await database
+        .into(database.conversationLabelAssignments)
+        .insert(
+          ConversationLabelAssignmentsCompanion.insert(
+            workspaceId: assignment.workspaceId,
+            conversationId: assignment.conversationId,
+            labelId: label.id,
+          ),
+        );
+  }
+}
+
+ConversationLabelEntity _mapLabel(ConversationLabelsTable label) =>
+    ConversationLabelEntity(
+      id: label.id,
+      workspaceId: label.workspaceId,
+      name: label.name,
+      createdAt: label.createdAt,
+      updatedAt: label.updatedAt,
+    );
+
+Stream<Map<String, List<ConversationLabelEntity>>>
+_watchLabelAssignmentsByWorkspace(
+  AppDatabase database,
+  String workspaceId,
+) => database
+    .customSelect(
+      '''
 SELECT labels.id AS label_id,
        labels.workspace_id AS workspace_id,
        labels.name AS name,
@@ -333,38 +442,37 @@ INNER JOIN conversation_labels AS labels
 WHERE assignments.workspace_id = ?
 ORDER BY labels.normalized_name ASC
 ''',
-        variables: [Variable<String>(workspaceId)],
-        readsFrom: {
-          _database.conversationLabels,
-          _database.conversationLabelAssignments,
-        },
-      )
-      .watch()
-      .map(_mapLabelAssignments);
+      variables: [Variable<String>(workspaceId)],
+      readsFrom: {
+        database.conversationLabels,
+        database.conversationLabelAssignments,
+      },
+    )
+    .watch()
+    .map(_mapLabelAssignments);
 
-  Map<String, List<ConversationLabelEntity>> _mapLabelAssignments(
-    List<QueryRow> rows,
-  ) {
-    final result = <String, List<ConversationLabelEntity>>{};
-    for (final row in rows) {
-      final conversationId = row.read<String>('conversation_id');
-      result
-          .putIfAbsent(conversationId, () => [])
-          .add(_mapLabelAssignment(row));
-    }
-
-    return result;
+Map<String, List<ConversationLabelEntity>> _mapLabelAssignments(
+  List<QueryRow> rows,
+) {
+  final result = <String, List<ConversationLabelEntity>>{};
+  for (final row in rows) {
+    final conversationId = row.read<String>('conversation_id');
+    result
+        .putIfAbsent(conversationId, () => [])
+        .add(_mapLabelAssignment(row));
   }
 
-  ConversationLabelEntity _mapLabelAssignment(QueryRow row) =>
-      ConversationLabelEntity(
-        id: row.read<String>('label_id'),
-        workspaceId: row.read<String>('workspace_id'),
-        name: row.read<String>('name'),
-        createdAt: row.read<DateTime>('created_at'),
-        updatedAt: row.read<DateTime>('updated_at'),
-      );
+  return result;
 }
+
+ConversationLabelEntity _mapLabelAssignment(QueryRow row) =>
+    ConversationLabelEntity(
+      id: row.read<String>('label_id'),
+      workspaceId: row.read<String>('workspace_id'),
+      name: row.read<String>('name'),
+      createdAt: row.read<DateTime>('created_at'),
+      updatedAt: row.read<DateTime>('updated_at'),
+    );
 
 String _normalizeName(String name) {
   final normalized = name.trim();
