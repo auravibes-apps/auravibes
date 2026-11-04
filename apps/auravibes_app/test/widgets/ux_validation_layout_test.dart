@@ -1866,6 +1866,31 @@ void main() {
             reason: '$name route must apply the app side safe area',
           );
           if (viewport.name != 'desktop') {
+            final expectedFixture =
+                !dark &&
+                    (viewport.name == 'duo_closed' ||
+                        (viewport.name == 'duo_open' && name == 'IntroRoute'))
+                ? switch (name) {
+                    'IntroRoute' =>
+                      'Empty in-memory database; no workspace or account',
+                    'MixedAccounts' =>
+                      'Two origins with stored accounts; controlled expired '
+                          'and unknown health',
+                    'CloudWorkspaceDetailRoute' =>
+                      'Controlled cloud workspace admin detail with '
+                          'authoritative capability values; no remote mutation',
+                    _ => null,
+                  }
+                : null;
+            final testOutput =
+                expectedFixture != null &&
+                    const String.fromEnvironment('UX_CAPTURE_DIR').isEmpty
+                ? Directory.systemTemp.createTempSync('ux-capture-')
+                : null;
+            if (testOutput != null) {
+              addTearDown(() => testOutput.deleteSync(recursive: true));
+            }
+            File? sidecar;
             await captureUxWidget(
               tester,
               '$name-${viewport.name}-${dark ? 'dark' : 'light'}',
@@ -1877,7 +1902,22 @@ void main() {
               controlMeasurements: name == 'AgentsRoute' || name == 'DarkAgents'
                   ? _disabledBadgeMeasurement(tester)
                   : null,
+              fixtureName: name,
+              outputDirectory: testOutput?.path,
+              onSidecar: (file) {
+                sidecar = file;
+              },
             );
+            if (expectedFixture != null) {
+              final capturedSidecar = sidecar;
+              if (capturedSidecar == null) {
+                fail('Capture did not produce a JSON sidecar');
+              }
+              final metadata = jsonDecode(
+                capturedSidecar.readAsStringSync(),
+              ) as Map<String, Object?>;
+              expect(metadata['fixture'], expectedFixture);
+            }
           }
           for (final side in const [
             (name: 'left', padding: FakeViewPadding(left: 40)),
@@ -2056,6 +2096,7 @@ void main() {
             size: .new(variant.width, 1200),
             scale: variant.scale,
             dark: variant.dark,
+            fixtureName: name,
           );
           await fixture.close(tester);
         },

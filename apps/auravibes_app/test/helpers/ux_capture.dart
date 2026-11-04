@@ -75,7 +75,9 @@ Future<void> captureUxWidget(
   required bool dark,
   Map<String, Object>? controlMeasurements,
   String? fixture,
+  String? fixtureName,
   String? outputDirectory,
+  void Function(File)? onSidecar,
 }) async {
   const defaultOutput = String.fromEnvironment('UX_CAPTURE_DIR');
   final output = outputDirectory ?? defaultOutput;
@@ -102,12 +104,13 @@ Future<void> captureUxWidget(
     final _ = await File('$output/$artifact.png').writeAsBytes(
       (bytes ?? (throw StateError('PNG encoding failed'))).buffer.asUint8List(),
     );
-    final _ = await File('$output/$artifact.json').writeAsString(
+    final sidecar = File('$output/$artifact.json');
+    final _ = await sidecar.writeAsString(
       const JsonEncoder.withIndent('  ').convert({
         'name': name,
         'controlMeasurements': ?controlMeasurements,
         'route': route,
-        'fixture': fixture ?? _fixtureDescription(name),
+        'fixture': fixture ?? _fixtureDescription(fixtureName ?? name),
         'sourceFingerprint': fingerprint,
         'sourceProvenance': sourceProvenance.isEmpty
             ? {'kind': 'unverified', 'declaredFingerprint': fingerprint}
@@ -127,6 +130,7 @@ Future<void> captureUxWidget(
             'assistive technology are not represented.',
       }),
     );
+    onSidecar?.call(sidecar);
   });
 }
 

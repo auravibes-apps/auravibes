@@ -116,11 +116,13 @@ Future<int> runLocalPreflight(List<String> arguments) async {
       stdout.writeln('  ${_formatCommand('fvm dart', arguments)}');
     }
   }
+  stdout.writeln('Localization audit:');
   if (auditLocalization) {
     stdout.writeln(
-      'Localization audit: cd apps/auravibes_app && '
-      'fvm dart run tool/localization_audit.dart',
+      '  (cd apps/auravibes_app && fvm dart run tool/localization_audit.dart)',
     );
+  } else {
+    stdout.writeln('  No command; no app source, tool, or catalog changes.');
   }
 
   final plannedCommands = <_PlannedCommand>[];
@@ -168,12 +170,6 @@ Future<int> runLocalPreflight(List<String> arguments) async {
   }
   if (options.dryRun) return 0;
 
-  if (auditLocalization) {
-    final appDirectory = Directory(p.join(root.path, 'apps', 'auravibes_app'));
-    const arguments = ['run', 'tool/localization_audit.dart'];
-    final result = await _run(dart, arguments, appDirectory);
-    if (result != 0) return result;
-  }
   if (changedDartPaths.isNotEmpty) {
     final formatExitCode = await _run(dart, formatArguments, root);
     if (formatExitCode != 0) return formatExitCode;
@@ -184,6 +180,13 @@ Future<int> runLocalPreflight(List<String> arguments) async {
     if (analyzeExitCode == 0) analyzeExitCode = result;
   }
   if (analyzeExitCode != 0) return analyzeExitCode;
+
+  if (auditLocalization) {
+    final app = Directory(p.join(root.path, 'apps', 'auravibes_app'));
+    const arguments = ['run', 'tool/localization_audit.dart'];
+    final result = await _run(dart, arguments, app);
+    if (result != 0) return result;
+  }
 
   return await runSelectedTests(selection, rootPath: root.path);
 }
@@ -316,7 +319,7 @@ Usage: melos run preflight:changed [-- --base <ref>]
        [--dry-run] [--full-validation]
 
 The default base is origin/main. The current working tree and untracked files
-are included. --dry-run prints selected formatter, analyzer, localization,
+are included. --dry-run prints selected formatter, analyzer, localization audit,
 and test commands.
 --full-validation explicitly runs the complete Melos validate script.
 ''';
