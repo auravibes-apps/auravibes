@@ -78,10 +78,7 @@ class const _PreflightContent({
       isCloud: isCloud,
     ),
     for (final id in WorkspaceSetupPreflightCheckId.values)
-      _PreflightCheckCard(
-        workspaceId: workspaceId,
-        check: result.check(id),
-      ),
+      _PreflightCheckCard(workspaceId: workspaceId, check: result.check(id)),
   ];
 }
 

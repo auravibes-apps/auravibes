@@ -66,10 +66,7 @@ WorkspaceSetupPreflightSnapshot _preflightSnapshot(
   final modelRead = sources.modelRead;
   final providerRead = sources.providerRead;
   final mcpRead = sources.mcpRead;
-  final providers = _providerSnapshots(
-    providerRead.value,
-    scope.workspaceId,
-  );
+  final providers = _providerSnapshots(providerRead.value, scope.workspaceId);
 
   return .new(
     storageAvailable: _storageAvailable(scope, sources.cloudStorageAvailable),
