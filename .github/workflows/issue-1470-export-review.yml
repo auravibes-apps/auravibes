@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-26.04
     timeout-minutes: 30
     env:
-      BASELINE_SHA: d2a73cded26cd319bc932a1a3fefd910d78c9bbb
+      BASELINE_SHA: d1000748d9afe65527cf37eb787d9961d101fd22
     steps:
       - name: Checkout feature source for the shared capture fixture
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
