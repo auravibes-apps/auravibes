@@ -21,18 +21,18 @@ void main() {
       isArchived: true,
     );
 
-    expect(
-      await repository.getArchivedConversationIds(workspace.id),
-      {'conversation-1'},
-    );
+    expect(await repository.getArchivedConversationIds(workspace.id), {
+      'conversation-1',
+    });
 
     await repository.clearConversationArchive(
       workspaceId: workspace.id,
       conversationId: 'conversation-1',
     );
 
-    final archivedIds =
-        await repository.getArchivedConversationIds(workspace.id);
+    final archivedIds = await repository.getArchivedConversationIds(
+      workspace.id,
+    );
     expect(archivedIds, isEmpty);
   });
 }
