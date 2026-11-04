@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 
+import 'analyzed_path_groups.dart';
 import 'validate_changed_dart.dart' show dclDirectoriesForPaths;
 
 void main() {
@@ -73,6 +74,55 @@ void main() {
       expect(result.stdout, contains('Formatted 2 files'));
     },
   );
+
+  test('groups paths by their nearest analysis options', () async {
+    final root = await Directory.systemTemp.createTemp('analyzer-groups-');
+    addTearDown(() => root.delete(recursive: true));
+    for (final path in [
+      'analysis_options.yaml',
+      'packages/a/analysis_options.yaml',
+      'packages/a/lib/one.dart',
+      'packages/a/test/two.dart',
+      'packages/b/analysis_options.yaml',
+      'packages/b/lib/three.dart',
+      'tool/four.dart',
+    ]) {
+      final file = File('${root.path}/$path');
+      final _ = await file.parent.create(recursive: true);
+      final _ = await file.writeAsString('');
+    }
+
+    final groups = await analyzedPathGroups(root, [
+      'packages/a/lib/one.dart',
+      'packages/b/lib/three.dart',
+      'packages/a/test/two.dart',
+      'tool/four.dart',
+    ]);
+
+    expect(groups, [
+      ['packages/a/lib/one.dart', 'packages/a/test/two.dart'],
+      ['packages/b/lib/three.dart'],
+      ['tool/four.dart'],
+    ]);
+    final _ = await expectLater(
+      analyzedPathGroups(root, ['../outside.dart']),
+      throwsFormatException,
+    );
+  });
+
+  test('reports lints from a different options group', () async {
+    final result = await _runFixture(
+      script,
+      'void main() {}\n',
+      files: {
+        'app/analysis_options.yaml': 'linter:\n  rules:\n    - avoid_print\n',
+        'app/lib/example.dart': 'void example() {\n  print(1);\n}\n',
+      },
+    );
+
+    expect(result.stdout, contains('AVOID_PRINT'));
+    expect(result.exitCode, isNot(0), reason: '${result.stderr}');
+  });
 
   test('still analyzes generated-looking names outside exclusions', () async {
     final result = await _runFixture(
