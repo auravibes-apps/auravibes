@@ -10,11 +10,15 @@ void main() {
   testWidgets('Spanish rating and step states come from app labels', (
     tester,
   ) async {
-    String envelope(Map<String, Object?> message) =>
-        A2uiChatContract.encodeEnvelope({
-          'version': a2uiChatWireVersion,
-          ...message,
-        }, interactionMode: 'requiresUserAction');
+    String envelope(Map<String, Object?> message) {
+      final data = {'version': a2uiChatWireVersion, ...message};
+
+      return A2uiChatContract.encodeEnvelope(
+        data,
+        interactionMode: 'requiresUserAction',
+      );
+    }
+
     final payloads = [
       envelope({
         'createSurface': {

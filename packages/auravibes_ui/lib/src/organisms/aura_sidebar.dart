@@ -372,18 +372,18 @@ class const _AuraSidebarItemView({
     return Stack(
       children: [
         content,
-        Positioned.fill(
-          child: IgnorePointer(
-            child: Opacity(
-              opacity: 0,
-              alwaysIncludeSemantics: true,
-              child: item.label,
-            ),
-          ),
-        ),
+        Positioned.fill(child: _AuraSidebarHiddenLabel(label: item.label)),
       ],
     );
   }
+}
+
+class const _AuraSidebarHiddenLabel({required final Widget label})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+    child: Opacity(opacity: 0, alwaysIncludeSemantics: true, child: label),
+  );
 }
 
 class const _AuraSidebarItemContent({

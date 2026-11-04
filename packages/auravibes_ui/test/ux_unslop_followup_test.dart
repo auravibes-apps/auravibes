@@ -108,11 +108,8 @@ void main() {
     );
     final node = tester.getSemantics(find.byType(MergeSemantics).first);
     expect(node.getSemanticsData().label, 'Open details');
-    tester.binding.pipelineOwner.semanticsOwner?.performAction(
-      node.id,
-      SemanticsAction.tap,
-    );
-    await tester.pumpAndSettle();
+    node.owner?.performAction(node.id, .tap);
+    final _ = await tester.pumpAndSettle();
     expect(find.text('Details'), findsOneWidget);
     expect(childTaps, 0);
     handle.dispose();
