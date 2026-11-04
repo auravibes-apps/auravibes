@@ -673,6 +673,30 @@ void main() {
             find.byType(UncontrolledProviderScope),
           )
           .container;
+
+      Future<List<ConversationEntity>> waitForSearchResults(
+        String search,
+        bool Function(List<ConversationEntity>) isReady,
+      ) async {
+        final provider = conversationsStreamProvider((
+          workspaceId: workspace.id,
+          search: search,
+          scope: ConversationListScope.archived,
+          pagination: (limit: 21, offset: 0),
+        ));
+        for (var attempt = 0; attempt < 30; attempt++) {
+          final state = container.read(provider);
+          if (state.hasValue && isReady(state.requireValue)) {
+            await tester.pump();
+
+            return state.requireValue;
+          }
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        final state = container.read(provider);
+        fail('Timed out waiting for archived search "$search": $state');
+      }
+
       final conversationState = container.read(
         conversationsStreamProvider((
           workspaceId: workspace.id,
@@ -736,12 +760,22 @@ void main() {
       expect(find.text('Delete selected'), findsNothing);
       await tester.enterText(find.byType(EditableText), 'missing');
       await tester.pump(const Duration(milliseconds: 301));
-      await tester.pump();
+      final missingResults = await waitForSearchResults(
+        'missing',
+        (conversations) => conversations.isEmpty,
+      );
+      expect(missingResults, isEmpty);
       expect(find.text('Project research'), findsNothing);
 
       await tester.enterText(find.byType(EditableText), 'Project');
       await tester.pump(const Duration(milliseconds: 301));
-      await tester.pump();
+      final projectResults = await waitForSearchResults(
+        'Project',
+        (conversations) => conversations.any(
+          (item) => item.id == conversation.id,
+        ),
+      );
+      expect(projectResults.map((item) => item.id), contains(conversation.id));
       expect(find.text('Project research'), findsOneWidget);
       await tester.tap(find.byIcon(Icons.more_vert));
       for (var attempt = 0; attempt < 5; attempt++) {
@@ -759,33 +793,19 @@ void main() {
         ),
         isEmpty,
       );
-      for (var attempt = 0; attempt < 30; attempt++) {
-        final restoredState = container.read(archivedProvider);
-        if (restoredState.hasValue &&
-            restoredState.requireValue.every(
-              (item) => item.id != conversation.id,
-            )) {
-          break;
-        }
-        await tester.pump(const Duration(milliseconds: 100));
-      }
-      final restoredState = container.read(archivedProvider);
-      expect(
-        restoredState.hasValue,
-        isTrue,
-        reason: 'Restored stream did not produce a value: $restoredState',
+      final restoredResults = await waitForSearchResults(
+        'Project',
+        (conversations) => conversations.every(
+          (item) => item.id != conversation.id,
+        ),
       );
       expect(
-        restoredState.requireValue.map((item) => item.id),
+        restoredResults.map((item) => item.id),
         isNot(contains(conversation.id)),
-        reason:
-            'Restored stream still contains the conversation: $restoredState',
       );
-      await tester.pump();
       expect(
         find.text('Project research'),
         findsNothing,
-        reason: 'Restored stream state: $restoredState',
       );
     });
 
