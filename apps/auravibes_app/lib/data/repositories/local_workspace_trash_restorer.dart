@@ -8,11 +8,28 @@ import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.
 class LocalWorkspaceTrashRestorer(final LocalWorkspaceTrashStore store) {
   bool _movedToRoot = false;
   Future<WorkspaceTrashRestoration> restore(String id) async {
+    final members = await _batchMembers(id);
+    await _restoreBatch(members);
+
+    return await _finishRestore(id, members);
+  }
+
+  Future<List<LocalTrashNode>> _batchMembers(String id) async {
     await store.requireLocal();
     final batch = await store.batch(id);
-    final members = localTrashMembers(batch);
+
+    return LocalWorkspaceTrashReader.members(batch);
+  }
+
+  Future<void> _restoreBatch(List<LocalTrashNode> members) async {
     final nodes = await store.nodes();
     await _restoreMembers(members, nodes);
+  }
+
+  Future<WorkspaceTrashRestoration> _finishRestore(
+    String id,
+    List<LocalTrashNode> members,
+  ) async {
     final unresolved = await _validate(members);
     await store.deleteBatch(id);
 

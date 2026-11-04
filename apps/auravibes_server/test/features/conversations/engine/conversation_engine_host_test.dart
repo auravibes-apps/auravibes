@@ -290,7 +290,7 @@ void main() {
     );
   });
 
-  test('cloud skill catalog is system context without an agent', () {
+  test('unknown cloud skill catalog remains data without an agent', () {
     expect(
       buildCloudSkillContextMessages(
         skillCatalog: const [
@@ -307,7 +307,7 @@ void main() {
       ),
       [
         {
-          'role': 'system',
+          'role': 'user',
           'content':
               '<skill_catalog revision="catalog-1">'
               '{"skills":[{"slug":"research","title":"Research","description":"Find sources.","revision":"revision-1","active":true}]}'
@@ -327,6 +327,39 @@ void main() {
       '<skill_content slug="research">body</skill_content>\n'
       '</durable_skill_activations>',
     );
+  });
+
+  test('authorized agent context keeps imported skill content as data', () {
+    final messages = buildCloudSkillContextMessages(
+      agentContent: 'USER_AGENT_CONFIGURATION_SENTINEL',
+      agentContentProvenance: AgentContextProvenance.userAgentConfiguration,
+      skillCatalog: const [
+        SkillCatalogEntry(
+          slug: 'imported',
+          title: 'Imported',
+          description: 'IMPORTED_CATALOG_SENTINEL',
+          revision: 'revision-1',
+          active: false,
+          provenance: AgentContextProvenance.importedSkill,
+        ),
+      ],
+      agentSkills: const [
+        AgentSkill(
+          title: 'Imported',
+          content: 'IMPORTED_BODY_SENTINEL',
+          provenance: AgentContextProvenance.importedSkill,
+        ),
+      ],
+    );
+
+    expect(messages.map((message) => message['role']), [
+      'system',
+      'user',
+      'user',
+    ]);
+    expect(messages[0]['content'], 'USER_AGENT_CONFIGURATION_SENTINEL');
+    expect(messages[1]['content'], contains('IMPORTED_CATALOG_SENTINEL'));
+    expect(messages[2]['content'], contains('IMPORTED_BODY_SENTINEL'));
   });
 
   test('cloud Skill context includes Connector references only', () {

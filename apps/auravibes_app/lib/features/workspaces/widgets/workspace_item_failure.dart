@@ -10,8 +10,11 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const WorkspaceItemFailure({required final Object error, super.key})
-    extends StatelessWidget {
+class const WorkspaceItemFailure({
+  required final Object error,
+  final String? fallbackKey,
+  super.key,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (error) {
     final WorkspaceAssetException failure => TextLocale(
@@ -29,6 +32,17 @@ class const WorkspaceItemFailure({required final Object error, super.key})
     final WorkspaceTableException failure => TextLocale(
       failure.localizationKey,
     ),
-    _ => TextLocale(CloudAppErrors.localizationKey(error)),
+    _ => TextLocale(_fallbackKey(error, fallbackKey)),
   };
+}
+
+String _fallbackKey(Object error, String? fallbackKey) {
+  final key = CloudAppErrors.localizationKey(error);
+  if (fallbackKey != null &&
+      key == LocaleKeys.cloud_errors_unavailable &&
+      error is! CloudAppException) {
+    return fallbackKey;
+  }
+
+  return key;
 }

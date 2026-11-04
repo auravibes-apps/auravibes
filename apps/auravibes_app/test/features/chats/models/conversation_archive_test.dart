@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
+import 'package:auravibes_app/features/chats/agent_adapters/agent_transcript_context_codec.dart';
 import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:collection/collection.dart';
@@ -415,6 +416,110 @@ void main() {
       expect(firstContext.toolSelections.single.toolName, 'calculator');
       expect(contextUpdate['toolOrder'], ['mcp_search']);
       expect(contextUpdate['approvalStates'], {'mcp_search': 'granted'});
+    });
+
+    test('accepts nested transcript-context v1 and v2', () {
+      final createdAt = DateTime.utc(2025, 1, 2);
+
+      ConversationArchive archiveWithUpdate(String updateJson) =>
+          ConversationArchive(
+            title: 'Context version',
+            createdAt: createdAt,
+            updatedAt: createdAt,
+            messages: const [],
+            agentContext: .new(
+              isComplete: true,
+              entriesInput: [
+                ConversationArchiveAgentContextEntry(
+                  afterMessageIndex: null,
+                  createdAt: createdAt,
+                  updateJson: updateJson,
+                ),
+              ],
+              toolSelectionsInput: const [],
+            ),
+          );
+
+      final updates = [
+        jsonEncode({
+          'version': 1,
+          'toolsAdded': <Object?>[],
+          'toolsRemoved': <String>[],
+          'contextMessages': [
+            {
+              'role': 'system',
+              'content': 'Legacy context',
+              'provenance': {
+                'origin': 'applicationPrompt',
+                'trust': 'appControlled',
+              },
+            },
+          ],
+        }),
+        jsonEncode({
+          'version': 2,
+          'toolsAdded': <Object?>[],
+          'toolsRemoved': <String>[],
+          'contextMessages': [
+            {
+              'role': 'system',
+              'content': 'V2 context',
+              'kind': 'archive-context',
+              'provenance': {
+                'origin': 'applicationPrompt',
+                'trust': 'appControlled',
+              },
+            },
+          ],
+        }),
+      ];
+
+      for (var index = 0; index < updates.length; index++) {
+        final update = updates[index];
+        final encoded = ConversationArchiveCodec.encode(
+          archiveWithUpdate(update),
+        );
+        final decoded = ConversationArchiveCodec.decode(encoded);
+        final decodedAgentContext =
+            decoded.agentContext ?? fail('Missing agent context');
+        final envelope = jsonDecode(encoded) as Map<String, dynamic>;
+        final agentContext = envelope['agentContext'] as Map<String, dynamic>;
+        final restoredUpdate = jsonDecode(
+          decodedAgentContext.entries.single.updateJson,
+        ) as Map<String, dynamic>;
+        final decodedContext = AgentTranscriptContextCodec.decodeUpdate(
+          decodedAgentContext.entries.single.updateJson,
+        );
+
+        expect(envelope['version'], ConversationArchiveCodec.version);
+        expect(
+          agentContext['version'],
+          ConversationArchiveCodec.agentContextVersion,
+        );
+        expect(
+          restoredUpdate['version'],
+          (jsonDecode(update) as Map)['version'],
+        );
+        expect(
+          decodedContext.contextMessages?.single.provenance,
+          index == 0
+              ? AgentContextProvenance.unknown
+              : AgentContextProvenance.applicationPrompt,
+        );
+      }
+
+      expect(
+        () => ConversationArchiveCodec.encode(
+          archiveWithUpdate(
+            jsonEncode({
+              'version': 3,
+              'toolsAdded': <Object?>[],
+              'toolsRemoved': <String>[],
+            }),
+          ),
+        ),
+        throwsA(isA<UnsupportedArchiveVersionException>()),
+      );
     });
 
     test('decodes legacy single archives inside the multi-import API', () {

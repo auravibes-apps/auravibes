@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:auravibes_engine/src/context_provenance.dart';
 import 'package:auravibes_engine/src/prompt_messages.dart';
 import 'package:auravibes_engine/src/skills/skill_command.dart';
 import 'package:crypto/crypto.dart';
@@ -17,6 +18,7 @@ class const SkillCatalogEntry({
   required final String description,
   required final String revision,
   required final bool active,
+  final AgentContextProvenance provenance = AgentContextProvenance.unknown,
 }) {
   Map<String, Object?> toJson() => {
     'slug': slug,
@@ -155,6 +157,7 @@ class const AgentSkill({
   required final String content,
   final String? identity,
   final SkillManifest? manifest,
+  final AgentContextProvenance provenance = AgentContextProvenance.unknown,
 });
 
 class const BuildSkillContextMessages() {
@@ -165,6 +168,7 @@ class const BuildSkillContextMessages() {
           role: .user,
           content: _skillXml(skill),
           metadata: const {'kind': skillContextMetadataKind},
+          provenance: skill.provenance,
         ),
     ];
   }
@@ -175,6 +179,8 @@ class const BuildSkillContextMessages() {
     Iterable<SkillCatalogEntry> skillCatalog = const [],
     String? catalogRevision,
     String? agentContent,
+    AgentContextProvenance agentContentProvenance =
+        AgentContextProvenance.unknown,
   }) {
     final seen = <String>{};
     final catalog = skillCatalog.toList(growable: false);
@@ -187,36 +193,56 @@ class const BuildSkillContextMessages() {
         .toList(growable: false);
     return [
       if (agentContent != null)
-        AgentChatMessage(role: .system, content: agentContent),
-      if (catalog.isNotEmpty)
         AgentChatMessage(
-          role: .system,
-          content: _skillCatalogXml(catalog, catalogRevision),
+          role: agentContentProvenance.mayUseSystemRole ? .system : .user,
+          content: agentContent,
+          provenance: agentContentProvenance,
+        ),
+      ..._catalogMessages(catalog, catalogRevision),
+      ...call(skills),
+    ];
+  }
+
+  List<AgentChatMessage> _catalogMessages(
+    List<SkillCatalogEntry> entries,
+    String? catalogRevision,
+  ) {
+    final groups = <AgentContextProvenance, List<SkillCatalogEntry>>{};
+    for (final entry in entries) {
+      groups.putIfAbsent(entry.provenance, () => []).add(entry);
+    }
+    final revision = catalogRevision ?? buildSkillCatalogRevision(entries);
+    final selectedRevisions = {
+      for (final entry in entries)
+        if (entry.active) entry.slug: entry.revision,
+    };
+
+    return [
+      for (final group in groups.entries)
+        AgentChatMessage(
+          role: group.key.mayUseSystemRole ? .system : .user,
+          content: _skillCatalogXml(group.value, revision),
           metadata: {
             'kind': skillCatalogMetadataKind,
-            skillCatalogRevisionMetadataKey:
-                catalogRevision ?? buildSkillCatalogRevision(catalog),
-            skillCatalogSelectedRevisionsMetadataKey: {
-              for (final entry in catalog)
-                if (entry.active) entry.slug: entry.revision,
-            },
+            skillCatalogRevisionMetadataKey: revision,
+            skillCatalogSelectedRevisionsMetadataKey: selectedRevisions,
           },
+          provenance: group.key,
         ),
-      ...call(skills),
     ];
   }
 
   String _skillCatalogXml(
     Iterable<SkillCatalogEntry> entries,
-    String? catalogRevision,
+    String catalogRevision,
   ) {
     final sorted = entries.toList()
       ..sort((left, right) => left.slug.compareTo(right.slug));
-    final revision = catalogRevision ?? buildSkillCatalogRevision(sorted);
     final catalog = jsonEncode({
       'skills': sorted.map((entry) => entry.toJson()).toList(),
     });
-    return '<skill_catalog revision="${_xmlAttributeEscape.convert(revision)}">'
+    return '<skill_catalog revision="'
+        '${_xmlAttributeEscape.convert(catalogRevision)}">'
         '${_xmlTextEscape.convert(catalog)}'
         '</skill_catalog>';
   }

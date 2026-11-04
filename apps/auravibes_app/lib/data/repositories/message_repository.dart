@@ -10,8 +10,8 @@ import 'package:auravibes_app/data/repositories/local_workspace_asset_mutation.d
 import 'package:auravibes_app/domain/entities/conversation_message_search_result.dart';
 import 'package:auravibes_app/domain/entities/message_bookmark_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/entities/sanitize_workspace_tool_result.dart';
 import 'package:auravibes_app/domain/entities/tool_call_approval_batch_item.dart';
+import 'package:auravibes_app/domain/entities/workspace_tool_result_sanitizer.dart';
 import 'package:auravibes_app/domain/enums/message_type.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/utils/json_codec.dart';
@@ -2060,7 +2060,7 @@ String? _sanitizeMetadataJson(String? raw) {
   if (raw == null) return null;
   final metadata = MessageMetadataEntity.fromJsonString(raw);
   if (metadata == null) return raw;
-  final sanitized = sanitizeWorkspaceToolMetadata(metadata);
+  final sanitized = WorkspaceToolResultSanitizer.sanitizeMetadata(metadata);
   if (const ListEquality<MessageToolCallEntity>().equals(
     sanitized.toolCalls,
     metadata.toolCalls,
@@ -2072,7 +2072,9 @@ String? _sanitizeMetadataJson(String? raw) {
 }
 
 MessageMetadataEntity? _sanitizeMetadata(MessageMetadataEntity? metadata) =>
-    metadata == null ? null : sanitizeWorkspaceToolMetadata(metadata);
+    metadata == null
+    ? null
+    : WorkspaceToolResultSanitizer.sanitizeMetadata(metadata);
 
 DateTime? _messageUpdatedAt(MessageToCreate message) =>
     message.updatedAt ?? message.createdAt;
