@@ -1218,10 +1218,10 @@ class const _NavButton({
   Widget build(BuildContext context) => AuraIconButton(
     icon: icon,
     onPressed: onPressed,
-    tooltip: _tooltip(context),
     disabled: onPressed == null,
     size: .small,
     identifier: selectorId,
+    tooltip: _tooltip(context),
   );
 
   String _tooltip(BuildContext context) {

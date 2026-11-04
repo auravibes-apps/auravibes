@@ -91,6 +91,33 @@ void main() {
     handle.dispose();
   });
 
+  testWidgets('modal trigger merges a button child name', (tester) async {
+    final handle = tester.ensureSemantics();
+    var childTaps = 0;
+    await tester.pumpWidget(
+      _TestApp(
+        child: AuraModal(
+          entryPointChild: AuraButton(
+            onPressed: () => childTaps++,
+            child: const Text('Open details'),
+          ),
+          contentChild: const Text('Details'),
+          barrierLabel: 'Dismiss',
+        ),
+      ),
+    );
+    final node = tester.getSemantics(find.byType(MergeSemantics).first);
+    expect(node.getSemanticsData().label, 'Open details');
+    tester.binding.pipelineOwner.semanticsOwner?.performAction(
+      node.id,
+      SemanticsAction.tap,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Details'), findsOneWidget);
+    expect(childTaps, 0);
+    handle.dispose();
+  });
+
   testWidgets('collapsed sidebar preserves names without overrides', (
     tester,
   ) async {

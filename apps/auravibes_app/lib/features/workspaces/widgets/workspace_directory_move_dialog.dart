@@ -71,10 +71,10 @@ class const _Navigation(final _MoveBody state) extends StatelessWidget {
         if (path.isNotEmpty)
           AuraIconButton(
             icon: Icons.arrow_back,
-            tooltip: MaterialLocalizations.of(context).backButtonTooltip,
             onPressed: _back,
             disabled: state.action.pending,
             identifier: 'directory_destination_back',
+            tooltip: MaterialLocalizations.of(context).backButtonTooltip,
           ),
         Expanded(child: _DestinationName(path)),
       ],

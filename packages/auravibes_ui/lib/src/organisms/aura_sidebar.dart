@@ -319,24 +319,10 @@ class _AuraSidebarItemButton extends StatelessWidget {
          child: AuraPressable(
            child: ExcludeSemantics(
              excluding: item.semanticLabel != null,
-             child: Stack(
-               children: [
-                 _AuraSidebarItemContent(
-                   icon: item.icon,
-                   label: isExpanded ? item.label : const SizedBox.shrink(),
-                   selected: selected,
-                 ),
-                 if (!isExpanded && item.semanticLabel == null)
-                   Positioned.fill(
-                     child: IgnorePointer(
-                       child: Opacity(
-                         opacity: 0,
-                         alwaysIncludeSemantics: true,
-                         child: item.label,
-                       ),
-                     ),
-                   ),
-               ],
+             child: _AuraSidebarItemView(
+               item: item,
+               isExpanded: isExpanded,
+               selected: selected,
              ),
            ),
            color: colors.primary,
@@ -366,6 +352,37 @@ class _AuraSidebarItemButton extends StatelessWidget {
     }
 
     return AuraTooltip(message: semanticLabel, child: _child);
+  }
+}
+
+class const _AuraSidebarItemView({
+  required final AuraNavigationData item,
+  required final bool isExpanded,
+  required final bool selected,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final content = _AuraSidebarItemContent(
+      icon: item.icon,
+      label: isExpanded ? item.label : const SizedBox.shrink(),
+      selected: selected,
+    );
+    if (isExpanded || item.semanticLabel != null) return content;
+
+    return Stack(
+      children: [
+        content,
+        Positioned.fill(
+          child: IgnorePointer(
+            child: Opacity(
+              opacity: 0,
+              alwaysIncludeSemantics: true,
+              child: item.label,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 

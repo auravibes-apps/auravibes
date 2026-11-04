@@ -512,8 +512,8 @@ class const _ServiceConnectionCreateAppBar({
       title: _ConnectionCreateTitle(form: form),
       leading: AuraIconButton(
         icon: Icons.arrow_back,
-        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
         onPressed: () => unawaited(form.routeExitGuard.pop(context)),
+        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
       ),
     );
   }

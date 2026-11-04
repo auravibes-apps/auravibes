@@ -545,8 +545,8 @@ class const _ChatConversationBackButton() extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraIconButton(
     icon: Icons.arrow_back,
-    tooltip: MaterialLocalizations.of(context).backButtonTooltip,
     onPressed: () => Navigator.of(context).pop(),
+    tooltip: MaterialLocalizations.of(context).backButtonTooltip,
   );
 }
 

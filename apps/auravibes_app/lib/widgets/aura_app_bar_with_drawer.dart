@@ -93,8 +93,8 @@ class const _AutomaticNavigationBackButton() extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraIconButton(
     icon: Icons.arrow_back,
-    tooltip: MaterialLocalizations.of(context).backButtonTooltip,
     onPressed: () => Navigator.of(context).pop(),
     identifier: 'app_navigation_back',
+    tooltip: MaterialLocalizations.of(context).backButtonTooltip,
   );
 }

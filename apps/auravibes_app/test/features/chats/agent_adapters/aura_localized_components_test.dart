@@ -77,7 +77,6 @@ void main() {
       '3 de 5',
     );
     final steps = tester.widget<AuraStepper>(find.byType(AuraStepper)).steps;
-    expect(steps[0].semanticLabel, 'Actual');
-    expect(steps[1].semanticLabel, 'Completado');
+    expect(steps.map((step) => step.semanticLabel), ['Actual', 'Completado']);
   });
 }

@@ -109,8 +109,8 @@ class const _ResolvedDetail({
             : Text(state.value!.detail.workspace.name),
         leading: AuraIconButton(
           icon: Icons.arrow_back,
-          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
           onPressed: () => Navigator.of(context).maybePop(),
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
         ),
       ),
       child: switch (state) {

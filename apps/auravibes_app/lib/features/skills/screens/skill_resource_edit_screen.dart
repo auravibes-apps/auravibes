@@ -255,8 +255,8 @@ class const _SkillResourceAppBar({
     title: TextLocale(titleKey),
     leading: AuraIconButton(
       icon: Icons.arrow_back,
-      tooltip: MaterialLocalizations.of(context).backButtonTooltip,
       onPressed: () => state._exitGuard.pop(context),
+      tooltip: MaterialLocalizations.of(context).backButtonTooltip,
     ),
   );
 }

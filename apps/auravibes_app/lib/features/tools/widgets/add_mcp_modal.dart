@@ -346,8 +346,8 @@ class _McpModalHeaderChildren {
         ),
         AuraIconButton(
           icon: Icons.close,
-          tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
           onPressed: () => Navigator.of(context).maybePop(),
+          tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
         ),
       ];
 

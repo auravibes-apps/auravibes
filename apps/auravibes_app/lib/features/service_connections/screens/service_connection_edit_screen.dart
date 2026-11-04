@@ -845,8 +845,8 @@ class const _ConnectionEditAppBar({
       title: Text(_connectionEditTitle(state)),
       leading: AuraIconButton(
         icon: Icons.arrow_back,
-        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
         onPressed: () => owner._handleBack(context),
+        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
       ),
     );
   }

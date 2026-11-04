@@ -152,8 +152,8 @@ class const _ToolCallResponseCloseIcon() extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraIconButton(
     icon: Icons.close,
-    tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
     onPressed: () => Navigator.of(context).pop(),
+    tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
   );
 }
 

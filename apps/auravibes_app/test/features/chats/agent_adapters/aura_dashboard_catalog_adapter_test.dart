@@ -12,11 +12,6 @@ void main() {
       AuraThemeScope(
         theme: .light,
         child: MaterialApp(
-          locale: const Locale('es'),
-          supportedLocales: const [Locale('es')],
-          localizationsDelegates: GlobalMaterialLocalizations.delegates,
-          builder: (_, child) =>
-              AuraLegacyMaterialBridge(child: child ?? const SizedBox.shrink()),
           home: SingleChildScrollView(
             child: ChatA2uiSurfaceHost.historical(
               messageId: 'chart-locale',
@@ -27,6 +22,11 @@ void main() {
               ),
             ),
           ),
+          builder: (_, child) =>
+              AuraLegacyMaterialBridge(child: child ?? const SizedBox.shrink()),
+          locale: const Locale('es'),
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          supportedLocales: const [Locale('es')],
         ),
       ),
     );

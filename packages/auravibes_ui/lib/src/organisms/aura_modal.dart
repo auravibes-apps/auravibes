@@ -159,13 +159,15 @@ class _AuraModalDialogData({
 class const _AuraModalDisabledEntry({required final AuraModal widget})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Semantics(
-    child: IgnorePointer(child: widget.entryPointChild),
-    container: true,
-    excludeSemantics: widget.triggerSemanticLabel != null,
-    enabled: false,
-    button: true,
-    label: widget.triggerSemanticLabel,
+  Widget build(BuildContext context) => MergeSemantics(
+    child: Semantics(
+      child: IgnorePointer(child: widget.entryPointChild),
+      container: true,
+      excludeSemantics: widget.triggerSemanticLabel != null,
+      enabled: false,
+      button: true,
+      label: widget.triggerSemanticLabel,
+    ),
   );
 }
 
@@ -237,17 +239,19 @@ class const _AuraModalEntrySemantics({
   Widget build(BuildContext context) {
     final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
 
-    return Semantics(
-      child: ConstrainedBox(
-        constraints: .new(minWidth: targetSize, minHeight: targetSize),
-        child: widget.entryPointChild,
+    return MergeSemantics(
+      child: Semantics(
+        child: ConstrainedBox(
+          constraints: .new(minWidth: targetSize, minHeight: targetSize),
+          child: widget.entryPointChild,
+        ),
+        container: true,
+        excludeSemantics: widget.triggerSemanticLabel != null,
+        enabled: true,
+        button: true,
+        label: widget.triggerSemanticLabel,
+        onTap: onShow,
       ),
-      container: true,
-      excludeSemantics: widget.triggerSemanticLabel != null,
-      enabled: true,
-      button: true,
-      label: widget.triggerSemanticLabel,
-      onTap: onShow,
     );
   }
 }

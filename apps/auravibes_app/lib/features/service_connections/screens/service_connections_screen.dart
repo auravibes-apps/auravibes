@@ -1923,8 +1923,8 @@ class const _ConnectionMenuButton({
   Widget build(BuildContext context) => AuraIconButton(
     icon: Icons.more_vert,
     onPressed: controller.toggle,
-    tooltip: MaterialLocalizations.of(context).showMenuTooltip,
     identifier: 'service_connection_menu_${connection.id}',
+    tooltip: MaterialLocalizations.of(context).showMenuTooltip,
   );
 }
 

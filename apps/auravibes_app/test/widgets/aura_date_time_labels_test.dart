@@ -33,7 +33,10 @@ void main() {
     final _ = await tester.pumpAndSettle();
     expect(find.text('Seleccionar fecha y hora'), findsOneWidget);
     expect(find.text('Cancelar'), findsOneWidget);
-    expect(find.bySemanticsLabel('D\u00eda 3'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('D${String.fromCharCode(0xed)}a 3'),
+      findsOneWidget,
+    );
     handle.dispose();
   });
 }
