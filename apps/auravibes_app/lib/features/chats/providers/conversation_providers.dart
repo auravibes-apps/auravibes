@@ -135,6 +135,7 @@ Stream<List<ConversationEntity>> _localConversationsWithLabels(
   _ConversationSessionRequest request,
 ) {
   final options = request.options;
+
   return request.ref
       .watch(conversationLabelsRepositoryProvider)
       .watchConversationsByWorkspace((
