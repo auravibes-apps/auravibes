@@ -687,7 +687,7 @@ class _IntroCapture {
 
   Future<void> capture(String stage) async {
     await pump();
-    await _capture(
+    await captureUxWidget(
       tester,
       'Intro-$stage-$locale-${mobile ? 'mobile' : 'desktop'}',
       container
@@ -700,6 +700,9 @@ class _IntroCapture {
       size: size,
       scale: scale,
       dark: false,
+      fixture:
+          'Initially empty in-memory database with mocked intro auth, '
+          'cloud, and model providers; stage $stage',
     );
   }
 

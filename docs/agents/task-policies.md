@@ -29,7 +29,7 @@ Read only section that matches current work. Root `AGENTS.md` lists each trigger
 - In handoffs, list each command, result, duration, and relevant failure. Report decision blockers at once. Before you retry or replace delegated work, inspect its current state and preserved output.
 - If focused checks pass and a wider gate reports unrelated diagnostics, report those diagnostics. Do not run a wider local suite.
 - A timeout or background job is incomplete. Wait for its exit status. Do not duplicate or retry it.
-- Separate known baseline failures from failures caused by current changes.
+- Classify a finding as baseline only after comparing the same check and scope on a clean base. Otherwise report its cause as unverified.
 - Before you interpret slow CI scope selection, verify CI head, base, and `run_attempt`.
 - Use `git diff --check` for documentation or patch-heavy changes, generated-code reviews, or final whitespace checks when relevant. Do not run it in each edit loop.
 

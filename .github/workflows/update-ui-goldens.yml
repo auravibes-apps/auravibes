@@ -100,8 +100,11 @@ jobs:
             --dart-define="UX_CAPTURE_DIR=$RUNNER_TEMP/scoped-verification-evidence/before" \
             --dart-define="UX_SOURCE_FINGERPRINT=$VERIFICATION_BASELINE_SHA"
           git diff --exit-code
-          sha256sum test/widgets/ux_validation_layout_test.dart test/helpers/ux_validation_fixture.dart \
-            > "$RUNNER_TEMP/scoped-verification-evidence/before-fixtures.sha256"
+          fixtures=(test/widgets/ux_validation_layout_test.dart test/helpers/ux_validation_fixture.dart)
+          for helper in test/helpers/ux_capture.dart test/helpers/intro_journey_capture.dart; do
+            if [ -f "$helper" ]; then fixtures+=("$helper"); fi
+          done
+          sha256sum "${fixtures[@]}" > "$RUNNER_TEMP/scoped-verification-evidence/before-fixtures.sha256"
 
       - name: Generate and format feature artifacts
         id: prepare
@@ -181,8 +184,11 @@ jobs:
             --dart-define="UX_CAPTURE_DIR=$RUNNER_TEMP/scoped-verification-evidence/after" \
             --dart-define="UX_SOURCE_FINGERPRINT=$VERIFICATION_FEATURE_SHA"
           git diff --exit-code
-          sha256sum test/widgets/ux_validation_layout_test.dart test/helpers/ux_validation_fixture.dart \
-            > "$RUNNER_TEMP/scoped-verification-evidence/after-fixtures.sha256"
+          fixtures=(test/widgets/ux_validation_layout_test.dart test/helpers/ux_validation_fixture.dart)
+          for helper in test/helpers/ux_capture.dart test/helpers/intro_journey_capture.dart; do
+            if [ -f "$helper" ]; then fixtures+=("$helper"); fi
+          done
+          sha256sum "${fixtures[@]}" > "$RUNNER_TEMP/scoped-verification-evidence/after-fixtures.sha256"
 
       - name: Write image evidence manifest
         if: ${{ always() }}

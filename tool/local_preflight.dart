@@ -53,6 +53,11 @@ Future<int> runLocalPreflight(List<String> arguments) async {
   }
   final sortedChanges = changes.toList()
     ..sort((left, right) => _changeLabel(left).compareTo(_changeLabel(right)));
+  final auditLocalization = sortedChanges.any(
+    (change) =>
+        _isLocalizationAuditInput(change.oldPath) ||
+        _isLocalizationAuditInput(change.newPath),
+  );
   final changedDartPaths = _existingChangedDartPaths(root, sortedChanges);
   final analyzeGroups = await analyzedPathGroups(root, changedDartPaths);
   final analyzePaths = analyzeGroups.expand((group) => group).toList();
@@ -111,6 +116,12 @@ Future<int> runLocalPreflight(List<String> arguments) async {
       stdout.writeln('  ${_formatCommand('fvm dart', arguments)}');
     }
   }
+  if (auditLocalization) {
+    stdout.writeln(
+      'Localization audit: cd apps/auravibes_app && '
+      'fvm dart run tool/localization_audit.dart',
+    );
+  }
 
   final plannedCommands = <_PlannedCommand>[];
   final diagnostics = <String>[];
@@ -157,6 +168,12 @@ Future<int> runLocalPreflight(List<String> arguments) async {
   }
   if (options.dryRun) return 0;
 
+  if (auditLocalization) {
+    final appDirectory = Directory(p.join(root.path, 'apps', 'auravibes_app'));
+    const arguments = ['run', 'tool/localization_audit.dart'];
+    final result = await _run(dart, arguments, appDirectory);
+    if (result != 0) return result;
+  }
   if (changedDartPaths.isNotEmpty) {
     final formatExitCode = await _run(dart, formatArguments, root);
     if (formatExitCode != 0) return formatExitCode;
@@ -169,6 +186,15 @@ Future<int> runLocalPreflight(List<String> arguments) async {
   if (analyzeExitCode != 0) return analyzeExitCode;
 
   return await runSelectedTests(selection, rootPath: root.path);
+}
+
+bool _isLocalizationAuditInput(String? path) {
+  if (path == null) return false;
+  const app = 'apps/auravibes_app/';
+
+  return (path.startsWith('${app}lib/') && path.endsWith('.dart')) ||
+      (path.startsWith('${app}assets/i18n/') && path.endsWith('.json')) ||
+      (path.startsWith('${app}tool/localization_') && path.endsWith('.dart'));
 }
 
 Future<List<ChangedFile>> _workingTreeChanges(
@@ -290,7 +316,8 @@ Usage: melos run preflight:changed [-- --base <ref>]
        [--dry-run] [--full-validation]
 
 The default base is origin/main. The current working tree and untracked files
-are included. --dry-run prints selected formatter, analyzer, and test commands.
+are included. --dry-run prints selected formatter, analyzer, localization,
+and test commands.
 --full-validation explicitly runs the complete Melos validate script.
 ''';
 

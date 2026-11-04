@@ -107,6 +107,7 @@ def repository_context(directory):
         "root": root,
         "head": head,
         "fingerprint": digest.hexdigest(),
+        "dirty": bool(status),
     }
 
 
@@ -131,6 +132,7 @@ def _git_common_directory(root):
 
 
 def default_store_path(root):
+    root = Path(root).resolve()
     common_directory = _git_common_directory(root)
     if os.name == "nt":
         state_root = Path(
