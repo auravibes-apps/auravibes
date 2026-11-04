@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
 import 'package:auravibes_app/data/repositories/skill_resources_repository.dart';
 import 'package:auravibes_app/data/repositories/skills_repository.dart';
@@ -119,7 +120,6 @@ void main() {
   _registerIntroJourneyCaptures();
   tearDownAll(UxValidationFixture.closeDatabase);
   setUpAll(loadUxCaptureFonts);
-
   testWidgets('capture sidecars record and clear view insets', (tester) async {
     final directory = await tester.runAsync(
       () => Directory.systemTemp.createTemp('ux-capture-metrics-'),
@@ -665,6 +665,90 @@ void main() {
       await fixture.close(tester);
     });
   }
+
+  testWidgets('conversation archive export review capture', (tester) async {
+    const size = Size(466, 678);
+    const baselineCapture = bool.fromEnvironment(
+      'EXPORT_REVIEW_CAPTURE_BASELINE',
+    );
+    final fixture = await UxValidationFixture.create();
+    final createdAt = DateTime.utc(2026, 11, 3);
+    final conversation = await ConversationRepository(fixture.database)
+        .createConversation(
+          .new(
+            workspaceId: fixture.workspaceId,
+            title: 'Export review sample',
+            createdAt: createdAt,
+            updatedAt: createdAt,
+          ),
+        );
+    final message = await fixture.database.messageDao.insertMessage(
+      .insert(
+        conversationId: conversation.id,
+        content: 'See the attached research notes.',
+        messageType: .text,
+        isUser: true,
+        status: .sent,
+        createdAt: .new(createdAt),
+      ),
+    );
+    final _ = await fixture.database
+        .into(fixture.database.messageAttachments)
+        .insert(
+          MessageAttachmentsCompanion.insert(
+            messageId: message.id,
+            localPath: '/private/export-review/research-notes.txt',
+            fileName: '/private/export-review/research-notes.txt',
+            displayName: const .new('research-notes.txt'),
+            mimeType: 'text/plain',
+            modality: 'file',
+            sizeBytes: 2048,
+          ),
+        );
+
+    final router = await fixture.pump(
+      tester,
+      ChatsRoute(workspaceId: fixture.workspaceId).location,
+      size: size,
+      useProductionRouter: true,
+      realSessions: true,
+    );
+    await fixture.settle(tester);
+    expect(find.byType(ChatsListScreen), findsOneWidget);
+    final conversationTitle = find.text('Export review sample').first;
+    final card = find.ancestor(
+      of: conversationTitle,
+      matching: find.byType(AuraCard),
+    );
+    await tester.tap(
+      find.descendant(of: card, matching: find.byTooltip('More options')),
+    );
+    await fixture.settle(tester);
+    await tester.tap(find.text('Export backup'));
+    await fixture.settle(tester);
+
+    expect(find.text('Review your conversation backup'), findsOneWidget);
+    if (!baselineCapture) {
+      await tester.ensureVisible(find.text('Size: 2,048 bytes'));
+      await fixture.settle(tester);
+      expect(find.text('research-notes.txt'), findsOneWidget);
+      expect(find.text('Type: text/plain'), findsOneWidget);
+      expect(find.text('Size: 2,048 bytes'), findsOneWidget);
+    }
+    expect(tester.takeException(), isNull);
+    await _capture(
+      tester,
+      'conversation-archive-export-review',
+      router.routeInformationProvider.value.uri.toString(),
+      locale: 'en',
+      size: size,
+      scale: 1,
+      dark: false,
+    );
+    await tester.tap(find.text('Cancel'));
+    await fixture.settle(tester);
+    await fixture.close(tester);
+  });
 
   testWidgets('captures chat composer desktop file drop states', (
     tester,

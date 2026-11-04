@@ -141,9 +141,35 @@ String _fixtureDescription(String name) => switch (name) {
   'cloud-workspace-populated-membership' =>
     'Controlled cloud workspace admin detail with one member and one '
         'pending invitation; no remote mutation',
+  final capture when capture.startsWith('CloudWorkspaceDetailRoute-') =>
+    'Controlled cloud workspace admin detail with one member and one '
+        'pending invitation; no remote mutation',
   'queued-prompts-before' || 'queued-prompts-after' =>
     'Persisted local conversation with three fixed text-only queued drafts; '
         'no model requests, attachments, network access, or remote mutations',
+  'agent-editor-skills-failure' || 'skills-list-failure' =>
+    'Persisted local workspace with a controlled skills load failure',
+  'agent-editor-tools-failure' =>
+    'Persisted local workspace with a controlled tools load failure',
+  'connected-editor-tools-failure' || 'connected-editor-connections-failure' =>
+    'Connected data editor in a test dialog with a controlled load failure',
+  'skill-detail-failure' || 'skill-resource-parent-failure' =>
+    'Persisted local workspace with a controlled skill detail load failure',
+  'skill-resource-failure' =>
+    'Persisted local workspace with a controlled skill resource load failure',
+  'skill-resources-list-failure' =>
+    'Persisted local workspace with a controlled skill resources list failure',
+  'agent-editor-skills-failure-es-large-dark' =>
+    'Persisted local workspace with a controlled skills load failure',
+  'conversation-archive-export-review' =>
+    'Local conversation with one synthetic text attachment whose path points '
+        'to no file; review dialog opened before attachment byte reads or save',
+  'conversation-archive-before' =>
+    'Persisted local workspace and seeded parent conversation; conversation '
+        'options open before device-local archive, with no remote access',
+  'conversation-archive-after' =>
+    'Same persisted local workspace after archiving the conversation; '
+        'archived conversation list visible, with no remote access',
   'workspace-erasure-confirmation-disclosure' =>
     'In-memory local workspace plus synthetic owner account and deleted cloud '
         'workspace state; confirmation open with no remote access or deletion',
