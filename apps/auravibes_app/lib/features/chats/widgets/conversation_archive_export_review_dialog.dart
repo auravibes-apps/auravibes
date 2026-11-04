@@ -172,10 +172,10 @@ class const _ConversationArchiveExportReviewSummary({
         const TextLocale(_reviewDescriptionKey),
         const AuraSizedBox(height: .md),
         _ArchiveExportReviewIncludedText(
-          attachmentCount: preview.attachmentCount,
+          attachmentCount: preview.countAttachments(),
           includeAttachments: includeAttachments,
         ),
-        if (preview.attachmentCount > 0)
+        if (preview.countAttachments() > 0)
           _ArchiveExportReviewAttachmentSummary(
             preview: preview,
             includeAttachments: includeAttachments,
@@ -215,7 +215,7 @@ class const _ArchiveExportReviewAttachmentSummary({
       const AuraSizedBox(height: .sm),
       TextLocale(
         _reviewAttachmentSectionKey,
-        args: [preview.attachmentCount.toString()],
+        args: [preview.countAttachments().toString()],
       ),
     ],
   );
@@ -279,10 +279,7 @@ class const _ArchiveExportConversationRowContent({
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: .start,
     children: [
-      Text(
-        conversation.title,
-        style: Theme.of(context).textTheme.titleSmall,
-      ),
+      Text(conversation.title, style: Theme.of(context).textTheme.titleSmall),
       _ArchiveExportConversationAttachments(conversation: conversation),
     ],
   );
@@ -321,7 +318,7 @@ class const _ArchiveExportReviewDisclosure({
       mainAxisSize: .min,
       crossAxisAlignment: .start,
       children: [
-        TextLocale(switch (preview.attachmentCount) {
+        TextLocale(switch (preview.countAttachments()) {
           0 => _reviewPrivacyNoAttachmentsKey,
           _ when includeAttachments => _reviewPrivacyWithAttachmentsKey,
           _ => _reviewPrivacyWithoutAttachmentsKey,

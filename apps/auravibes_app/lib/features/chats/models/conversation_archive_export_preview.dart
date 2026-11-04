@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 
 @immutable
 // Copying caller lists prevents later mutation of the review snapshot.
-// This immutable review snapshot intentionally exposes data through getters.
+// The immutable review snapshot exposes copied conversations and their count.
 // ignore: weight-of-class
 // ignore: prefer_const_constructors_in_immutables
 final class ConversationArchiveExportPreview({
@@ -11,10 +11,13 @@ final class ConversationArchiveExportPreview({
   final List<ConversationArchivePreviewConversation> conversations =
       .unmodifiable(sourceConversations);
 
-  int get attachmentCount => conversations.fold(
-    0,
-    (total, conversation) => total + conversation.attachments.length,
-  );
+  int countAttachments() {
+    var total = 0;
+    for (final conversation in conversations) {
+      total += conversation.attachments.length;
+    }
+    return total;
+  }
 }
 
 @immutable

@@ -109,7 +109,7 @@ void main() {
       conversationId: conversation.id,
     );
 
-    expect(preview.attachmentCount, 1);
+    expect(preview.countAttachments(), 1);
     expect(preview.conversations.single.title, 'Research notes');
     final attachment = preview.conversations.single.attachments.single;
     expect(attachment.fileName, 'report.pdf');

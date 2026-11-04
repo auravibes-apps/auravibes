@@ -1304,10 +1304,7 @@ ConversationArchiveMessage _archiveMessageTranscript(
   );
 }
 
-String _archiveMessageContent(
-  MessageEntity message,
-  bool includeAttachments,
-) {
+String _archiveMessageContent(MessageEntity message, bool includeAttachments) {
   // Keep attachment-only message position valid in v2 without attachment data.
   if (includeAttachments ||
       message.content.trim().isNotEmpty ||
