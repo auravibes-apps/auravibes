@@ -159,7 +159,7 @@ final class ConversationsStreamProvider
 }
 
 String _$conversationsStreamHash() =>
-    r'c84d898542b011d8e4603055a84683d510465e56';
+    r'7311f79a21afb1b43c4c86ee5465db4d42b4647a';
 
 final class ConversationsStreamFamily extends $Family
     with

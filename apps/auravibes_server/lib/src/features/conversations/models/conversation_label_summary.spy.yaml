@@ -1,0 +1,7 @@
+class: ConversationLabelSummary
+fields:
+  id: String
+  workspaceId: int
+  name: String
+  createdAt: DateTime
+  updatedAt: DateTime

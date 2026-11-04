@@ -5,14 +5,23 @@ import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
+typedef _CloudConversationPageRequest = ({
+  CloudWorkspaceStateGateway gateway,
+  CloudWorkspaceRef cloud,
+  String? cursor,
+  String search,
+  Set<String> labelIds,
+});
+
 class FilteredCloudConversationPageReader(
   final CloudWorkspaceStateGateway _gateway,
   final CloudWorkspaceRef _cloud,
   final ConversationListScope _scope,
   final ({int? limit, int offset}) _pagination,
   final String _search,
-  final Set<String> _archivedIds,
-) {
+  final Set<String> _archivedIds, {
+  final Set<String> labelIds = const {},
+}) {
   final _conversations = <ConversationSummary>[];
   final _seenCursors = <String>{};
   int _skipped = 0;
@@ -33,9 +42,7 @@ class FilteredCloudConversationPageReader(
 
     while (true) {
       final page = await _readCloudConversationPageAtCursor(
-        gateway,
-        cloud,
-        cursor,
+        _allPagesRequest(gateway, cloud, cursor),
       );
       conversations.addAll(page.conversations);
 
@@ -55,10 +62,7 @@ class FilteredCloudConversationPageReader(
 
   Future<bool> _readNextPage() async {
     final page = await _readCloudConversationPageAtCursor(
-      _gateway,
-      _cloud,
-      _cursor,
-      search: _search,
+      _filteredPageRequest(),
     );
     final reachedLimit = _appendMatchingConversations(page.conversations);
     final nextCursor = _nextCloudConversationCursor(
@@ -90,36 +94,59 @@ class FilteredCloudConversationPageReader(
     return false;
   }
 
-  static Future<ConversationPage> _readCloudConversationPageAtCursor(
-    CloudWorkspaceStateGateway gateway,
-    CloudWorkspaceRef cloud,
-    String? cursor, {
-    String search = '',
-  }) => gateway.client.conversation.listPage(
+  _CloudConversationPageRequest _filteredPageRequest() => (
+    gateway: _gateway,
+    cloud: _cloud,
+    cursor: _cursor,
+    search: _search,
+    labelIds: labelIds,
+  );
+}
+
+Future<ConversationPage> _readCloudConversationPageAtCursor(
+  _CloudConversationPageRequest request,
+) {
+  return request.gateway.client.conversation.listPage(
     .new(
-      workspaceId: cloud.cloudWorkspaceId,
+      workspaceId: request.cloud.cloudWorkspaceId,
       limit: 100,
-      cursor: cursor,
-      search: search.isEmpty ? null : search,
+      cursor: request.cursor,
+      search: request.search.isEmpty ? null : request.search,
+      labelIds: request.labelIds.toList(),
     ),
   );
+}
 
-  static String? _nextCloudConversationCursor(
-    String? nextCursor,
-    Set<String> seenCursors,
-  ) {
-    if (nextCursor == null) return null;
-    if (nextCursor.isEmpty || !seenCursors.add(nextCursor)) {
-      _throwInvalidCloudConversationCursor();
-    }
+_CloudConversationPageRequest _allPagesRequest(
+  CloudWorkspaceStateGateway gateway,
+  CloudWorkspaceRef cloud,
+  String? cursor,
+) {
+  return (
+    gateway: gateway,
+    cloud: cloud,
+    cursor: cursor,
+    search: '',
+    labelIds: const {},
+  );
+}
 
-    return nextCursor;
+String? _nextCloudConversationCursor(
+  String? nextCursor,
+  Set<String> seenCursors,
+) {
+  if (nextCursor == null) return null;
+  if (nextCursor.isEmpty || !seenCursors.add(nextCursor)) {
+    _throwInvalidCloudConversationCursor();
   }
 
-  static Never _throwInvalidCloudConversationCursor() =>
-      throw const CloudAppException(
-        localizationKey: LocaleKeys.cloud_errors_malformed_resource,
-        context: .conversation,
-        code: 'invalidCursor',
-      );
+  return nextCursor;
+}
+
+Never _throwInvalidCloudConversationCursor() {
+  throw const CloudAppException(
+    localizationKey: LocaleKeys.cloud_errors_malformed_resource,
+    context: .conversation,
+    code: 'invalidCursor',
+  );
 }

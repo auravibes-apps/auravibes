@@ -17,3 +17,4 @@ fields:
   activeCompactionCheckpointId: String?
   createdAt: DateTime
   updatedAt: DateTime
+  labels: List<ConversationLabelSummary>?

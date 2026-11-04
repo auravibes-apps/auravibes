@@ -675,6 +675,60 @@ abstract class LocaleKeys {
       'chats_screens.chats_list.bulk_pin_failures';
   static const chats_screens_chats_list_bulk_delete_failures =
       'chats_screens.chats_list.bulk_delete_failures';
+  static const chats_screens_conversation_labels_filter =
+      'chats_screens.conversation_labels.filter';
+  static const chats_screens_conversation_labels_filter_semantics =
+      'chats_screens.conversation_labels.filter_semantics';
+  static const chats_screens_conversation_labels_filter_count_semantics =
+      'chats_screens.conversation_labels.filter_count_semantics';
+  static const chats_screens_conversation_labels_selected_count_semantics =
+      'chats_screens.conversation_labels.selected_count_semantics';
+  static const chats_screens_conversation_labels_filter_title =
+      'chats_screens.conversation_labels.filter_title';
+  static const chats_screens_conversation_labels_filter_help =
+      'chats_screens.conversation_labels.filter_help';
+  static const chats_screens_conversation_labels_apply =
+      'chats_screens.conversation_labels.apply';
+  static const chats_screens_conversation_labels_manage =
+      'chats_screens.conversation_labels.manage';
+  static const chats_screens_conversation_labels_manage_title =
+      'chats_screens.conversation_labels.manage_title';
+  static const chats_screens_conversation_labels_assignment_title =
+      'chats_screens.conversation_labels.assignment_title';
+  static const chats_screens_conversation_labels_new_label =
+      'chats_screens.conversation_labels.new_label';
+  static const chats_screens_conversation_labels_label_name =
+      'chats_screens.conversation_labels.label_name';
+  static const chats_screens_conversation_labels_create =
+      'chats_screens.conversation_labels.create';
+  static const chats_screens_conversation_labels_rename =
+      'chats_screens.conversation_labels.rename';
+  static const chats_screens_conversation_labels_delete =
+      'chats_screens.conversation_labels.delete';
+  static const chats_screens_conversation_labels_delete_title =
+      'chats_screens.conversation_labels.delete_title';
+  static const chats_screens_conversation_labels_delete_message =
+      'chats_screens.conversation_labels.delete_message';
+  static const chats_screens_conversation_labels_save_assignments =
+      'chats_screens.conversation_labels.save_assignments';
+  static const chats_screens_conversation_labels_done =
+      'chats_screens.conversation_labels.done';
+  static const chats_screens_conversation_labels_clear_filter =
+      'chats_screens.conversation_labels.clear_filter';
+  static const chats_screens_conversation_labels_empty =
+      'chats_screens.conversation_labels.empty';
+  static const chats_screens_conversation_labels_no_matches =
+      'chats_screens.conversation_labels.no_matches';
+  static const chats_screens_conversation_labels_duplicate_name =
+      'chats_screens.conversation_labels.duplicate_name';
+  static const chats_screens_conversation_labels_invalid_name =
+      'chats_screens.conversation_labels.invalid_name';
+  static const chats_screens_conversation_labels_load_error =
+      'chats_screens.conversation_labels.load_error';
+  static const chats_screens_conversation_labels_save_error =
+      'chats_screens.conversation_labels.save_error';
+  static const chats_screens_conversation_labels_label_semantics =
+      'chats_screens.conversation_labels.label_semantics';
   static const chats_screens_archived_conversations_title =
       'chats_screens.archived_conversations.title';
   static const chats_screens_archived_conversations_empty =
@@ -1071,6 +1125,12 @@ abstract class LocaleKeys {
       'chats_screens.chat_conversation.queued_messages_count';
   static const chats_screens_chat_conversation_queued_clear_all =
       'chats_screens.chat_conversation.queued_clear_all';
+  static const chats_screens_chat_conversation_queued_item_actions =
+      'chats_screens.chat_conversation.queued_item_actions';
+  static const chats_screens_chat_conversation_queued_move_up =
+      'chats_screens.chat_conversation.queued_move_up';
+  static const chats_screens_chat_conversation_queued_move_down =
+      'chats_screens.chat_conversation.queued_move_down';
   static const chats_screens_chat_conversation_delete_title =
       'chats_screens.chat_conversation.delete_title';
   static const chats_screens_chat_conversation_delete_confirm =

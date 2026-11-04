@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 
+import 'package:auravibes_app/domain/entities/conversation_label_entity.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -30,6 +31,9 @@ abstract class const ConversationEntity._() with _$ConversationEntity {
 
     /// Timestamp when the conversation was last updated.
     required DateTime updatedAt,
+
+    /// Workspace labels currently assigned to the conversation.
+    @Default([]) List<ConversationLabelEntity> labels,
 
     /// Server revision for optimistic cloud mutations.
     @Default(0) int revision,

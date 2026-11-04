@@ -2,6 +2,7 @@
 import 'dart:async';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/conversation_labels_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/workspace_tools_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
@@ -17,6 +18,8 @@ import 'package:auravibes_app/features/chats/providers/agent_cancellation_runtim
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_archive_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_draft_cleanup_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_labels_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_labels_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/delete_conversation_provider.dart';
@@ -53,20 +56,35 @@ void main() {
     required List<Object> overrides,
     Widget? content,
     Locale startLocale = const Locale('en'),
-  }) => TestableApp(
-    child: Theme(
-      data: .new(),
-      child: Portal(
-        child: Material(
-          child: content ?? ChatListWidget(workspaceId: workspaceId),
+  }) {
+    final labelDatabase = AppDatabase(
+      connection: DatabaseConnection(NativeDatabase.memory()),
+    );
+    addTearDown(labelDatabase.close);
+
+    return TestableApp(
+      child: Theme(
+        data: .new(),
+        child: Portal(
+          child: Material(
+            child: content ?? ChatListWidget(workspaceId: workspaceId),
+          ),
         ),
       ),
-    ),
-    overrides: [...overrides],
-    workspaceId: workspaceId,
-    workspaceSession: .new(LocalWorkspaceRef(localWorkspaceId: workspaceId)),
-    startLocale: startLocale,
-  );
+      overrides: [
+        ...overrides,
+        conversationLabelsRepositoryProvider.overrideWithValue(
+          _PassthroughConversationLabelsRepository(labelDatabase),
+        ),
+        conversationLabelsStreamProvider.overrideWith(
+          (ref, workspaceId) => Stream.value(const []),
+        ),
+      ],
+      workspaceId: workspaceId,
+      workspaceSession: .new(LocalWorkspaceRef(localWorkspaceId: workspaceId)),
+      startLocale: startLocale,
+    );
+  }
 
   ConversationEntity _createConversation({
     String id = 'conv-1',
@@ -796,6 +814,7 @@ void main() {
         conversationsStreamProvider((
           workspaceId: workspace.id,
           search: '',
+          labelIds: const {},
           scope: ConversationListScope.active,
           pagination: (limit: 21, offset: 0),
         )),
@@ -910,6 +929,7 @@ void main() {
         conversationsStreamProvider((
           workspaceId: workspace.id,
           search: '',
+          labelIds: const {},
           scope: ConversationListScope.active,
           pagination: (limit: 21, offset: 0),
         )),
@@ -2110,6 +2130,15 @@ void main() {
       expect(find.text('Show more'), findsNothing);
     });
   });
+}
+
+class _PassthroughConversationLabelsRepository(super._database)
+    extends ConversationLabelsRepository {
+  @override
+  Stream<List<ConversationEntity>> withLabels({
+    required String workspaceId,
+    required Stream<List<ConversationEntity>> conversations,
+  }) => conversations;
 }
 
 class _RecordingArchiveFileService extends ConversationArchiveFileService {

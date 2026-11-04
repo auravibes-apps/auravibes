@@ -258,6 +258,7 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
   Future<List<Conversation>> listConversations(
     Session session, {
     required int workspaceId,
+    Set<int>? conversationIds,
     String? search,
     bool? beforeIsPinned,
     DateTime? beforeUpdatedAt,
@@ -274,6 +275,9 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
         var where =
             table.workspaceId.equals(workspaceId) &
             table.deletedAt.equals(null);
+        if (conversationIds != null) {
+          where &= table.id.inSet(conversationIds);
+        }
         if (normalizedSearch != null && normalizedSearch.isNotEmpty) {
           where &= table.title.ilike('%${_escapeLike(normalizedSearch)}%');
         }
@@ -304,6 +308,32 @@ class ConversationRepository({ObjectReferenceService? objectReferenceService}) {
       offset: offset,
       transaction: transaction,
     );
+  }
+
+  Future<Set<int>> conversationIdsForLabels(
+    Session session, {
+    required int workspaceId,
+    required Set<String> labelStableIds,
+    Transaction? transaction,
+  }) async {
+    if (labelStableIds.isEmpty) return const {};
+    final labels = await ConversationLabel.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.stableId.inSet(labelStableIds),
+      transaction: transaction,
+    );
+    if (labels.isEmpty) return const {};
+    final assignments = await ConversationLabelAssignment.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.labelId.inSet(labels.map((label) => label.id!).toSet()),
+      transaction: transaction,
+    );
+
+    return assignments.map((assignment) => assignment.conversationId).toSet();
   }
 
   Future<int> countPinnedConversations(

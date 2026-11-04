@@ -1,0 +1,13 @@
+class: ConversationLabelAssignment
+table: conversation_label_assignment
+fields:
+  workspaceId: int, relation(parent=cloud_workspace, onDelete=Cascade)
+  labelId: int, relation(parent=conversation_label, onDelete=Cascade)
+  conversationId: int, relation(parent=conversation, onDelete=Cascade)
+  createdAt: DateTime
+indexes:
+  conversation_label_assignment_identity_idx:
+    fields: workspaceId, conversationId, labelId
+    unique: true
+  conversation_label_assignment_filter_idx:
+    fields: workspaceId, labelId, conversationId

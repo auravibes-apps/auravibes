@@ -1,9 +1,12 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/conversation_label_entity.dart';
+import 'package:auravibes_app/domain/entities/conversation_list_query_options.dart';
 import 'package:auravibes_app/features/chats/models/conversation_list_scope.dart';
 import 'package:auravibes_app/features/chats/models/conversation_stream_request.dart';
 import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_archive_state_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_labels_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/filtered_cloud_conversation_page_reader.dart';
 import 'package:auravibes_app/features/chats/services/cloud_chat_gateway.dart';
@@ -21,10 +24,17 @@ typedef _ConversationPagination = ({int? limit, int offset});
 
 typedef _ConversationListOptions = ({
   String search,
+  Set<String> labelIds,
   _ConversationPagination pagination,
   bool fetchAllPages,
   ConversationListScope scope,
   Set<String> archivedIds,
+});
+typedef _ConversationSessionRequest = ({
+  Ref ref,
+  WorkspaceSession session,
+  String workspaceId,
+  _ConversationListOptions options,
 });
 typedef _ForkedConversationRequest = ({
   String workspaceId,
@@ -77,6 +87,8 @@ Stream<ConversationEntity?> _localConversationById(
     .watchConversationById(conversationId);
 
 @riverpod
+// Riverpod generates the family key from these explicit request fields.
+// ignore: number-of-parameters
 Stream<List<ConversationEntity>> conversationsStream(
   Ref ref,
   ConversationStreamRequest request,
@@ -88,18 +100,32 @@ Stream<List<ConversationEntity>> conversationsStream(
   if (streamContext == null) return;
 
   yield* _conversationsForSession(
-    ref,
-    streamContext.session,
-    request.workspaceId,
-    (
-      search: request.search,
-      pagination: request.pagination,
-      fetchAllPages: false,
-      scope: request.scope,
-      archivedIds: streamContext.archivedIds,
-    ),
+    _conversationSessionRequest(ref, request, streamContext),
   );
 }
+
+_ConversationSessionRequest _conversationSessionRequest(
+  Ref ref,
+  ConversationStreamRequest request,
+  ({WorkspaceSession session, Set<String> archivedIds}) context,
+) => (
+  ref: ref,
+  session: context.session,
+  workspaceId: request.workspaceId,
+  options: _conversationListOptions(request, context.archivedIds),
+);
+
+_ConversationListOptions _conversationListOptions(
+  ConversationStreamRequest request,
+  Set<String> archivedIds,
+) => (
+  search: request.search,
+  labelIds: request.labelIds,
+  pagination: request.pagination,
+  fetchAllPages: false,
+  scope: request.scope,
+  archivedIds: archivedIds,
+);
 
 Future<({WorkspaceSession session, Set<String> archivedIds})?>
 _conversationStreamContext(Ref ref, String workspaceId) async {
@@ -124,27 +150,78 @@ Future<Set<String>> _archiveIdsForSession(
     : await ref.watch(conversationArchiveStateIdsProvider(workspaceId).future);
 
 Stream<List<ConversationEntity>> _conversationsForSession(
-  Ref ref,
-  WorkspaceSession session,
-  String workspaceId,
-  _ConversationListOptions options,
+  _ConversationSessionRequest request,
 ) {
-  if (session.cloud case final cloud?) {
-    return _cloudConversations(ref, cloud, options);
+  if (request.session.cloud case final cloud?) {
+    return _cloudConversations(request.ref, cloud, request.options);
   }
 
-  return ref
-      .watch(conversationRepositoryProvider)
+  return _localConversationsForSession(request);
+}
+
+Stream<List<ConversationEntity>> _localConversationsForSession(
+  _ConversationSessionRequest request,
+) {
+  if (request.options.labelIds.isNotEmpty) {
+    return _localConversationsWithLabels(request);
+  }
+
+  return _localConversationsWithAllLabels(request);
+}
+
+Stream<List<ConversationEntity>> _localConversationsWithLabels(
+  _ConversationSessionRequest request,
+) {
+  final options = request.options;
+  final query = (
+    workspaceId: request.workspaceId,
+    search: options.search,
+    limit: options.pagination.limit,
+    offset: options.pagination.offset,
+    labelIds: options.labelIds,
+  );
+
+  return request.ref
+      .watch(conversationLabelsRepositoryProvider)
       .watchConversationsByWorkspace(
-        workspaceId,
-        options: (
-          search: options.search,
-          archivedOnly: options.scope == ConversationListScope.archived,
-          limit: options.pagination.limit,
-          offset: options.pagination.offset,
-        ),
+        query,
+        archivedOnly: options.scope == ConversationListScope.archived,
       );
 }
+
+Stream<List<ConversationEntity>> _localConversationsWithAllLabels(
+  _ConversationSessionRequest request,
+) {
+  final labelsRepository = request.ref.watch(
+    conversationLabelsRepositoryProvider,
+  );
+  final conversations = _watchLocalConversations(request);
+
+  return labelsRepository.withLabels(
+    workspaceId: request.workspaceId,
+    conversations: conversations,
+  );
+}
+
+Stream<List<ConversationEntity>> _watchLocalConversations(
+  _ConversationSessionRequest request,
+) {
+  final repository = request.ref.watch(conversationRepositoryProvider);
+
+  return repository.watchConversationsByWorkspace(
+    request.workspaceId,
+    options: _localConversationQueryOptions(request.options),
+  );
+}
+
+ConversationListQueryOptions _localConversationQueryOptions(
+  _ConversationListOptions options,
+) => (
+  search: options.search,
+  archivedOnly: options.scope == ConversationListScope.archived,
+  limit: options.pagination.limit,
+  offset: options.pagination.offset,
+);
 
 @Riverpod(retry: _childConversationRetry)
 Stream<List<ConversationEntity>> childConversationsStream(
@@ -257,6 +334,7 @@ Stream<List<ConversationEntity>> _cloudChildConversations(
 ) =>
     _cloudConversations(ref, cloud, (
       search: '',
+      labelIds: const {},
       pagination: _defaultConversationPagination,
       fetchAllPages: true,
       scope: .active,
@@ -289,6 +367,7 @@ Stream<List<ConversationEntity>> _cloudConversations(
   CloudWorkspaceRef cloud, [
   _ConversationListOptions options = (
     search: '',
+    labelIds: const {},
     pagination: _defaultConversationPagination,
     fetchAllPages: false,
     scope: .active,
@@ -322,16 +401,11 @@ _readCloudConversations(
   CloudWorkspaceRef cloud,
   _ConversationListOptions options,
 ) async {
-  final conversations = options.fetchAllPages
-      ? await FilteredCloudConversationPageReader.readAllPages(gateway, cloud)
-      : await FilteredCloudConversationPageReader(
-          gateway,
-          cloud,
-          options.scope,
-          options.pagination,
-          options.search,
-          options.archivedIds,
-        ).read();
+  final conversations = await _readCloudConversationSummaries(
+    gateway,
+    cloud,
+    options,
+  );
   final currentSequence = await _cloudConversationSequence(gateway);
 
   return _cloudConversationSnapshot(
@@ -340,6 +414,42 @@ _readCloudConversations(
     currentSequence,
   );
 }
+
+Future<List<ConversationSummary>> _readCloudConversationSummaries(
+  CloudWorkspaceStateGateway gateway,
+  CloudWorkspaceRef cloud,
+  _ConversationListOptions options,
+) => options.fetchAllPages
+    ? FilteredCloudConversationPageReader.readAllPages(gateway, cloud)
+    : _readFilteredCloudConversationSummaries(gateway, cloud, options);
+
+Future<List<ConversationSummary>> _readFilteredCloudConversationSummaries(
+  CloudWorkspaceStateGateway gateway,
+  CloudWorkspaceRef cloud,
+  _ConversationListOptions options,
+) {
+  final pageReader = _filteredCloudConversationPageReader(
+    gateway,
+    cloud,
+    options,
+  );
+
+  return pageReader.read();
+}
+
+FilteredCloudConversationPageReader _filteredCloudConversationPageReader(
+  CloudWorkspaceStateGateway gateway,
+  CloudWorkspaceRef cloud,
+  _ConversationListOptions options,
+) => FilteredCloudConversationPageReader(
+  gateway,
+  cloud,
+  options.scope,
+  options.pagination,
+  options.search,
+  options.archivedIds,
+  labelIds: options.labelIds,
+);
 
 ({List<ConversationEntity> value, int currentSequence})
 _cloudConversationSnapshot(
@@ -394,18 +504,43 @@ ConversationEntity _cloudConversationCore(
 ConversationEntity _cloudConversationFields(
   ConversationSummary conversation,
   String localWorkspaceId,
-) {
-  return ConversationEntity(
-    id: conversation.id,
-    title: conversation.title,
-    workspaceId: localWorkspaceId,
-    isPinned: conversation.isPinned,
-    createdAt: conversation.createdAt,
-    updatedAt: conversation.updatedAt,
-    revision: conversation.revision,
-    modelId: conversation.modelId,
-    agentId: conversation.agentId,
-    reasoningConfiguration: .decode(conversation.reasoningConfigJson),
-    parentConversationId: conversation.parentConversationId,
-  );
-}
+) => _cloudConversationBase(conversation, localWorkspaceId).copyWith(
+  labels: _cloudConversationLabels(conversation.labels, localWorkspaceId),
+  revision: conversation.revision,
+  modelId: conversation.modelId,
+  agentId: conversation.agentId,
+  reasoningConfiguration: .decode(conversation.reasoningConfigJson),
+  parentConversationId: conversation.parentConversationId,
+);
+
+ConversationEntity _cloudConversationBase(
+  ConversationSummary conversation,
+  String localWorkspaceId,
+) => ConversationEntity(
+  id: conversation.id,
+  title: conversation.title,
+  workspaceId: localWorkspaceId,
+  isPinned: conversation.isPinned,
+  createdAt: conversation.createdAt,
+  updatedAt: conversation.updatedAt,
+);
+
+List<ConversationLabelEntity> _cloudConversationLabels(
+  List<ConversationLabelSummary>? labels,
+  String localWorkspaceId,
+) =>
+    labels
+        ?.map((label) => _cloudConversationLabel(label, localWorkspaceId))
+        .toList() ??
+    const [];
+
+ConversationLabelEntity _cloudConversationLabel(
+  ConversationLabelSummary label,
+  String localWorkspaceId,
+) => ConversationLabelEntity(
+  id: label.id,
+  workspaceId: localWorkspaceId,
+  name: label.name,
+  createdAt: label.createdAt,
+  updatedAt: label.updatedAt,
+);

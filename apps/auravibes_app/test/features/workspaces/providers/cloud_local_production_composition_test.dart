@@ -214,6 +214,7 @@ void main() {
     final conversations = conversationsStreamProvider((
       workspaceId: 'mirror-a',
       search: '',
+      labelIds: const {},
       scope: .active,
       pagination: (limit: null, offset: 0),
     ));
@@ -326,6 +327,7 @@ void main() {
     final conversations = conversationsStreamProvider((
       workspaceId: 'local-a',
       search: '',
+      labelIds: const {},
       scope: .active,
       pagination: (limit: null, offset: 0),
     ));

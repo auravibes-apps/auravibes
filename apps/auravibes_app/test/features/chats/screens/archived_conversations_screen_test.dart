@@ -35,6 +35,7 @@ void main() {
               (
                 workspaceId: cloudWorkspace.localWorkspaceId,
                 search: '',
+                labelIds: const {},
                 scope: .archived,
                 pagination: (limit: 21, offset: 0),
               ),
@@ -114,6 +115,7 @@ void main() {
               (
                 workspaceId: cloudWorkspace.localWorkspaceId,
                 search: '',
+                labelIds: const {},
                 scope: .archived,
                 pagination: (limit: 21, offset: 0),
               ),

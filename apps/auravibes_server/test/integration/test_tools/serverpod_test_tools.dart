@@ -43,6 +43,8 @@ import 'package:auravibes_server/src/generated/features/conversations/models/con
     as _ihn1s8rq;
 import 'package:auravibes_server/src/generated/features/conversations/models/continue_turn_request.dart'
     as _io8jb8cg;
+import 'package:auravibes_server/src/generated/features/conversations/models/conversation_label_summary.dart'
+    as _il2ljt3z;
 import 'package:auravibes_server/src/generated/features/conversations/models/conversation_message_search_result.dart'
     as _inj3grkb;
 import 'package:auravibes_server/src/generated/features/conversations/models/conversation_message_view.dart'
@@ -59,8 +61,12 @@ import 'package:auravibes_server/src/generated/features/conversations/models/con
     as _iwkyl6n9;
 import 'package:auravibes_server/src/generated/features/conversations/models/conversation_summary.dart'
     as _itibmfuz;
+import 'package:auravibes_server/src/generated/features/conversations/models/create_conversation_label_request.dart'
+    as _i3ikkixl;
 import 'package:auravibes_server/src/generated/features/conversations/models/create_conversation_request.dart'
     as _ish3zj9o;
+import 'package:auravibes_server/src/generated/features/conversations/models/delete_conversation_label_request.dart'
+    as _ibro4unb;
 import 'package:auravibes_server/src/generated/features/conversations/models/delete_conversation_request.dart'
     as _il5llor3;
 import 'package:auravibes_server/src/generated/features/conversations/models/detach_tool_call_request.dart'
@@ -75,6 +81,8 @@ import 'package:auravibes_server/src/generated/features/conversations/models/get
     as _iaqawmcu;
 import 'package:auravibes_server/src/generated/features/conversations/models/list_background_works_request.dart'
     as _i2euehas;
+import 'package:auravibes_server/src/generated/features/conversations/models/list_conversation_labels_request.dart'
+    as _isec1dw6;
 import 'package:auravibes_server/src/generated/features/conversations/models/list_conversation_messages_request.dart'
     as _i5dqxctc;
 import 'package:auravibes_server/src/generated/features/conversations/models/list_conversations_request.dart'
@@ -87,12 +95,16 @@ import 'package:auravibes_server/src/generated/features/conversations/models/que
     as _i605rjdx;
 import 'package:auravibes_server/src/generated/features/conversations/models/remove_pending_conversation_message_request.dart'
     as _irlsykk6;
+import 'package:auravibes_server/src/generated/features/conversations/models/rename_conversation_label_request.dart'
+    as _ieqg2cyv;
 import 'package:auravibes_server/src/generated/features/conversations/models/reorder_pending_conversation_message_request.dart'
     as _ilmuzuyl;
 import 'package:auravibes_server/src/generated/features/conversations/models/restore_conversation_checkpoint_request.dart'
     as _if7qtxue;
 import 'package:auravibes_server/src/generated/features/conversations/models/search_conversation_messages_request.dart'
     as _i71vvsjf;
+import 'package:auravibes_server/src/generated/features/conversations/models/set_conversation_labels_request.dart'
+    as _ipzswz3u;
 import 'package:auravibes_server/src/generated/features/conversations/models/start_turn_request.dart'
     as _ijasfsbp;
 import 'package:auravibes_server/src/generated/features/conversations/models/start_turn_result.dart'
@@ -1185,6 +1197,151 @@ class _ConversationEndpoint {
           _localUniqueSession,
           _localCallContext.arguments,
         ) as _ida.Future<_ids1u12p.ConversationPage>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<List<_il2ljt3z.ConversationLabelSummary>> listLabels(
+    _ist.TestSessionBuilder sessionBuilder,
+    _isec1dw6.ListConversationLabelsRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'listLabels',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'listLabels',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<List<_il2ljt3z.ConversationLabelSummary>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_il2ljt3z.ConversationLabelSummary> createLabel(
+    _ist.TestSessionBuilder sessionBuilder,
+    _i3ikkixl.CreateConversationLabelRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'createLabel',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'createLabel',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_il2ljt3z.ConversationLabelSummary>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_il2ljt3z.ConversationLabelSummary> renameLabel(
+    _ist.TestSessionBuilder sessionBuilder,
+    _ieqg2cyv.RenameConversationLabelRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'renameLabel',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'renameLabel',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<_il2ljt3z.ConversationLabelSummary>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<void> deleteLabel(
+    _ist.TestSessionBuilder sessionBuilder,
+    _ibro4unb.DeleteConversationLabelRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'deleteLabel',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'deleteLabel',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<void>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<void> setConversationLabels(
+    _ist.TestSessionBuilder sessionBuilder,
+    _ipzswz3u.SetConversationLabelsRequest request,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'conversation',
+            method: 'setConversationLabels',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'conversation',
+          methodName: 'setConversationLabels',
+          parameters: _ist.testObjectToJson({'request': request}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue = await (_localCallContext.method.call(
+          _localUniqueSession,
+          _localCallContext.arguments,
+        ) as _ida.Future<void>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

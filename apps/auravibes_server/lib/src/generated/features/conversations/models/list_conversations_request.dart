@@ -10,6 +10,7 @@
 // ignore_for_file: invalid_use_of_internal_member
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
+import 'package:auravibes_server/src/generated/protocol.dart' as _if5qez1k;
 import 'package:serverpod/serverpod.dart' as _is;
 
 abstract class ListConversationsRequest
@@ -20,6 +21,7 @@ abstract class ListConversationsRequest
     this.cursor,
     this.search,
     this.offset,
+    this.labelIds,
   });
 
   factory ListConversationsRequest({
@@ -28,6 +30,7 @@ abstract class ListConversationsRequest
     String? cursor,
     String? search,
     int? offset,
+    List<String>? labelIds,
   }) = _ListConversationsRequestImpl;
 
   factory ListConversationsRequest.fromJson(
@@ -39,6 +42,11 @@ abstract class ListConversationsRequest
       cursor: jsonSerialization['cursor'] as String?,
       search: jsonSerialization['search'] as String?,
       offset: jsonSerialization['offset'] as int?,
+      labelIds: jsonSerialization['labelIds'] == null
+          ? null
+          : _if5qez1k.Protocol().deserialize<List<String>>(
+              jsonSerialization['labelIds'],
+            ),
     );
   }
 
@@ -52,6 +60,8 @@ abstract class ListConversationsRequest
 
   int? offset;
 
+  List<String>? labelIds;
+
   /// Returns a shallow copy of this [ListConversationsRequest]
   /// with some or all fields replaced by the given arguments.
   @_is.useResult
@@ -61,6 +71,7 @@ abstract class ListConversationsRequest
     String? cursor,
     String? search,
     int? offset,
+    List<String>? labelIds,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -71,6 +82,7 @@ abstract class ListConversationsRequest
       if (cursor != null) 'cursor': cursor,
       if (search != null) 'search': search,
       if (offset != null) 'offset': offset,
+      if (labelIds != null) 'labelIds': labelIds?.toJson(),
     };
   }
 
@@ -83,6 +95,7 @@ abstract class ListConversationsRequest
       if (cursor != null) 'cursor': cursor,
       if (search != null) 'search': search,
       if (offset != null) 'offset': offset,
+      if (labelIds != null) 'labelIds': labelIds?.toJson(),
     };
   }
 
@@ -101,12 +114,14 @@ class _ListConversationsRequestImpl extends ListConversationsRequest {
     String? cursor,
     String? search,
     int? offset,
+    List<String>? labelIds,
   }) : super._(
          workspaceId: workspaceId,
          limit: limit,
          cursor: cursor,
          search: search,
          offset: offset,
+         labelIds: labelIds,
        );
 
   /// Returns a shallow copy of this [ListConversationsRequest]
@@ -119,6 +134,7 @@ class _ListConversationsRequestImpl extends ListConversationsRequest {
     Object? cursor = _Undefined,
     Object? search = _Undefined,
     Object? offset = _Undefined,
+    Object? labelIds = _Undefined,
   }) {
     return ListConversationsRequest(
       workspaceId: workspaceId ?? this.workspaceId,
@@ -126,6 +142,9 @@ class _ListConversationsRequestImpl extends ListConversationsRequest {
       cursor: cursor is String? ? cursor : this.cursor,
       search: search is String? ? search : this.search,
       offset: offset is int? ? offset : this.offset,
+      labelIds: labelIds is List<String>?
+          ? labelIds
+          : this.labelIds?.map((e0) => e0).toList(),
     );
   }
 }

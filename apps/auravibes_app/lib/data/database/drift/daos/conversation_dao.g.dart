@@ -13,6 +13,10 @@ mixin _$ConversationDaoMixin on DatabaseAccessor<AppDatabase> {
   $ConversationsTable get conversations => attachedDatabase.conversations;
   $ConversationArchiveStatesTable get conversationArchiveStates =>
       attachedDatabase.conversationArchiveStates;
+  $ConversationLabelsTable get conversationLabels =>
+      attachedDatabase.conversationLabels;
+  $ConversationLabelAssignmentsTable get conversationLabelAssignments =>
+      attachedDatabase.conversationLabelAssignments;
   ConversationDaoManager get managers => ConversationDaoManager(this);
 }
 
@@ -39,5 +43,16 @@ class ConversationDaoManager {
       $$ConversationArchiveStatesTableTableManager(
         _db.attachedDatabase,
         _db.conversationArchiveStates,
+      );
+  $$ConversationLabelsTableTableManager get conversationLabels =>
+      $$ConversationLabelsTableTableManager(
+        _db.attachedDatabase,
+        _db.conversationLabels,
+      );
+  $$ConversationLabelAssignmentsTableTableManager
+  get conversationLabelAssignments =>
+      $$ConversationLabelAssignmentsTableTableManager(
+        _db.attachedDatabase,
+        _db.conversationLabelAssignments,
       );
 }

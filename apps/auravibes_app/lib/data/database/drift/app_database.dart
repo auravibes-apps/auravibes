@@ -30,6 +30,8 @@ import 'package:auravibes_app/data/database/drift/tables/app_skill_workspace_set
 import 'package:auravibes_app/data/database/drift/tables/background_works.dart';
 import 'package:auravibes_app/data/database/drift/tables/connector_writes.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversation_archive_states.dart';
+import 'package:auravibes_app/data/database/drift/tables/conversation_label_assignments.dart';
+import 'package:auravibes_app/data/database/drift/tables/conversation_labels.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversation_skills.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversation_tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversations.dart';
@@ -142,6 +144,8 @@ part 'app_database.g.dart';
     WorkspaceContentReports,
     WorkspaceVerificationSettings,
     WorkspaceVerificationRuns,
+    ConversationLabels,
+    ConversationLabelAssignments,
   ],
   daos: [
     WorkspaceDao,
@@ -256,8 +260,9 @@ class AppDatabase extends _$AppDatabase {
       _workspaceAgentHookSettingsSchemaVersion + 1;
   static const int _conversationArchiveStateSchemaVersion =
       _workspaceVerificationSchemaVersion + 1;
-  static const int _currentSchemaVersion =
-      _conversationArchiveStateSchemaVersion;
+  static const int _conversationLabelsSchemaVersion =
+      _conversationArchiveStateSchemaVersion + 1;
+  static const int _currentSchemaVersion = _conversationLabelsSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -336,6 +341,13 @@ extension on AppDatabase {
     await _upgradeWorkspaceAssetDeletionOwnerSchema(m, from);
     await _upgradeWorkspaceAgentHookSettingsSchema(m, from);
     await _upgradeWorkspaceVerificationSchema(m, from);
+    await _upgradeConversationLabelsSchema(m, from);
+  }
+
+  Future<void> _upgradeConversationLabelsSchema(Migrator m, int from) async {
+    if (from >= AppDatabase._conversationLabelsSchemaVersion) return;
+    await m.createTable(conversationLabels);
+    await m.createTable(conversationLabelAssignments);
   }
 
   Future<void> _upgradeWorkspaceAgentHookSettingsSchema(

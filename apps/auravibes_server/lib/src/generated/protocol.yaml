@@ -23,6 +23,11 @@ conversation:
   - fork:
   - list:
   - listPage:
+  - listLabels:
+  - createLabel:
+  - renameLabel:
+  - deleteLabel:
+  - setConversationLabels:
   - get:
   - listMessages:
   - bookmarkMessage:
