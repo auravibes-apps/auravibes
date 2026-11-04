@@ -140,8 +140,8 @@ String? _nextCloudConversationCursor(
 }
 
 Never _throwInvalidCloudConversationCursor() =>
-  throw const CloudAppException(
-    localizationKey: LocaleKeys.cloud_errors_malformed_resource,
-    context: .conversation,
-    code: 'invalidCursor',
-  );
+    throw const CloudAppException(
+      localizationKey: LocaleKeys.cloud_errors_malformed_resource,
+      context: .conversation,
+      code: 'invalidCursor',
+    );
