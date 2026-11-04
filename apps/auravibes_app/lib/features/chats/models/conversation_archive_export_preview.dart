@@ -32,9 +32,11 @@ final class ConversationArchiveExportPreview({
         return false;
       }
 
-      for (var attachmentIndex = 0;
-          attachmentIndex < expected.attachments.length;
-          attachmentIndex++) {
+      for (
+        var attachmentIndex = 0;
+        attachmentIndex < expected.attachments.length;
+        attachmentIndex++
+      ) {
         final expectedAttachment = expected.attachments[attachmentIndex];
         final actualAttachment = actual.attachments[attachmentIndex];
         if (expectedAttachment.attachmentId != actualAttachment.attachmentId ||

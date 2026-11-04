@@ -99,17 +99,19 @@ void main() {
         status: .sent,
       ),
     );
-    final _ = await database.into(database.messageAttachments).insert(
-      MessageAttachmentsCompanion.insert(
-        messageId: message.id,
-        localPath: '/private/account/report.pdf',
-        fileName: '/private/account/report.pdf',
-        displayName: const .new('report.pdf'),
-        mimeType: 'application/pdf',
-        modality: 'file',
-        sizeBytes: 2048,
-      ),
-    );
+    final _ = await database
+        .into(database.messageAttachments)
+        .insert(
+          MessageAttachmentsCompanion.insert(
+            messageId: message.id,
+            localPath: '/private/account/report.pdf',
+            fileName: '/private/account/report.pdf',
+            displayName: const .new('report.pdf'),
+            mimeType: 'application/pdf',
+            modality: 'file',
+            sizeBytes: 2048,
+          ),
+        );
 
     final usecase = _usecase(database);
     final preview = await usecase.previewConversation(
@@ -160,17 +162,19 @@ void main() {
       conversationId: conversation.id,
     );
 
-    final _ = await database.into(database.messageAttachments).insert(
-      MessageAttachmentsCompanion.insert(
-        messageId: message.id,
-        localPath: '/private/account/new-report.pdf',
-        fileName: 'new-report.pdf',
-        displayName: const .new('new-report.pdf'),
-        mimeType: 'application/pdf',
-        modality: 'file',
-        sizeBytes: 2048,
-      ),
-    );
+    final _ = await database
+        .into(database.messageAttachments)
+        .insert(
+          MessageAttachmentsCompanion.insert(
+            messageId: message.id,
+            localPath: '/private/account/new-report.pdf',
+            fileName: 'new-report.pdf',
+            displayName: const .new('new-report.pdf'),
+            mimeType: 'application/pdf',
+            modality: 'file',
+            sizeBytes: 2048,
+          ),
+        );
 
     await expectLater(
       usecase.exportConversation(

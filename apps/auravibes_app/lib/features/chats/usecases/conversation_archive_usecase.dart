@@ -161,9 +161,9 @@ class const ConversationArchiveUsecase({
 
   Future<ConversationArchiveExportPreview> previewConversation({
     required String conversationId,
-  }) => _ConversationArchiveExporter(this).previewConversation(
-    conversationId: conversationId,
-  );
+  }) =>
+      _ConversationArchiveExporter(this)
+          .previewConversation(conversationId: conversationId);
 
   Future<ConversationArchiveExportPreview> previewConversations({
     required String workspaceId,
@@ -249,9 +249,8 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
 
   Future<ConversationArchiveExportPreview> previewConversation({
     required String conversationId,
-  }) async => _previewSnapshots([
-    await _loadConversationSnapshot(conversationId),
-  ]);
+  }) async =>
+      _previewSnapshots([await _loadConversationSnapshot(conversationId)]);
 
   Future<ConversationArchiveExportPreview> previewConversations({
     required String workspaceId,
