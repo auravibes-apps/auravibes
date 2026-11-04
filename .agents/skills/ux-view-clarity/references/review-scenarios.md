@@ -210,3 +210,11 @@ Use these with the review process above. The cases test explicit and indirect re
 | This screen uses a solid purple accent and rounded cards. Review it for slop. | Recognizes that neither is on the blacklist by itself. | Treating every purple color or rounded card as a violation. |
 | The focus indicator glows for visibility. Remove glows. | Replaces the glow with a visible, accessible non-glowing focus indicator and verifies the affected states. | Keeping the blacklisted glow or removing focus visibility. |
 | Check the button's WCAG contrast only. | Routes the accessibility-only review to accessibility guidance; does not perform a generic-appearance audit. | Loading a full UX audit solely because the request mentions appearance. |
+
+## Capture provenance cards
+
+| Request | Expected decision | Reject |
+| --- | --- | --- |
+| Audit Skills and include screenshots. | Captures the selected Skills route with verified source metadata. | Capturing Agent Detail only because it appears in an example. |
+| Compare an old screen with a new test fixture. | Records the fixture overlay and labels the before image as mixed-source in the PR. | Calling the mixed image a clean base capture. |
+| Change a backend retry without altering UI. | Uses backend validation; does not load ux-task-audit or require screenshots. | Routing a non-visual change to a visual audit. |

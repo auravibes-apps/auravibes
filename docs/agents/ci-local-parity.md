@@ -20,6 +20,10 @@ selector cannot narrow the change, the preflight explains that its safe test
 fallback is the workspace test suite. The complete Melos `validate` command is
 separate and runs only when explicitly requested with `-- --full-validation`.
 
+For app source, localization catalog, or localization-tool changes, preflight
+runs the existing localization audit before analysis and tests. Its dry run
+prints that selection.
+
 This preflight is a contributor feedback command, not a skill-evaluation
 runner. It does not replace the evaluation runners tracked in #1259 and #1288.
 
