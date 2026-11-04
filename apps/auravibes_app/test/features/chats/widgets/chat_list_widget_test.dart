@@ -35,6 +35,7 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart' hide Column, isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -633,7 +634,7 @@ void main() {
     testWidgets('archives, searches, and restores a conversation', (
       tester,
     ) async {
-      print('archive-ui: start');
+      debugPrint('archive-ui: start');
       final database = AppDatabase(
         connection: DatabaseConnection(NativeDatabase.memory()),
       );
@@ -641,12 +642,12 @@ void main() {
       final workspace = await database.workspaceDao.insertWorkspace(
         .insert(name: 'Archive UI test', type: WorkspaceType.local),
       );
-      print('archive-ui: workspace inserted');
+      debugPrint('archive-ui: workspace inserted');
       final conversation = await ConversationRepository(database)
           .createConversation(
             .new(title: 'Project research', workspaceId: workspace.id),
           );
-      print('archive-ui: conversation created');
+      debugPrint('archive-ui: conversation created');
       final scope = ValueNotifier(ConversationListScope.active);
       addTearDown(scope.dispose);
 
@@ -669,7 +670,7 @@ void main() {
           ],
         ),
       );
-      print('archive-ui: widget initialized');
+      debugPrint('archive-ui: widget initialized');
 
       final container = tester
           .widget<UncontrolledProviderScope>(
@@ -696,7 +697,7 @@ void main() {
       }
 
       await waitForConversationVisibility(isVisible: true);
-      print('archive-ui: active conversation visible');
+      debugPrint('archive-ui: active conversation visible');
 
       final conversationState = container.read(
         conversationsStreamProvider((
@@ -717,22 +718,22 @@ void main() {
       expect(find.text('Export backup'), findsOneWidget);
       await tester.tap(find.text('Archive'));
       await tester.pump(const Duration(milliseconds: 300));
-      print('archive-ui: archive tapped and pumped');
+      debugPrint('archive-ui: archive tapped and pumped');
 
-      print('archive-ui: reading archived ids after archive');
+      debugPrint('archive-ui: reading archived ids after archive');
       expect(
         await database.conversationArchiveStateDao.getArchivedConversationIds(
           workspace.id,
         ),
         {conversation.id},
       );
-      print('archive-ui: archived id confirmed');
+      debugPrint('archive-ui: archived id confirmed');
       expect(find.text('Project research'), findsNothing);
       scope.value = ConversationListScope.archived;
       await tester.pump();
 
       await waitForConversationVisibility(isVisible: true);
-      print('archive-ui: archived conversation visible');
+      debugPrint('archive-ui: archived conversation visible');
       expect(find.text('Project research'), findsOneWidget);
       expect(
         find.byKey(ValueKey('conversation-selection-${conversation.id}')),
@@ -742,13 +743,13 @@ void main() {
       await tester.enterText(find.byType(EditableText), 'missing');
       await tester.pump(const Duration(milliseconds: 301));
       await waitForConversationVisibility(isVisible: false);
-      print('archive-ui: missing search completed');
+      debugPrint('archive-ui: missing search completed');
       expect(find.text('Project research'), findsNothing);
 
       await tester.enterText(find.byType(EditableText), 'Project');
       await tester.pump(const Duration(milliseconds: 301));
       await waitForConversationVisibility(isVisible: true);
-      print('archive-ui: project search completed');
+      debugPrint('archive-ui: project search completed');
       expect(find.text('Project research'), findsOneWidget);
       await tester.tap(find.byIcon(Icons.more_vert));
       for (var attempt = 0; attempt < 5; attempt++) {
@@ -759,18 +760,18 @@ void main() {
       expect(find.text('Archive'), findsNothing);
       await tester.tap(find.text('Restore'));
       await tester.pump();
-      print('archive-ui: restore tapped and pumped');
+      debugPrint('archive-ui: restore tapped and pumped');
 
-      print('archive-ui: reading archived ids after restore');
+      debugPrint('archive-ui: reading archived ids after restore');
       expect(
         await database.conversationArchiveStateDao.getArchivedConversationIds(
           workspace.id,
         ),
         isEmpty,
       );
-      print('archive-ui: restored id confirmed');
+      debugPrint('archive-ui: restored id confirmed');
       await waitForConversationVisibility(isVisible: false);
-      print('archive-ui: restored conversation hidden');
+      debugPrint('archive-ui: restored conversation hidden');
       expect(find.text('Project research'), findsNothing);
     });
 
