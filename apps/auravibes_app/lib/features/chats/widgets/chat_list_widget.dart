@@ -422,6 +422,7 @@ _ChatListPageRequest _chatListPageRequest(
 
 Set<String> _chatListLabelIds(_ChatListQueryRequest request) {
   final selectedLabelIds = request.input.selectedLabelIds.value;
+
   return selectedLabelIds.isEmpty ? const {} : selectedLabelIds;
 }
 

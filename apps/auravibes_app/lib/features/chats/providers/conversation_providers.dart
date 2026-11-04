@@ -427,7 +427,7 @@ Future<List<ConversationSummary>> _readFilteredCloudConversationSummaries(
   CloudWorkspaceStateGateway gateway,
   CloudWorkspaceRef cloud,
   _ConversationListOptions options,
-) async {
+) {
   final pageReader = _filteredCloudConversationPageReader(
     gateway,
     cloud,
