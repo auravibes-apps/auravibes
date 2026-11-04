@@ -161,12 +161,19 @@ abstract final class ConversationArchiveCodec {
   static const int maxStringLength = 1024 * 1024;
 
   static Future<String> exportConversation(
-    ConversationArchiveCreationInput input,
-  ) async => encode(await createConversationArchive(input));
+    ConversationArchiveCreationInput input, {
+    bool includeAttachments = true,
+  }) async => encode(
+    await createConversationArchive(
+      input,
+      includeAttachments: includeAttachments,
+    ),
+  );
 
   static Future<ConversationArchive> createConversationArchive(
-    ConversationArchiveCreationInput input,
-  ) async {
+    ConversationArchiveCreationInput input, {
+    bool includeAttachments = true,
+  }) async {
     final (
       :conversation,
       :messages,
@@ -177,6 +184,7 @@ abstract final class ConversationArchiveCodec {
     final archivedMessages = await _archiveMessages(
       messages,
       readAttachmentBytes,
+      includeAttachments,
     );
 
     return ConversationArchive(
@@ -312,7 +320,11 @@ ConversationArchiveAttachment _exportedAttachment(
   String? toolCallId,
 ) => ConversationArchiveAttachment(
   fileName: _archiveFileName(attachment.fileName),
-  displayName: attachment.displayName,
+  displayName: _archiveFileName(
+    attachment.displayName.trim().isEmpty
+        ? attachment.fileName
+        : attachment.displayName,
+  ),
   mimeType: attachment.mimeType,
   modality: attachment.modality,
   bytes: bytes,
@@ -1194,6 +1206,7 @@ ConversationToolAccessMode _decodeToolAccessMode(Map<String, Object?> json) {
 Future<List<ConversationArchiveMessage>> _archiveMessages(
   List<MessageEntity> messages,
   Future<Uint8List> Function(String localPath) readAttachmentBytes,
+  bool includeAttachments,
 ) async {
   final messageIndexes = {
     for (var index = 0; index < messages.length; index++)
@@ -1202,7 +1215,12 @@ Future<List<ConversationArchiveMessage>> _archiveMessages(
   final archivedMessages = <ConversationArchiveMessage>[];
   for (final message in messages) {
     archivedMessages.add(
-      await _archiveMessage(message, messageIndexes, readAttachmentBytes),
+      await _archiveMessage(
+        message,
+        messageIndexes,
+        readAttachmentBytes,
+        includeAttachments,
+      ),
     );
   }
 
@@ -1213,20 +1231,40 @@ Future<ConversationArchiveMessage> _archiveMessage(
   MessageEntity message,
   Map<String, int> messageIndexes,
   Future<Uint8List> Function(String localPath) readAttachmentBytes,
+  bool includeAttachments,
 ) async {
   final toolCallIds = _archiveToolCallIds(
     message.metadata?.toolCalls ?? const [],
   );
-  final attachments = await _archiveMessageAttachments(
-    message.attachments,
+  final attachments = await _archiveMessageAttachmentsIfIncluded(
+    message,
     readAttachmentBytes,
     toolCallIds,
+    includeAttachments,
   );
 
   return _archiveMessageTranscript(
     message,
     messageIndexes,
     attachments,
+    content: _archiveMessageContent(message, includeAttachments),
+  );
+}
+
+Future<List<ConversationArchiveAttachment>>
+_archiveMessageAttachmentsIfIncluded(
+  MessageEntity message,
+  Future<Uint8List> Function(String localPath) readAttachmentBytes,
+  Map<String, String> toolCallIds,
+  bool includeAttachments,
+) {
+  if (!includeAttachments) {
+    return Future.value(const <ConversationArchiveAttachment>[]);
+  }
+
+  return _archiveMessageAttachments(
+    message.attachments,
+    readAttachmentBytes,
     toolCallIds,
   );
 }
@@ -1253,17 +1291,34 @@ Future<List<ConversationArchiveAttachment>> _archiveMessageAttachments(
 ConversationArchiveMessage _archiveMessageTranscript(
   MessageEntity message,
   Map<String, int> messageIndexes,
-  List<ConversationArchiveAttachment> attachments,
-  Map<String, String> toolCallIds,
-) => ConversationArchiveMessage(
-  content: message.content,
-  messageType: message.messageType,
-  isUser: message.isUser,
-  status: message.status,
-  createdAt: message.createdAt,
-  metadata: _archiveMetadata(message.metadata, messageIndexes, toolCallIds),
-  attachments: attachments,
-);
+  List<ConversationArchiveAttachment> attachments, {
+  required String content,
+}) {
+  final toolCallIds = _archiveToolCallIds(
+    message.metadata?.toolCalls ?? const [],
+  );
+
+  return ConversationArchiveMessage(
+    content: content,
+    messageType: message.messageType,
+    isUser: message.isUser,
+    status: message.status,
+    createdAt: message.createdAt,
+    metadata: _archiveMetadata(message.metadata, messageIndexes, toolCallIds),
+    attachments: attachments,
+  );
+}
+
+String _archiveMessageContent(MessageEntity message, bool includeAttachments) {
+  // Keep attachment-only message position valid in v2 without attachment data.
+  if (includeAttachments ||
+      message.content.trim().isNotEmpty ||
+      message.attachments.isEmpty) {
+    return message.content;
+  }
+
+  return '[Attachment omitted]';
+}
 
 ConversationArchiveMetadata _archiveMetadata(
   MessageMetadataEntity? source,

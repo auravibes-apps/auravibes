@@ -15,12 +15,14 @@ import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_transcript_context_codec.dart';
 import 'package:auravibes_app/features/chats/agent_adapters/agent_transcript_context_decode_exception.dart';
 import 'package:auravibes_app/features/chats/models/conversation_archive.dart';
+import 'package:auravibes_app/features/chats/models/conversation_archive_export_preview.dart';
 import 'package:auravibes_app/features/chats/services/local_chat_attachment_service.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show
         AgentContextMessage,
         AgentTranscriptContextUpdate,
         foldAgentTranscriptContext;
+import 'package:path/path.dart' as p;
 import 'package:uuid/v7.dart';
 
 typedef _ArchivedContextUpdates = ({
@@ -119,6 +121,11 @@ typedef _RestoredImportedMessageParts = ({
   String metadata,
 });
 
+typedef _ConversationArchiveExportSnapshot = ({
+  ConversationEntity conversation,
+  List<MessageEntity> transcript,
+});
+
 class const ConversationArchiveUsecase({
   required final ConversationRepository conversationRepository,
   required final MessageRepository messageRepository,
@@ -130,15 +137,38 @@ class const ConversationArchiveUsecase({
 }) {
   Future<String> exportConversation({
     required String conversationId,
+    required ConversationArchiveExportPreview expectedPreview,
     String? modelLabel,
-  }) => _ConversationArchiveExporter(
-    this,
-  ).exportConversation(conversationId: conversationId, modelLabel: modelLabel);
+    bool includeAttachments = true,
+  }) => _ConversationArchiveExporter(this).exportConversation(
+    conversationId: conversationId,
+    modelLabel: modelLabel,
+    includeAttachments: includeAttachments,
+    expectedPreview: expectedPreview,
+  );
 
   Future<String> exportConversations({
     required String workspaceId,
     required List<String> conversationIds,
+    required ConversationArchiveExportPreview expectedPreview,
+    bool includeAttachments = true,
   }) => _ConversationArchiveExporter(this).exportConversations(
+    workspaceId: workspaceId,
+    conversationIds: conversationIds,
+    includeAttachments: includeAttachments,
+    expectedPreview: expectedPreview,
+  );
+
+  Future<ConversationArchiveExportPreview> previewConversation({
+    required String conversationId,
+  }) =>
+      _ConversationArchiveExporter(this)
+          .previewConversation(conversationId: conversationId);
+
+  Future<ConversationArchiveExportPreview> previewConversations({
+    required String workspaceId,
+    required List<String> conversationIds,
+  }) => _ConversationArchiveExporter(this).previewConversations(
     workspaceId: workspaceId,
     conversationIds: conversationIds,
   );
@@ -157,6 +187,8 @@ class const ConversationArchiveUsecase({
           .importArchive(workspaceId: workspaceId, archiveJson: archiveJson);
 }
 
+class const ArchiveExportPreviewChangedException() implements Exception;
+
 class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
   final ConversationRepository conversationRepository =
       usecase.conversationRepository;
@@ -172,68 +204,131 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
 
   Future<String> exportConversation({
     required String conversationId,
+    required ConversationArchiveExportPreview expectedPreview,
     String? modelLabel,
+    bool includeAttachments = true,
   }) async {
-    final conversation = await conversationRepository.getConversationById(
-      conversationId,
-    );
-    if (conversation == null) throw StateError('Conversation not found');
+    final snapshot = await _loadConversationSnapshot(conversationId);
+    _requireMatchingPreview(expectedPreview, [snapshot]);
 
-    return await _exportConversation(
-      conversation: conversation,
+    return await _exportSnapshot(
+      snapshot,
       modelLabel: modelLabel,
+      includeAttachments: includeAttachments,
     );
   }
 
   Future<String> exportConversations({
     required String workspaceId,
     required List<String> conversationIds,
+    required ConversationArchiveExportPreview expectedPreview,
+    bool includeAttachments = true,
   }) async {
     _validateConversationIds(conversationIds);
-    final archives = <ConversationArchive>[];
-    for (final id in conversationIds) {
-      archives.add(await _createWorkspaceArchive(id, workspaceId));
-    }
+    final snapshots = await _loadConversationSnapshots(
+      this,
+      workspaceId: workspaceId,
+      conversationIds: conversationIds,
+    );
+    _requireMatchingPreview(expectedPreview, snapshots);
+    final archives = await _createArchives(this, snapshots, includeAttachments);
 
     return ConversationArchiveCodec.encodeMany(archives);
   }
 
-  Future<ConversationArchive> _createWorkspaceArchive(
-    String conversationId,
-    String workspaceId,
-  ) async {
-    final conversation = await conversationRepository.getConversationById(
-      conversationId,
-    );
-    if (conversation == null || conversation.workspaceId != workspaceId) {
-      throw const MalformedConversationArchiveException();
+  Future<ConversationArchiveExportPreview> previewConversation({
+    required String conversationId,
+  }) async =>
+      _previewSnapshots([await _loadConversationSnapshot(conversationId)]);
+
+  Future<ConversationArchiveExportPreview> previewConversations({
+    required String workspaceId,
+    required List<String> conversationIds,
+  }) async {
+    _validateConversationIds(conversationIds);
+    final snapshots = <_ConversationArchiveExportSnapshot>[];
+    for (final id in conversationIds) {
+      snapshots.add(
+        await _loadConversationSnapshot(id, workspaceId: workspaceId),
+      );
     }
 
-    return await _createArchive(conversation);
+    return _previewSnapshots(snapshots);
   }
 
-  Future<String> _exportConversation({
-    required ConversationEntity conversation,
+  Future<_ConversationArchiveExportSnapshot> _loadConversationSnapshot(
+    String conversationId, {
+    String? workspaceId,
+  }) async {
+    final conversation = await _loadConversationForExport(
+      conversationRepository,
+      conversationId,
+      workspaceId: workspaceId,
+    );
+
+    final transcript = List<MessageEntity>.unmodifiable(
+      await messageRepository.getTranscriptMessagesByConversation(
+        conversation.id,
+      ),
+    );
+
+    return (conversation: conversation, transcript: transcript);
+  }
+
+  Future<String> _exportSnapshot(
+    _ConversationArchiveExportSnapshot snapshot, {
     String? modelLabel,
+    bool includeAttachments = true,
   }) async => ConversationArchiveCodec.encode(
-    await _createArchive(conversation, modelLabel: modelLabel),
+    await _createArchive(
+      snapshot.conversation,
+      snapshot.transcript,
+      modelLabel: modelLabel,
+      includeAttachments: includeAttachments,
+    ),
   );
 
   Future<ConversationArchive> _createArchive(
-    ConversationEntity conversation, {
+    ConversationEntity conversation,
+    List<MessageEntity> transcript, {
     String? modelLabel,
+    bool includeAttachments = true,
   }) async {
-    final transcript = await messageRepository
-        .getTranscriptMessagesByConversation(conversation.id);
     final agentContext = await _archiveAgentContext(conversation, transcript);
-
-    return await ConversationArchiveCodec.createConversationArchive((
+    final input = (
       conversation: conversation,
       messages: _archiveVisibleMessages(transcript),
       modelLabel: modelLabel,
       agentContext: agentContext,
       readAttachmentBytes: attachmentService.readAttachmentBytes,
-    ));
+    );
+
+    return await ConversationArchiveCodec.createConversationArchive(
+      input,
+      includeAttachments: includeAttachments,
+    );
+  }
+
+  ConversationArchiveExportPreview _previewSnapshots(
+    List<_ConversationArchiveExportSnapshot> snapshots,
+  ) => ConversationArchiveExportPreview(
+    sourceConversations: [
+      for (final snapshot in snapshots)
+        ConversationArchivePreviewConversation(
+          conversationId: snapshot.conversation.id,
+          title: snapshot.conversation.title,
+          sourceAttachments: _previewAttachments(snapshot.transcript),
+        ),
+    ],
+  );
+
+  void _requireMatchingPreview(
+    ConversationArchiveExportPreview expectedPreview,
+    List<_ConversationArchiveExportSnapshot> snapshots,
+  ) {
+    if (!expectedPreview.matchesSnapshot(_previewSnapshots(snapshots))) {
+      throw const ArchiveExportPreviewChangedException();
+    }
   }
 
   Future<ConversationArchiveAgentContext> _archiveAgentContext(
@@ -257,6 +352,62 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
   }
 }
 
+Future<List<_ConversationArchiveExportSnapshot>> _loadConversationSnapshots(
+  _ConversationArchiveExporter exporter, {
+  required String workspaceId,
+  required List<String> conversationIds,
+}) async {
+  final snapshots = <_ConversationArchiveExportSnapshot>[];
+  for (final id in conversationIds) {
+    final snapshot = await exporter._loadConversationSnapshot(
+      id,
+      workspaceId: workspaceId,
+    );
+    snapshots.add(snapshot);
+  }
+
+  return snapshots;
+}
+
+Future<List<ConversationArchive>> _createArchives(
+  _ConversationArchiveExporter exporter,
+  List<_ConversationArchiveExportSnapshot> snapshots,
+  bool includeAttachments,
+) async {
+  final archives = <ConversationArchive>[];
+  for (final snapshot in snapshots) {
+    archives.add(
+      await exporter._createArchive(
+        snapshot.conversation,
+        snapshot.transcript,
+        includeAttachments: includeAttachments,
+      ),
+    );
+  }
+
+  return archives;
+}
+
+Future<ConversationEntity> _loadConversationForExport(
+  ConversationRepository conversationRepository,
+  String conversationId, {
+  String? workspaceId,
+}) async {
+  final conversation = await conversationRepository.getConversationById(
+    conversationId,
+  );
+  if (conversation == null) {
+    if (workspaceId == null) throw StateError('Conversation not found');
+
+    throw const MalformedConversationArchiveException();
+  }
+  if (workspaceId != null && conversation.workspaceId != workspaceId) {
+    throw const MalformedConversationArchiveException();
+  }
+
+  return conversation;
+}
+
 void _validateConversationIds(List<String> conversationIds) {
   if (conversationIds.isEmpty ||
       conversationIds.length > ConversationArchiveCodec.maxConversations) {
@@ -268,6 +419,26 @@ List<MessageEntity> _archiveVisibleMessages(List<MessageEntity> transcript) =>
     transcript
         .where((message) => !message.isAgentTranscriptContextUpdate)
         .toList(growable: false);
+
+String _previewAttachmentName(MessageAttachmentEntity attachment) {
+  final fileName = attachment.fileName.trim();
+  final name = fileName.isEmpty ? attachment.displayName : fileName;
+
+  return p.posix.basename(name.replaceAll(r'\', '/'));
+}
+
+List<ConversationArchivePreviewAttachment> _previewAttachments(
+  List<MessageEntity> transcript,
+) => [
+  for (final message in _archiveVisibleMessages(transcript))
+    for (final attachment in message.attachments)
+      ConversationArchivePreviewAttachment(
+        attachmentId: attachment.id,
+        fileName: _previewAttachmentName(attachment),
+        mimeType: attachment.mimeType,
+        sizeBytes: attachment.sizeBytes,
+      ),
+];
 
 _ArchivedContextUpdates _archiveTranscriptContext(
   List<MessageEntity> transcript,

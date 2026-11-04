@@ -161,6 +161,15 @@ String _fixtureDescription(String name) => switch (name) {
     'Persisted local workspace with a controlled skill resources list failure',
   'agent-editor-skills-failure-es-large-dark' =>
     'Persisted local workspace with a controlled skills load failure',
+  'conversation-archive-export-review' =>
+    'Local conversation with one synthetic text attachment whose path points '
+        'to no file; review dialog opened before attachment byte reads or save',
+  'conversation-archive-before' =>
+    'Persisted local workspace and seeded parent conversation; conversation '
+        'options open before device-local archive, with no remote access',
+  'conversation-archive-after' =>
+    'Same persisted local workspace after archiving the conversation; '
+        'archived conversation list visible, with no remote access',
   'workspace-erasure-confirmation-disclosure' =>
     'In-memory local workspace plus synthetic owner account and deleted cloud '
         'workspace state; confirmation open with no remote access or deletion',

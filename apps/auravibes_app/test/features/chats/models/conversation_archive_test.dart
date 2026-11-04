@@ -133,7 +133,7 @@ void main() {
                 messageId: 'summary-private-id',
                 localPath: 'file:///private/attachment/report.pdf',
                 fileName: 'report.pdf',
-                displayName: 'Report',
+                displayName: '/private/attachment/Report',
                 mimeType: 'application/pdf',
                 modality: .file,
                 sizeBytes: 3,
@@ -181,6 +181,9 @@ void main() {
           'resultStatus': 'success',
         });
         expect(attachment['toolCallId'], 'tool-call-0');
+        expect(attachment['fileName'], 'report.pdf');
+        expect(attachment['mimeType'], 'application/pdf');
+        expect(attachment['sizeBytes'], 3);
         expect(attachment['dataBase64'], 'AQID');
         expect(attachment['displayName'], 'Report');
         expect(attachment, isNot(contains('localPath')));
@@ -206,11 +209,237 @@ void main() {
           'workspace-secret',
           'private-thinking',
           'file:///private/attachment/report.pdf',
+          '/private/attachment/Report',
         ]) {
           expect(encoded, isNot(contains(privateValue)));
         }
       },
     );
+
+    test('excludes files and preserves transcript text and order', () async {
+      final createdAt = DateTime.utc(2025, 1, 2);
+      final conversation = ConversationEntity(
+        id: 'conversation-id',
+        title: 'Archive test',
+        workspaceId: 'workspace-id',
+        isPinned: false,
+        createdAt: createdAt,
+        updatedAt: createdAt,
+        modelId: 'model-id',
+        agentId: 'agent-id',
+      );
+      var readCount = 0;
+      final messages = [
+        MessageEntity(
+          id: 'first-message-id',
+          conversationId: conversation.id,
+          content: 'First visible message',
+          messageType: .text,
+          isUser: true,
+          status: .sent,
+          createdAt: createdAt,
+          updatedAt: createdAt,
+        ),
+        MessageEntity(
+          id: 'second-message-id',
+          conversationId: conversation.id,
+          content: 'Second visible message',
+          messageType: .text,
+          isUser: false,
+          status: .sent,
+          createdAt: createdAt,
+          updatedAt: createdAt,
+          metadata: const .new(
+            toolCalls: [
+              MessageToolCallEntity(
+                id: 'tool-call-id',
+                name: 'private-server-tool',
+                argumentsRaw: '{"secret":"tool-secret"}',
+                userFacingDescription: 'Summarize attachment',
+                responseRaw: 'tool-response-secret',
+                resultStatus: .success,
+              ),
+            ],
+          ),
+          attachments: [
+            MessageAttachmentEntity(
+              id: 'attachment-id',
+              messageId: 'second-message-id',
+              localPath: '/private/path/secret-report.pdf',
+              fileName: 'secret-report.pdf',
+              displayName: 'Secret report',
+              mimeType: 'application/x-private',
+              modality: .file,
+              sizeBytes: 3,
+              createdAt: createdAt,
+              updatedAt: createdAt,
+              toolCallId: 'tool-call-id',
+            ),
+          ],
+        ),
+        MessageEntity(
+          id: 'attachment-only-message-id',
+          conversationId: conversation.id,
+          content: '',
+          messageType: .text,
+          isUser: true,
+          status: .sent,
+          createdAt: createdAt,
+          updatedAt: createdAt,
+          attachments: [
+            MessageAttachmentEntity(
+              id: 'attachment-only-id',
+              messageId: 'attachment-only-message-id',
+              localPath: '/private/path/only-file.png',
+              fileName: 'only-file.png',
+              displayName: 'Only file',
+              mimeType: 'image/png',
+              modality: .image,
+              sizeBytes: 3,
+              createdAt: createdAt,
+              updatedAt: createdAt,
+            ),
+          ],
+        ),
+      ];
+
+      final input = (
+        conversation: conversation,
+        messages: messages,
+        modelLabel: null,
+        agentContext: null,
+        readAttachmentBytes: (String path) {
+          readCount++;
+          fail('Excluded attachments must not read bytes from $path.');
+        },
+      );
+      final encoded = await ConversationArchiveCodec.exportConversation(
+        input,
+        includeAttachments: false,
+      );
+      final root = jsonDecode(encoded) as Map<String, dynamic>;
+      final archivedMessages = root['messages'] as List<dynamic>;
+
+      expect(root['format'], ConversationArchiveCodec.format);
+      expect(root['version'], 2);
+      expect(readCount, 0);
+      expect(
+        archivedMessages
+            .map((message) => (message as Map<String, dynamic>)['content'])
+            .toList(),
+        [
+          'First visible message',
+          'Second visible message',
+          '[Attachment omitted]',
+        ],
+      );
+      expect(
+        archivedMessages
+            .map((message) => (message as Map<String, dynamic>)['attachments'])
+            .toList(),
+        [<Object?>[], <Object?>[], <Object?>[]],
+      );
+
+      final second = archivedMessages[1] as Map<String, dynamic>;
+      final metadata = second['metadata'] as Map<String, dynamic>;
+      expect(metadata['toolCalls'], [
+        {
+          'id': 'tool-call-0',
+          'displayName': 'Summarize attachment',
+          'resultStatus': 'success',
+        },
+      ]);
+      expect(
+        ConversationArchiveCodec.decode(encoded).messages[1].attachments,
+        isEmpty,
+      );
+      expect(
+        ConversationArchiveCodec.decode(encoded).messages[2].content,
+        '[Attachment omitted]',
+      );
+      for (final privateValue in [
+        'secret-report.pdf',
+        'Secret report',
+        'application/x-private',
+        'secret-report.pdf',
+        '/private/path/',
+        'tool-secret',
+        'tool-response-secret',
+        'only-file.png',
+        'Only file',
+        'AQID',
+      ]) {
+        expect(encoded, isNot(contains(privateValue)));
+      }
+    });
+
+    test('keeps attachment size validation when files are included', () async {
+      final createdAt = DateTime.utc(2025, 1, 2);
+      final conversation = ConversationEntity(
+        id: 'conversation-id',
+        title: 'Archive test',
+        workspaceId: 'workspace-id',
+        isPinned: false,
+        createdAt: createdAt,
+        updatedAt: createdAt,
+        modelId: 'model-id',
+        agentId: 'agent-id',
+      );
+      final messages = [
+        MessageEntity(
+          id: 'message-id',
+          conversationId: conversation.id,
+          content: 'Message with a large file',
+          messageType: .text,
+          isUser: true,
+          status: .sent,
+          createdAt: createdAt,
+          updatedAt: createdAt,
+          attachments: [
+            MessageAttachmentEntity(
+              id: 'attachment-id',
+              messageId: 'message-id',
+              localPath: '/private/large.bin',
+              fileName: 'large.bin',
+              displayName: 'large.bin',
+              mimeType: 'application/octet-stream',
+              modality: .file,
+              sizeBytes: ConversationArchiveCodec.maxAttachmentBytes + 1,
+              createdAt: createdAt,
+              updatedAt: createdAt,
+            ),
+          ],
+        ),
+      ];
+      var readCount = 0;
+      final input = (
+        conversation: conversation,
+        messages: messages,
+        modelLabel: null,
+        agentContext: null,
+        readAttachmentBytes: (String _) async {
+          readCount++;
+
+          return Uint8List(ConversationArchiveCodec.maxAttachmentBytes + 1);
+        },
+      );
+
+      await expectLater(
+        ConversationArchiveCodec.exportConversation(input),
+        throwsA(isA<MalformedConversationArchiveException>()),
+      );
+      expect(readCount, 1);
+
+      final excluded = await ConversationArchiveCodec.exportConversation(
+        input,
+        includeAttachments: false,
+      );
+      expect(readCount, 1);
+      expect(
+        (jsonDecode(excluded) as Map<String, dynamic>)['version'],
+        ConversationArchiveCodec.version,
+      );
+    });
 
     test('rejects Windows separators in attachment file names', () {
       const archiveJson = r'''
