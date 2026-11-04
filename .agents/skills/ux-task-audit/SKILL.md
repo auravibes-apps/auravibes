@@ -1,6 +1,6 @@
 ---
 name: ux-task-audit
-description: Use automatically for review-only AuraVibes UI/UX critiques, including ugly or unbalanced screens, weak hierarchy, inconsistent typography/spacing, clutter, confusing navigation, or task friction. Give specific evidence and rationale. Use ux-view-clarity for UI implementation. Skip accessibility-only and non-UI reviews.
+description: Use automatically for review-only AuraVibes UI/UX critiques, including unslop audits, generic-looking screens, weak hierarchy, inconsistent typography/spacing, clutter, confusing navigation, or task friction. Give specific evidence and rationale. Use ux-view-clarity for UI implementation. Skip accessibility-only and non-UI reviews.
 ---
 
 # AuraVibes task-flow audit
@@ -8,6 +8,8 @@ description: Use automatically for review-only AuraVibes UI/UX critiques, includ
 Audit how well an existing AuraVibes experience helps a person complete a task. Follow the user's goal from entry through completion, including the view changes, decisions, system states, and recovery along the way. Ground the task in [target users](../../../docs/product/target-users.md); use the relevant sections of [interaction rules](../ux-view-clarity/references/interaction-rules.md) for navigation, control placement, forms, density, and adaptive behavior. A single-screen critique can stay scoped to that screen and its entry/exit; it need not become an app-wide audit.
 
 For appearance, balance, hierarchy, typography, or polish critiques, read [visual design rules](../ux-view-clarity/references/visual-design-rules.md). Tie each finding to a visible relationship and its effect: competing emphasis, ambiguous groups, broken alignment, weak readability, or inconsistent states. “Looks generic” and “not premium” are not actionable findings. A visual-only review does not need a full journey map; trace behavior only where the finding depends on it.
+
+For a visual critique or task audit that includes a visible surface, use the relevant checks in [assessing generic-looking UI](../ux-view-clarity/references/visual-design-rules.md#assessing-generic-looking-ui).
 
 Do not exempt an existing Aura component or identity rule from critique. When it causes the problem, propose the smallest shared-UI or identity improvement, explain affected consumers and trade-offs, and give a verification scenario. Use Apple Settings and Linear only for the calibrated qualities described in [reference calibration](../ux-view-clarity/references/visual-design-rules.md#reference-calibration-and-system-improvements); do not prescribe a copied brand or new app-wide aesthetic for a local finding.
 

@@ -24,6 +24,7 @@ class AuraMessageBubble extends StatelessWidget {
     required this.isUser,
     super.key,
     this.status = AuraMessageDeliveryStatus.sent,
+    this.statusSemanticLabel,
     this.timestamp,
     this.timestampLabel,
     this.contentType = AuraMessageContentType.text,
@@ -46,6 +47,9 @@ class AuraMessageBubble extends StatelessWidget {
 
   /// The delivery status of the message.
   final AuraMessageDeliveryStatus status;
+
+  /// Optional localized semantic label for the delivery status.
+  final String? statusSemanticLabel;
 
   /// The timestamp when the message was sent.
   final DateTime? timestamp;
@@ -144,18 +148,22 @@ class const _AuraMessageBubbleColumn({required final AuraMessageBubble message})
     children: [
       _AuraMessageBubbleCard(message: message),
       if (message.status != AuraMessageDeliveryStatus.sent)
-        _AuraMessageStatus(status: message.status),
+        _AuraMessageStatus(
+          status: message.status,
+          semanticLabel: message.statusSemanticLabel,
+        ),
     ],
   );
 }
 
 class const _AuraMessageStatus({
   required final AuraMessageDeliveryStatus status,
+  final String? semanticLabel,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs) / 2),
-    child: AuraMessageStatus(status: status),
+    child: AuraMessageStatus(status: status, semanticLabel: semanticLabel),
   );
 }
 

@@ -1292,6 +1292,14 @@
     "pending": "Esperando confirmación"
   },
   "common": {
+    "enable_named": "Habilitar {}",
+    "enable_all_tools_named": "Habilitar todas las herramientas de {}",
+    "message_status_sending": "Se está enviando el mensaje",
+    "message_status_unfinished": "El mensaje se interrumpió antes de completarse",
+    "message_status_sent": "Mensaje enviado correctamente",
+    "message_status_delivered": "Mensaje entregado",
+    "message_status_read": "Mensaje leído por el destinatario",
+    "message_status_error": "No se pudo enviar el mensaje",
     "back": "Atrás",
     "cancel": "Cancelar",
     "remove": "Eliminar",

@@ -29,7 +29,7 @@ class AuraSwitch extends StatefulWidget {
     this.size = AuraSwitchSize.base,
     this.disabled = false,
     this.isLoading = false,
-    this.semanticLabel = 'Switch',
+    this.semanticLabel,
   });
 
   /// Whether the switch is on or off.
@@ -326,6 +326,7 @@ class const _AuraSwitchTrackSurface(final _AuraSwitchTrackData data)
     return AnimatedContainer(
       padding: EdgeInsets.all(dimensions.thumbPadding),
       decoration: _trackDecoration(data),
+      foregroundDecoration: _focusDecoration(data),
       width: dimensions.trackWidth,
       height: dimensions.trackHeight,
       child: _AuraSwitchThumbStack(data),
@@ -333,6 +334,13 @@ class const _AuraSwitchTrackSurface(final _AuraSwitchTrackData data)
     );
   }
 }
+
+BoxDecoration _focusDecoration(_AuraSwitchTrackData data) => BoxDecoration(
+  border: data.state.isFocused ? Border.all(color: data.colors.surface) : null,
+  borderRadius: BorderRadius.circular(
+    data.dimensions.trackHeight / _switchRadiusDivisor,
+  ),
+);
 
 BoxDecoration _trackDecoration(_AuraSwitchTrackData data) {
   return BoxDecoration(
@@ -347,12 +355,7 @@ BoxDecoration _trackDecoration(_AuraSwitchTrackData data) {
 List<BoxShadow>? _focusShadow(_AuraSwitchTrackData data) {
   if (!data.state.isFocused) return null;
 
-  return [
-    BoxShadow(
-      color: data.colors.primary.withValues(alpha: 0.24),
-      spreadRadius: 3,
-    ),
-  ];
+  return [BoxShadow(color: data.colors.primary, spreadRadius: 3)];
 }
 
 class const _AuraSwitchThumbStack(final _AuraSwitchTrackData data)

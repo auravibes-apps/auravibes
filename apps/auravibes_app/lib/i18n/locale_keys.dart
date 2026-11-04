@@ -1793,6 +1793,16 @@ abstract class LocaleKeys {
       'tool_call_status.execution_error';
   static const tool_call_status_running = 'tool_call_status.running';
   static const tool_call_status_pending = 'tool_call_status.pending';
+  static const common_enable_named = 'common.enable_named';
+  static const common_enable_all_tools_named = 'common.enable_all_tools_named';
+  static const common_message_status_sending = 'common.message_status_sending';
+  static const common_message_status_unfinished =
+      'common.message_status_unfinished';
+  static const common_message_status_sent = 'common.message_status_sent';
+  static const common_message_status_delivered =
+      'common.message_status_delivered';
+  static const common_message_status_read = 'common.message_status_read';
+  static const common_message_status_error = 'common.message_status_error';
   static const common_back = 'common.back';
   static const common_cancel = 'common.cancel';
   static const common_remove = 'common.remove';

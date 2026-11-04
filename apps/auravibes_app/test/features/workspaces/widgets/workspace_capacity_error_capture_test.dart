@@ -80,10 +80,10 @@ void main() {
 
     const captureStage = String.fromEnvironment('UX_CAPTURE_STAGE');
     if (captureStage == 'before') {
-      expect(
-        find.text(LocaleKeys.workspace_assets_invalid.tr()),
-        findsOneWidget,
-      );
+      // The capture baseline now runs against main, which already includes
+      // the typed size-limit error copy. Keep it valid when this test is used
+      // to capture the current base revision.
+      expect(find.text(sizeLimitFailure.localizationKey.tr()), findsOneWidget);
     } else if (captureStage == 'after') {
       expect(find.text(sizeLimitFailure.localizationKey.tr()), findsOneWidget);
     } else {

@@ -108,12 +108,36 @@ void main() {
           home: Scaffold(
             body: Column(
               children: [
-                AuraMessageStatus(status: .sending, showAnimation: false),
-                AuraMessageStatus(status: .unfinished, showAnimation: false),
-                AuraMessageStatus(status: .sent, showAnimation: false),
-                AuraMessageStatus(status: .delivered, showAnimation: false),
-                AuraMessageStatus(status: .read, showAnimation: false),
-                AuraMessageStatus(status: .error, showAnimation: false),
+                AuraMessageStatus(
+                  status: .sending,
+                  showAnimation: false,
+                  semanticLabel: 'Message is being sent',
+                ),
+                AuraMessageStatus(
+                  status: .unfinished,
+                  showAnimation: false,
+                  semanticLabel: 'Message was interrupted before completion',
+                ),
+                AuraMessageStatus(
+                  status: .sent,
+                  showAnimation: false,
+                  semanticLabel: 'Message sent successfully',
+                ),
+                AuraMessageStatus(
+                  status: .delivered,
+                  showAnimation: false,
+                  semanticLabel: 'Message delivered',
+                ),
+                AuraMessageStatus(
+                  status: .read,
+                  showAnimation: false,
+                  semanticLabel: 'Message read by recipient',
+                ),
+                AuraMessageStatus(
+                  status: .error,
+                  showAnimation: false,
+                  semanticLabel: 'Message failed to send',
+                ),
               ],
             ),
           ),

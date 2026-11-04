@@ -1800,12 +1800,6 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
         keyExpression: 'groupWithTools.localizedDisplayNameKey',
       ),
       DynamicTranslationSite(
-        file: 'features/tools/widgets/tools_group_header.dart',
-        method: 'tr',
-        keyExpression: 'groupWithTools.localizedDisplayNameKey',
-        occurrence: 1,
-      ),
-      DynamicTranslationSite(
         file: 'features/tools/widgets/tools_management_modal.dart',
         method: 'tr',
         keyExpression: 'group.localizedDisplayNameKey',
