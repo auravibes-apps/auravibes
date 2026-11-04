@@ -10,6 +10,8 @@ import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/models/providers/chat_model_connections_provider.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/models/widgets/add_model_provider_widget.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
@@ -18,6 +20,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:riverpod/riverpod.dart';
 
 import '../data/database/drift/database_test_utils.dart';
 import '../helpers/test_app.dart';
@@ -34,6 +37,9 @@ void main() {
     await clearAppDatabase(database);
     final workspace = await WorkspaceRepository(database)
         .createWorkspace(const .new(name: 'First chat', type: .local));
+    final session = WorkspaceSession(
+      LocalWorkspaceRef(localWorkspaceId: workspace.id),
+    );
     const starter = 'Help me plan my day';
     final chat = NewChatRoute(workspaceId: workspace.id).location;
     final router = GoRouter(
@@ -51,6 +57,8 @@ void main() {
         ),
         overrides: [
           appDatabaseProvider.overrideWithValue(database),
+          workspaceSessionForRouteProvider(workspace.id)
+              .overrideWithValue(AsyncData(session)),
           routerProvider.overrideWithValue(router),
           chatModelConnectionsProvider(workspace.id)
               .overrideWith((ref) => Stream.value([])),
@@ -58,6 +66,7 @@ void main() {
               .overrideWith((ref) => Stream.value({})),
         ],
         workspaceId: workspace.id,
+        workspaceSession: session,
       ),
     );
     final _ = await tester.pumpAndSettle();
@@ -93,6 +102,9 @@ void main() {
     await clearAppDatabase(database);
     final workspace = await WorkspaceRepository(database)
         .createWorkspace(const .new(name: 'First chat', type: .local));
+    final session = WorkspaceSession(
+      LocalWorkspaceRef(localWorkspaceId: workspace.id),
+    );
     final chat = NewChatRoute(workspaceId: workspace.id).location;
     final router = GoRouter(
       routes: $appRoutes,
@@ -109,6 +121,8 @@ void main() {
         ),
         overrides: [
           appDatabaseProvider.overrideWithValue(database),
+          workspaceSessionForRouteProvider(workspace.id)
+              .overrideWithValue(AsyncData(session)),
           routerProvider.overrideWithValue(router),
           chatModelConnectionsProvider(workspace.id)
               .overrideWith((ref) => Stream.value([])),
@@ -116,6 +130,7 @@ void main() {
               .overrideWith((ref) => Stream.value({})),
         ],
         workspaceId: workspace.id,
+        workspaceSession: session,
       ),
     );
     final _ = await tester.pumpAndSettle();
@@ -140,6 +155,9 @@ void main() {
         await clearAppDatabase(database);
         final workspace = await WorkspaceRepository(database)
             .createWorkspace(const .new(name: 'Handoff', type: .local));
+        final session = WorkspaceSession(
+          LocalWorkspaceRef(localWorkspaceId: workspace.id),
+        );
         final chat = NewChatRoute(workspaceId: workspace.id).location;
         final setup = ServiceConnectionCreateRoute(
           workspaceId: workspace.id,
@@ -159,6 +177,8 @@ void main() {
             ),
             overrides: [
               appDatabaseProvider.overrideWithValue(database),
+              workspaceSessionForRouteProvider(workspace.id)
+                  .overrideWithValue(AsyncData(session)),
               routerProvider.overrideWithValue(router),
               chatModelConnectionsProvider(workspace.id).overrideWith(
                 (ref) => Stream.value([_connection(workspace.id)]),
@@ -171,6 +191,7 @@ void main() {
                   ),
             ],
             workspaceId: workspace.id,
+            workspaceSession: session,
           ),
         );
         final _ = await tester.pumpAndSettle();
