@@ -140,6 +140,106 @@ void main() {
       await _sdkRoboto(),
     );
   });
+
+  testWidgets('capture sidecars record and clear view insets', (tester) async {
+    final directory = await tester.runAsync(
+      () => Directory.systemTemp.createTemp('ux-capture-metrics-'),
+    );
+    if (directory == null) {
+      throw StateError('Could not create capture directory');
+    }
+    addTearDown(() => directory.delete(recursive: true));
+    tester.view
+      ..devicePixelRatio = 2
+      ..physicalSize = const Size(640, 1280)
+      ..padding = const FakeViewPadding(left: 8, top: 12, right: 24, bottom: 16)
+      ..viewPadding = const FakeViewPadding(top: 20, right: 24, bottom: 16)
+      ..viewInsets = const FakeViewPadding(bottom: 300);
+    addTearDown(() {
+      tester.view
+        ..resetPadding()
+        ..resetViewPadding()
+        ..resetViewInsets()
+        ..resetPhysicalSize()
+        ..resetDevicePixelRatio();
+    });
+    await tester.pumpWidget(
+      const RepaintBoundary(
+        key: ValueKey('ux-capture'),
+        child: SizedBox.expand(child: ColoredBox(color: .new(0xff000000))),
+      ),
+    );
+
+    Future<void> capture(String name) => _capture(
+      tester,
+      name,
+      '/fixture',
+      locale: 'en',
+      size: const Size(320, 640),
+      scale: 1,
+      dark: false,
+      outputDirectory: directory.path,
+    );
+    Map<String, dynamic> metadata(String name) => jsonDecode(
+      directory
+          .listSync()
+          .whereType<File>()
+          .singleWhere((file) => file.path.endsWith('$name.json'))
+          .readAsStringSync(),
+    ) as Map<String, dynamic>;
+
+    await capture('with-insets');
+    expect(metadata('with-insets')['viewMetrics'], {
+      'devicePixelRatio': 2.0,
+      'paddingPhysicalPixels': {
+        'left': 8.0,
+        'top': 12.0,
+        'right': 24.0,
+        'bottom': 16.0,
+      },
+      'viewPaddingPhysicalPixels': {
+        'left': 0.0,
+        'top': 20.0,
+        'right': 24.0,
+        'bottom': 16.0,
+      },
+      'viewInsetsPhysicalPixels': {
+        'left': 0.0,
+        'top': 0.0,
+        'right': 0.0,
+        'bottom': 300.0,
+      },
+    });
+
+    tester.view
+      ..resetPadding()
+      ..resetViewPadding()
+      ..resetViewInsets();
+    await tester.pump();
+    await capture('without-insets');
+    expect(metadata('without-insets')['viewMetrics'], {
+      'devicePixelRatio': 2.0,
+      'paddingPhysicalPixels': {
+        'left': 0.0,
+        'top': 0.0,
+        'right': 0.0,
+        'bottom': 0.0,
+      },
+      'viewPaddingPhysicalPixels': {
+        'left': 0.0,
+        'top': 0.0,
+        'right': 0.0,
+        'bottom': 0.0,
+      },
+      'viewInsetsPhysicalPixels': {
+        'left': 0.0,
+        'top': 0.0,
+        'right': 0.0,
+        'bottom': 0.0,
+      },
+    });
+  });
+
   for (final scenario in const [
     (
       name: 'agent-editor-skills-failure',
@@ -2154,10 +2254,19 @@ Future<void> _capture(
   required double scale,
   required bool dark,
   Map<String, Object>? controlMeasurements,
+  String? outputDirectory,
 }) async {
-  const output = String.fromEnvironment('UX_CAPTURE_DIR');
+  const defaultOutput = String.fromEnvironment('UX_CAPTURE_DIR');
+  final output = outputDirectory ?? defaultOutput;
   if (output.isEmpty) return;
   const fingerprint = String.fromEnvironment('UX_SOURCE_FINGERPRINT');
+  final view = tester.view;
+  final viewMetrics = {
+    'devicePixelRatio': view.devicePixelRatio,
+    'paddingPhysicalPixels': _viewPadding(view.padding),
+    'viewPaddingPhysicalPixels': _viewPadding(view.viewPadding),
+    'viewInsetsPhysicalPixels': _viewPadding(view.viewInsets),
+  };
   final boundary = tester.renderObject<RenderRepaintBoundary>(
     find.byKey(const ValueKey('ux-capture')),
   );
@@ -2180,6 +2289,7 @@ Future<void> _capture(
         'sourceFingerprint': fingerprint,
         'renderer': 'Flutter widget-test Skia, ${Platform.operatingSystem}',
         'viewport': [size.width, size.height],
+        'viewMetrics': viewMetrics,
         'locale': locale,
         'textScale': scale,
         'theme': dark ? 'dark' : 'light',
@@ -2194,6 +2304,13 @@ Future<void> _capture(
     );
   });
 }
+
+Map<String, double> _viewPadding(ui.ViewPadding padding) => {
+  'left': padding.left,
+  'top': padding.top,
+  'right': padding.right,
+  'bottom': padding.bottom,
+};
 
 const _accounts = [
   CloudAccountSession(

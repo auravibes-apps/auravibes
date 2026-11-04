@@ -1788,6 +1788,7 @@ bool _isDocumentation(String path) {
 
 bool _isNonExecutablePath(String path) =>
     _isDocumentation(path) ||
+    (path.startsWith('docs/audits/') && path.toLowerCase().endsWith('.json')) ||
     _isSkillMetadataPath(path) ||
     path.startsWith('.pi/') ||
     path == 'sonar-project.properties' ||

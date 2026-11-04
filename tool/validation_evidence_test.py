@@ -138,6 +138,86 @@ class ValidationEvidenceTest(unittest.TestCase):
                 )
             )
 
+    def test_require_rejects_missing_unfinished_failed_and_stale_results(self):
+        command = [sys.executable, "-c", "pass"]
+        self.assertNotEqual(self._evidence_cli("require", command).returncode, 0)
+        self.assertEqual(self._evidence_cli("run", command).returncode, 0)
+        self.assertEqual(self._evidence_cli("require", command).returncode, 0)
+        machine = self._evidence_cli("require", command, "--json")
+        self.assertEqual(json.loads(machine.stdout)["status"], "success")
+
+        source = validation_evidence.repository_context(self.root)
+        environment = {"XDG_STATE_HOME": str(self.root / ".git" / "state")}
+        with patch.dict(os.environ, environment):
+            store = validation_evidence.default_store_path(self.root)
+        with closing(validation_evidence.open_store(store)) as db:
+            for status in ("incomplete", "failure", "skipped", "cancelled"):
+                record = validation_evidence.start_record(
+                    db,
+                    command=command,
+                    cwd=".",
+                    package=".",
+                    head=source["head"],
+                    fingerprint=source["fingerprint"],
+                    toolchain="fixture",
+                )
+                if status != "incomplete":
+                    validation_evidence.finish_record(
+                        db,
+                        record["id"],
+                        status=status,
+                        exit_code=1 if status == "failure" else None,
+                    )
+                self.assertNotEqual(
+                    self._evidence_cli("require", command).returncode, 0, status
+                )
+
+        result = self._evidence_cli("run", command, "--reuse")
+        self.assertEqual(result.returncode, 0)
+        self.assertNotIn("REUSED", result.stdout)
+        self.assertEqual(self._evidence_cli("require", command).returncode, 0)
+        (self.root / "tracked.txt").write_text("changed source\n")
+        self.assertNotEqual(self._evidence_cli("require", command).returncode, 0)
+
+    def test_source_changed_during_validation_is_not_success(self):
+        command = [
+            sys.executable,
+            "-c",
+            "from pathlib import Path; Path('tracked.txt').write_text('changed')",
+        ]
+        result = self._evidence_cli("run", command)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("INCOMPLETE", result.stdout)
+        (self.root / "tracked.txt").write_text("original\n")
+        self.assertNotEqual(self._evidence_cli("require", command).returncode, 0)
+
+    def test_require_does_not_match_redacted_commands(self):
+        command = [sys.executable, "-c", "pass", "--token", "example-value"]
+        self.assertEqual(self._evidence_cli("run", command).returncode, 0)
+        self.assertNotEqual(self._evidence_cli("require", command).returncode, 0)
+
+    def _evidence_cli(self, action, command, *options):
+        environment = os.environ.copy()
+        environment["XDG_STATE_HOME"] = str(self.root / ".git" / "state")
+        environment["LOCALAPPDATA"] = str(self.root / ".git" / "state")
+        return subprocess.run(
+            [
+                sys.executable,
+                str(Path(__file__).resolve().with_name("validation_evidence.py")),
+                action,
+                "--toolchain-version",
+                "fixture",
+                *options,
+                "--",
+                *command,
+            ],
+            cwd=self.root,
+            env=environment,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
     def test_success_with_redacted_arguments_is_not_reusable(self):
         source = validation_evidence.repository_context(self.root)
         command = ["python3", "check.py", "--token", "<redacted>"]

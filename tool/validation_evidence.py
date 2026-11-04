@@ -131,6 +131,7 @@ def _git_common_directory(root):
 
 
 def default_store_path(root):
+    root = Path(root).resolve()
     common_directory = _git_common_directory(root)
     if os.name == "nt":
         state_root = Path(
@@ -523,10 +524,9 @@ def find_reusable_record(
     row = connection.execute(
         """
         SELECT * FROM validation_evidence
-        WHERE status = 'success' AND exit_code = 0 AND reuse_allowed = 1
-          AND command_json = ? AND working_directory = ? AND package = ?
+        WHERE command_json = ? AND working_directory = ? AND package = ?
           AND head = ? AND fingerprint = ? AND toolchain_version = ?
-        ORDER BY ended_at DESC LIMIT 1
+        ORDER BY started_at DESC, rowid DESC LIMIT 1
         """,
         (
             json.dumps(command, ensure_ascii=False),
@@ -537,7 +537,9 @@ def find_reusable_record(
             toolchain,
         ),
     ).fetchone()
-    return dict(row) if row else None
+    if row is None or row["status"] != "success" or row["exit_code"] != 0:
+        return None
+    return dict(row) if row["reuse_allowed"] else None
 
 
 def current_snapshot(record, head, fingerprint):
@@ -571,6 +573,7 @@ def machine_record(record, *, reused=False):
 
 
 def emit_record(record, *, as_json=False, reused=False):
+    record = dict(record)
     if as_json:
         print(
             json.dumps(
@@ -618,6 +621,13 @@ def _parser():
     run.add_argument("--redact-arg", type=int, action="append", default=[])
     run.add_argument("--json", action="store_true", dest="as_json")
     run.add_argument("command", nargs=argparse.REMAINDER)
+
+    require = commands.add_parser(
+        "require", help="require the latest matching validation to have passed"
+    )
+    _add_context_arguments(require)
+    require.add_argument("--json", action="store_true", dest="as_json")
+    require.add_argument("command", nargs=argparse.REMAINDER)
 
     skip = commands.add_parser("skip", help="record that a validation was skipped")
     _add_context_arguments(skip)
@@ -708,6 +718,28 @@ def main(argv=None):
                 emit_record(record, as_json=args.as_json)
                 return 0
 
+            if args.action == "require":
+                if has_redactions:
+                    raise ValueError("redacted commands cannot be matched safely")
+                reusable = find_reusable_record(
+                    connection,
+                    command=sanitized,
+                    cwd=cwd,
+                    package=package,
+                    head=run_source["head"],
+                    fingerprint=run_source["fingerprint"],
+                    toolchain=toolchain,
+                )
+                if reusable is None:
+                    print(
+                        "validation evidence: no matching completed success for "
+                        "the current source snapshot",
+                        file=sys.stderr,
+                    )
+                    return 1
+                emit_record(reusable, as_json=args.as_json)
+                return 0
+
             if args.timeout is not None and args.timeout <= 0:
                 raise ValueError("--timeout must be greater than zero")
 
@@ -738,6 +770,15 @@ def main(argv=None):
             status, exit_code, detail, duration_ms = execute_command(
                 command, directory, args.timeout
             )
+            if status == "success":
+                completed_source = repository_context(directory)
+                if (
+                    completed_source["head"] != run_source["head"]
+                    or completed_source["fingerprint"] != run_source["fingerprint"]
+                ):
+                    status = "incomplete"
+                    exit_code = None
+                    detail = "source changed during validation"
             result = finish_record(
                 connection,
                 record["id"],
@@ -751,6 +792,8 @@ def main(argv=None):
                 return 130
             if detail == "timed out without a command exit code":
                 return 124
+            if detail == "source changed during validation":
+                return 1
             if exit_code is None:
                 return 127
             return min(exit_code, 255) if exit_code >= 0 else 128 + abs(exit_code)
