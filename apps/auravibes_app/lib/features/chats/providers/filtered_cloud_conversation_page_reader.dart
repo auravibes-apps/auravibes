@@ -94,30 +94,6 @@ class FilteredCloudConversationPageReader(
     return false;
   }
 
-  static Future<ConversationPage> _readCloudConversationPageAtCursor(
-    _CloudConversationPageRequest request,
-  ) => request.gateway.client.conversation.listPage(
-    .new(
-      workspaceId: request.cloud.cloudWorkspaceId,
-      limit: 100,
-      cursor: request.cursor,
-      search: request.search.isEmpty ? null : request.search,
-      labelIds: request.labelIds.toList(),
-    ),
-  );
-
-  static _CloudConversationPageRequest _allPagesRequest(
-    CloudWorkspaceStateGateway gateway,
-    CloudWorkspaceRef cloud,
-    String? cursor,
-  ) => (
-    gateway: gateway,
-    cloud: cloud,
-    cursor: cursor,
-    search: '',
-    labelIds: const {},
-  );
-
   _CloudConversationPageRequest _filteredPageRequest() => (
     gateway: _gateway,
     cloud: _cloud,
@@ -125,23 +101,47 @@ class FilteredCloudConversationPageReader(
     search: _search,
     labelIds: labelIds,
   );
+}
 
-  static String? _nextCloudConversationCursor(
-    String? nextCursor,
-    Set<String> seenCursors,
-  ) {
-    if (nextCursor == null) return null;
-    if (nextCursor.isEmpty || !seenCursors.add(nextCursor)) {
-      _throwInvalidCloudConversationCursor();
-    }
+Future<ConversationPage> _readCloudConversationPageAtCursor(
+  _CloudConversationPageRequest request,
+) => request.gateway.client.conversation.listPage(
+  .new(
+    workspaceId: request.cloud.cloudWorkspaceId,
+    limit: 100,
+    cursor: request.cursor,
+    search: request.search.isEmpty ? null : request.search,
+    labelIds: request.labelIds.toList(),
+  ),
+);
 
-    return nextCursor;
+_CloudConversationPageRequest _allPagesRequest(
+  CloudWorkspaceStateGateway gateway,
+  CloudWorkspaceRef cloud,
+  String? cursor,
+) => (
+  gateway: gateway,
+  cloud: cloud,
+  cursor: cursor,
+  search: '',
+  labelIds: const {},
+);
+
+String? _nextCloudConversationCursor(
+  String? nextCursor,
+  Set<String> seenCursors,
+) {
+  if (nextCursor == null) return null;
+  if (nextCursor.isEmpty || !seenCursors.add(nextCursor)) {
+    _throwInvalidCloudConversationCursor();
   }
 
-  static Never _throwInvalidCloudConversationCursor() =>
-      throw const CloudAppException(
-        localizationKey: LocaleKeys.cloud_errors_malformed_resource,
-        context: .conversation,
-        code: 'invalidCursor',
-      );
+  return nextCursor;
 }
+
+Never _throwInvalidCloudConversationCursor() =>
+  throw const CloudAppException(
+    localizationKey: LocaleKeys.cloud_errors_malformed_resource,
+    context: .conversation,
+    code: 'invalidCursor',
+  );

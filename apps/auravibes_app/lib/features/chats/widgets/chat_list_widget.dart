@@ -2031,17 +2031,21 @@ extension on _ChatTileMenu {
     controller: controller,
   );
 
-  List<AuraPopupMenuItem> _menuItems() => [
-    _chatTilePinItem(chat, callbacks.actions.onTogglePin),
-    ..._chatTileConversationItems(callbacks),
-    _chatTileArchiveStateItem(scope, callbacks.actions.onArchiveStateChange),
-    if (onArchiveExport case final onArchiveExport?)
-      _chatTileBackupItem(onArchiveExport),
-    ..._chatTileMenuItems(
-      onRename: callbacks.actions.onRename,
-      onDelete: callbacks.actions.onDelete,
-    ),
-  ];
+  List<AuraPopupMenuItem> _menuItems() {
+    final actions = callbacks.actions;
+
+    return [
+      _chatTilePinItem(chat, actions.onTogglePin),
+      ..._chatTileConversationItems(callbacks),
+      _chatTileArchiveStateItem(scope, actions.onArchiveStateChange),
+      if (onArchiveExport case final onArchiveExport?)
+        _chatTileBackupItem(onArchiveExport),
+      ..._chatTileMenuItems(
+        onRename: actions.onRename,
+        onDelete: actions.onDelete,
+      ),
+    ];
+  }
 }
 
 List<AuraPopupMenuItem> _chatTileConversationItems(
