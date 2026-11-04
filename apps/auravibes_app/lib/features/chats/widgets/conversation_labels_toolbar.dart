@@ -155,8 +155,9 @@ class const _ConversationLabelFilterButton({
 
   String get _filterSemantics => count == 0
       ? LocaleKeys.chats_screens_conversation_labels_filter_semantics.tr()
-      : LocaleKeys.chats_screens_conversation_labels_filter_count_semantics
-            .tr(args: [count.toString()]);
+      : LocaleKeys.chats_screens_conversation_labels_filter_count_semantics.tr(
+          args: [count.toString()],
+        );
 
   String get _selectedCountSemantics => LocaleKeys
       .chats_screens_conversation_labels_selected_count_semantics
@@ -213,11 +214,8 @@ class _ConversationLabelFilterDialogState
   }
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: _title,
-    content: _content,
-    actions: _actions(context),
-  );
+  Widget build(BuildContext context) =>
+      AlertDialog(title: _title, content: _content, actions: _actions(context));
 
   Widget get _title =>
       Text(LocaleKeys.chats_screens_conversation_labels_filter_title.tr());
@@ -299,8 +297,7 @@ class const _ConversationLabelCheckboxList({
       label: label,
       selected: selectedLabelIds.contains(label.id),
       enabled: enabled,
-      onChanged: (selected) =>
-          onChanged(labelId: label.id, selected: selected),
+      onChanged: (selected) => onChanged(labelId: label.id, selected: selected),
     );
   }
 }
@@ -467,9 +464,8 @@ class const _ConversationLabelManagementList({
     AsyncLoading() => _loadingState(),
   };
 
-  Widget _dataState(List<ConversationLabelEntity> values) => values.isEmpty
-      ? _emptyState()
-      : _loadedState(values);
+  Widget _dataState(List<ConversationLabelEntity> values) =>
+      values.isEmpty ? _emptyState() : _loadedState(values);
 
   Widget _emptyState() => Padding(
     padding: const EdgeInsets.symmetric(
@@ -731,21 +727,19 @@ class _ConversationLabelAssignmentDialogState
     );
   }
 
-  Widget get _assignmentTitle => Text(
-    LocaleKeys.chats_screens_conversation_labels_assignment_title.tr(),
-  );
+  Widget get _assignmentTitle =>
+      Text(LocaleKeys.chats_screens_conversation_labels_assignment_title.tr());
 
-  Widget _assignmentContent(
-    AsyncValue<List<ConversationLabelEntity>> labels,
-  ) => SizedBox(
-    width: _conversationLabelFilterDialogWidth,
-    child: _ConversationLabelAssignmentList(
-      labels: labels,
-      selectedLabelIds: _selected,
-      enabled: !_isSaving,
-      onChanged: _toggleAssignment,
-    ),
-  );
+  Widget _assignmentContent(AsyncValue<List<ConversationLabelEntity>> labels) =>
+      SizedBox(
+        width: _conversationLabelFilterDialogWidth,
+        child: _ConversationLabelAssignmentList(
+          labels: labels,
+          selectedLabelIds: _selected,
+          enabled: !_isSaving,
+          onChanged: _toggleAssignment,
+        ),
+      );
 
   List<Widget> _assignmentActions(BuildContext context) => [
     TextButton(
