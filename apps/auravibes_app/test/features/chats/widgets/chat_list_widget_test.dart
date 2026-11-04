@@ -666,7 +666,6 @@ void main() {
           ],
         ),
       );
-      final _ = await tester.pumpAndSettle();
 
       final container = tester
           .widget<UncontrolledProviderScope>(
@@ -674,7 +673,9 @@ void main() {
           )
           .container;
 
-      Future<void> waitForSearchResult({required bool isVisible}) async {
+      Future<void> waitForConversationVisibility({
+        required bool isVisible,
+      }) async {
         for (var attempt = 0; attempt < 30; attempt++) {
           await tester.pump(const Duration(milliseconds: 100));
           final isSearching = find
@@ -687,8 +688,10 @@ void main() {
               .isNotEmpty;
           if (!isSearching && titleIsVisible == isVisible) return;
         }
-        fail('Timed out waiting for archived search visibility: $isVisible');
+        fail('Timed out waiting for conversation visibility: $isVisible');
       }
+
+      await waitForConversationVisibility(isVisible: true);
 
       final conversationState = container.read(
         conversationsStreamProvider((
@@ -704,11 +707,11 @@ void main() {
         reason: 'Conversation stream state: $conversationState',
       );
       await tester.tap(find.byIcon(Icons.more_vert));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('Archive'), findsOneWidget);
       expect(find.text('Export backup'), findsOneWidget);
       await tester.tap(find.text('Archive'));
-      final _ = await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(
         await database.conversationArchiveStateDao.getArchivedConversationIds(
@@ -720,31 +723,10 @@ void main() {
       scope.value = ConversationListScope.archived;
       await tester.pump();
 
-      final archivedProvider = conversationsStreamProvider((
-        workspaceId: workspace.id,
-        search: '',
-        scope: ConversationListScope.archived,
-        pagination: (limit: 21, offset: 0),
-      ));
-      for (var attempt = 0; attempt < 30; attempt++) {
-        if (container.read(archivedProvider).hasValue) break;
-        await tester.pump(const Duration(milliseconds: 100));
-      }
-      final archivedState = container.read(archivedProvider);
-      expect(
-        archivedState.hasValue,
-        isTrue,
-        reason: 'Archived stream state: $archivedState',
-      );
-      expect(
-        archivedState.requireValue.map((item) => item.id),
-        contains(conversation.id),
-      );
-      await tester.pump();
+      await waitForConversationVisibility(isVisible: true);
       expect(
         find.text('Project research'),
         findsOneWidget,
-        reason: 'Archived stream state: $archivedState',
       );
       expect(
         find.byKey(ValueKey('conversation-selection-${conversation.id}')),
@@ -753,12 +735,12 @@ void main() {
       expect(find.text('Delete selected'), findsNothing);
       await tester.enterText(find.byType(EditableText), 'missing');
       await tester.pump(const Duration(milliseconds: 301));
-      await waitForSearchResult(isVisible: false);
+      await waitForConversationVisibility(isVisible: false);
       expect(find.text('Project research'), findsNothing);
 
       await tester.enterText(find.byType(EditableText), 'Project');
       await tester.pump(const Duration(milliseconds: 301));
-      await waitForSearchResult(isVisible: true);
+      await waitForConversationVisibility(isVisible: true);
       expect(find.text('Project research'), findsOneWidget);
       await tester.tap(find.byIcon(Icons.more_vert));
       for (var attempt = 0; attempt < 5; attempt++) {
@@ -776,7 +758,7 @@ void main() {
         ),
         isEmpty,
       );
-      await waitForSearchResult(isVisible: false);
+      await waitForConversationVisibility(isVisible: false);
       expect(find.text('Project research'), findsNothing);
     });
 
