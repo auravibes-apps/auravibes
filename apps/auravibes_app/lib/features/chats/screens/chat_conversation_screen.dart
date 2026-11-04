@@ -1733,12 +1733,18 @@ class const _ChatConversationAppBar({
   );
 
   Widget _appBar(bool compact) => AuraAppBarWithDrawer(
-    title: _title(compact),
+    title: _ChatConversationHeaderTitle(data: data, compact: compact),
     actions: actions.widgets(compact: compact),
     leading: data.leading,
   );
+}
 
-  Widget _title(bool compact) => compact
+class const _ChatConversationHeaderTitle({
+  required final _LoadedChatConversationData data,
+  required final bool compact,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => compact
       ? Text(data.conversation.title, overflow: .ellipsis, maxLines: 1)
       : _ChatConversationAppBarTitle(data: data);
 }
