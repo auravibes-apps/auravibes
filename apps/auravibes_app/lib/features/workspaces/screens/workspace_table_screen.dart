@@ -499,7 +499,7 @@ class const _NewRecordButton(
     settings.value = false;
     unawaited(
       action.run(
-        () => createEmptyWorkspaceRecord(
+        () => WorkspaceRecordBrowser.createEmptyRecord(
           ref,
           workspaceId: browser.workspaceId,
           table: browser.table,

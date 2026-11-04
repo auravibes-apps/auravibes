@@ -4,7 +4,11 @@ import 'package:auravibes_app/features/chats/services/chatbot/anthropic_request_
 import 'package:auravibes_app/features/chats/services/chatbot/app_anthropic_plugin.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
-    show AgentContextMessage, AgentTranscriptContextEntry, ToolSpec;
+    show
+        AgentContextMessage,
+        AgentContextProvenance,
+        AgentTranscriptContextEntry,
+        ToolSpec;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart';
 import 'package:http/http.dart' as http;
@@ -110,6 +114,9 @@ void main() {
           Message(
             role: .system,
             content: [TextPart(text: 'Stable\n prompt')],
+            metadata: AgentContextProvenance.applicationPrompt.withMetadata(
+              const {},
+            ),
           ),
           Message(
             role: .user,

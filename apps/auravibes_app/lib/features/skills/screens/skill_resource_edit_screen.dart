@@ -12,6 +12,7 @@ import 'package:auravibes_app/widgets/app_screen.dart';
 import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
+import 'package:auravibes_app/widgets/route_recovery_view.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show AppSkillResourceDefinition;
@@ -29,6 +30,7 @@ typedef _SkillResourceViewData = ({
 });
 typedef _SkillResourceRenderData = ({
   _SkillResourceViewData viewData,
+  AsyncValue<SkillDetail?> detailAsync,
   String titleKey,
   String? parentTitle,
 });
@@ -108,6 +110,15 @@ class _SkillResourceEditScreenState
   }
 
   void _updateState(VoidCallback callback) => setState(callback);
+
+  void _retrySkill() =>
+      ref.invalidate(skillDetailProvider(widget.workspaceId, widget.skillId));
+
+  void _retryResource() {
+    final resourceId = widget.resourceId;
+    if (resourceId == null) return;
+    ref.invalidate(skillResourceProvider(widget.workspaceId, resourceId));
+  }
 }
 
 extension on _SkillResourceEditScreenState {
@@ -179,6 +190,7 @@ _SkillResourceRenderData _resourceScreenData(
 
   return (
     viewData: viewData,
+    detailAsync: detailAsync,
     titleKey: state._titleKey(viewData.staticResource),
     parentTitle: detail?.title,
   );
@@ -193,6 +205,7 @@ class const _SkillResourceScreenView({
     child: _SkillResourceScreenContent(
       state: state,
       viewData: renderData.viewData,
+      detailAsync: renderData.detailAsync,
       parentTitle: renderData.parentTitle,
     ),
     appBar: _SkillResourceAppBar(state: state, titleKey: renderData.titleKey),
@@ -202,6 +215,7 @@ class const _SkillResourceScreenView({
 class const _SkillResourceScreenContent({
   required final _SkillResourceEditScreenState state,
   required final _SkillResourceViewData viewData,
+  required final AsyncValue<SkillDetail?> detailAsync,
   required final String? parentTitle,
 }) extends StatelessWidget {
   @override
@@ -213,11 +227,10 @@ class const _SkillResourceScreenContent({
       if (viewData.staticResource != null)
         const _SkillResourceReadOnlyMessage(),
       Expanded(
-        child: _SkillResourceBody(
+        child: _SkillResourceParentGate(
           state: state,
-          resourceAsync: viewData.resourceAsync,
-          resource: viewData.resource,
-          staticResource: viewData.staticResource,
+          detailAsync: detailAsync,
+          viewData: viewData,
         ),
       ),
     ],
@@ -369,6 +382,33 @@ extension on _SkillResourceEditScreenState {
   }
 }
 
+class const _SkillResourceParentGate({
+  required final _SkillResourceEditScreenState state,
+  required final AsyncValue<SkillDetail?> detailAsync,
+  required final _SkillResourceViewData viewData,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (detailAsync case AsyncError()) {
+      return RouteRecoveryView(
+        messageKey: LocaleKeys.skills_screen_detail_load_error,
+        onRetry: state._retrySkill,
+        embedded: true,
+      );
+    }
+    if (detailAsync is AsyncLoading && !detailAsync.hasValue) {
+      return const Center(child: AuraSpinner());
+    }
+
+    return _SkillResourceBody(
+      state: state,
+      resourceAsync: viewData.resourceAsync,
+      resource: viewData.resource,
+      staticResource: viewData.staticResource,
+    );
+  }
+}
+
 class const _SkillResourceBody({
   required final _SkillResourceEditScreenState state,
   required final AsyncValue<SkillResourceEntity?>? resourceAsync,
@@ -378,11 +418,10 @@ class const _SkillResourceBody({
   @override
   Widget build(BuildContext context) {
     if (resourceAsync case AsyncError()) {
-      return const Center(
-        child: AuraText(
-          child: TextLocale(LocaleKeys.skills_resource_load_error),
-          tint: .error,
-        ),
+      return RouteRecoveryView(
+        messageKey: LocaleKeys.skills_resource_load_error,
+        onRetry: state._retryResource,
+        embedded: true,
       );
     }
     if (state.widget.resourceId != null &&

@@ -26,6 +26,7 @@ import 'package:auravibes_app/widgets/aura_app_bar_with_drawer.dart';
 import 'package:auravibes_app/widgets/bottom_padding.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
 import 'package:auravibes_app/widgets/feature_destinations.dart';
+import 'package:auravibes_app/widgets/route_recovery_view.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_engine/auravibes_engine.dart'
     show AppSkillResourceDefinition;
@@ -142,6 +143,12 @@ extension on _SkillDetailScreenState {
     if (skillId == null) return null;
 
     return ref.watch(skillDetailProvider(widget.workspaceId, skillId));
+  }
+
+  void _retryDetail() {
+    final skillId = widget.skillId;
+    if (skillId == null) return;
+    ref.invalidate(skillDetailProvider(widget.workspaceId, skillId));
   }
 
   SkillDetail? _userSkillDetail(SkillDetail? detail) =>
@@ -514,7 +521,11 @@ class const _SkillDetailBody({
     ),
     _SkillDetailNotFoundState() => const _SkillNotFound(),
     _SkillDetailLoadingState() => const _SkillLoading(),
-    _SkillDetailErrorState() => const _SkillLoadError(),
+    _SkillDetailErrorState() => RouteRecoveryView(
+      messageKey: LocaleKeys.skills_screen_detail_load_error,
+      onRetry: state._retryDetail,
+      embedded: true,
+    ),
   };
 }
 
@@ -559,13 +570,6 @@ class const _SkillLoading() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Center(child: AuraSpinner());
-  }
-}
-
-class const _SkillLoadError() extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return const Center(child: TextLocale(LocaleKeys.skills_screen_load_error));
   }
 }
 
@@ -1107,6 +1111,7 @@ class const _SkillResourcesUserCard({
         resourcesAsync: resourcesAsync,
         onCreate: actions.create,
         onOpen: actions.open,
+        onRetry: actions.retry,
       ),
     );
   }
@@ -1142,6 +1147,8 @@ class _SkillResourcesActions {
 
   void create() => unawaited(_open());
 
+  void retry() => ref.invalidate(skillResourcesProvider(workspaceId, skillId));
+
   Future<void> open(String resourceId) => _open(resourceId);
 
   Future<void> _open([String? resourceId]) async {
@@ -1163,6 +1170,7 @@ class const _SkillResourcesUserContent({
   required final AsyncValue<List<SkillResourceEntity>> resourcesAsync,
   required final VoidCallback onCreate,
   required final Future<void> Function(String) onOpen,
+  required final VoidCallback onRetry,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
@@ -1174,13 +1182,28 @@ class const _SkillResourcesUserContent({
           onOpen: onOpen,
         ),
         AsyncLoading() => const Center(child: AuraSpinner(size: .small)),
-        AsyncError() => const AuraText(
-          child: TextLocale(LocaleKeys.skills_resource_load_error),
-          tint: .error,
-        ),
+        AsyncError() => _SkillResourcesLoadError(onRetry: onRetry),
       },
     ],
     spacing: .sm,
+    crossAxisAlignment: .start,
+  );
+}
+
+class const _SkillResourcesLoadError({required final VoidCallback onRetry})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      Semantics(
+        child: const TextLocale(LocaleKeys.skills_resource_load_error),
+        liveRegion: true,
+      ),
+      AuraButton(
+        onPressed: onRetry,
+        child: const TextLocale(LocaleKeys.route_state_retry),
+      ),
+    ],
     crossAxisAlignment: .start,
   );
 }

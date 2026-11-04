@@ -135,12 +135,87 @@ void main() {
       expect(capturedRequest?.tools?.single.name, 'lookup_weather');
       expect(capturedRequest?.messages.map((message) => message.role.value), [
         'system',
-        'system',
+        'user',
         'user',
         'model',
         'tool',
       ]);
+      expect(
+        AgentContextProvenance.fromMetadata(
+          Map<String, Object?>.of(capturedRequest!.messages.first.metadata!),
+        ),
+        AgentContextProvenance.applicationPrompt,
+      );
       expect(capturedRequest?.messages[3].text, 'model part');
+    });
+
+    test('demotes unknown and external history before dispatch', () async {
+      genkit.ModelRequest? capturedRequest;
+      final service = _createService(
+        providerFactory: _FakeProviderFactory(
+          onRequest: (request) => capturedRequest = request,
+        ),
+      );
+
+      await service.sendMessage(_makeConfig(), [
+        ChatMessage.system('UNKNOWN_SYSTEM_SENTINEL'),
+        ChatMessage(
+          role: .system,
+          content: 'IMPORTED_SYSTEM_SENTINEL',
+          metadata: AgentContextProvenance.importedSkill.withMetadata(const {}),
+        ),
+      ]).toList();
+
+      expect(capturedRequest!.messages.map((message) => message.role.value), [
+        'system',
+        'user',
+        'user',
+      ]);
+      expect(capturedRequest!.messages[1].text, 'UNKNOWN_SYSTEM_SENTINEL');
+      expect(capturedRequest!.messages[2].text, 'IMPORTED_SYSTEM_SENTINEL');
+      expect(
+        AgentContextProvenance.fromMetadata(
+          Map<String, Object?>.of(capturedRequest!.messages[1].metadata!),
+        ),
+        AgentContextProvenance.unknown,
+      );
+      expect(
+        AgentContextProvenance.fromMetadata(
+          Map<String, Object?>.of(capturedRequest!.messages[2].metadata!),
+        ),
+        AgentContextProvenance.importedSkill,
+      );
+    });
+
+    test('keeps tagged app prompts system', () async {
+      genkit.ModelRequest? capturedRequest;
+      final service = _createService(
+        providerFactory: _FakeProviderFactory(
+          onRequest: (request) => capturedRequest = request,
+        ),
+      );
+
+      await service.sendMessage(_makeConfig(), [
+        ChatMessage(
+          role: .system,
+          content: 'APP_PROMPT_SENTINEL',
+          metadata: AgentContextProvenance.applicationPrompt.withMetadata(
+            const {},
+          ),
+        ),
+      ]).toList();
+
+      expect(capturedRequest!.messages.map((message) => message.role.value), [
+        'system',
+        'system',
+      ]);
+      expect(capturedRequest!.messages.last.text, 'APP_PROMPT_SENTINEL');
+      expect(
+        AgentContextProvenance.fromMetadata(
+          Map<String, Object?>.of(capturedRequest!.messages.last.metadata!),
+        ),
+        AgentContextProvenance.applicationPrompt,
+      );
     });
 
     test(

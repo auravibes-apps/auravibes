@@ -48,7 +48,7 @@ class const BuildPromptChatMessages({
       _agentBuilder,
       modalitiesInput,
       supportsImageToolResults,
-      redactWorkspaceToolHistory(messages),
+      WorkspaceHistoryRedaction.redactHistory(messages),
     );
   }
 }
@@ -91,7 +91,7 @@ Future<List<ChatMessage>> _buildPromptMessage(
       await _withAttachments(
         _toChatMessage(chatMessage).copyWith(
           metadata: {
-            ...chatMessage.metadata,
+            ...chatMessage.metadataWithProvenance,
             'transcriptMessageId': message.id,
           },
         ),
@@ -210,7 +210,20 @@ agent.AgentPromptMessage _agentPromptMessage(
     thinking: metadata?.thinking,
     modelMetadata: metadata?.modelMetadata ?? const {},
     toolCalls: toolCalls,
+    provenance: _messageProvenance(message, metadata),
   );
+}
+
+agent.AgentContextProvenance _messageProvenance(
+  MessageEntity message,
+  MessageMetadataEntity? metadata,
+) {
+  if (metadata?.isCompactionSummary == true) {
+    return agent.AgentContextProvenance.compactionSummary;
+  }
+  if (message.isUser) return agent.AgentContextProvenance.userConversation;
+
+  return agent.AgentContextProvenance.unknown;
 }
 
 agent.AgentPromptMessageType _promptMessageType(MessageEntity message) =>
@@ -298,6 +311,9 @@ agent.AgentPromptToolCall _agentPromptToolCall(
   isResolved: toolCall.isResolved,
   response: toolCall.getResponseForAI(),
   media: media,
+  provenance: toolCall.isResolved
+      ? agent.AgentContextProvenance.toolResult
+      : agent.AgentContextProvenance.unknown,
 );
 
 Future<_ToolResultMediaBuild> _toolResultMediaForCall(
@@ -399,7 +415,7 @@ ChatMessage _toChatMessage(agent.AgentChatMessage message) => ChatMessage(
   role: _chatMessageRole(message),
   content: message.content,
   parts: message.parts.map(_toPart).toList(),
-  metadata: Map<String, Object?>.of(message.metadata),
+  metadata: message.metadataWithProvenance,
 );
 
 ChatMessageRole _chatMessageRole(agent.AgentChatMessage message) =>
