@@ -17,7 +17,7 @@ typedef _ConversationLabelAssignment = ({
 class ConversationLabelsRepository(final AppDatabase _database) {
   Stream<List<ConversationLabelEntity>> watchLabelsByWorkspace(
     String workspaceId,
-  ) => this._labelsByWorkspace(workspaceId).watch().map(this._mapLabels);
+  ) => _labelsByWorkspace(workspaceId).watch().map(_mapLabels);
 
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     ConversationLabelQuery query,
@@ -45,7 +45,7 @@ class ConversationLabelsRepository(final AppDatabase _database) {
     required Stream<List<ConversationEntity>> conversations,
   }) => Rx.combineLatest2(
     conversations,
-    this._watchLabelAssignmentsByWorkspace(workspaceId),
+    _watchLabelAssignmentsByWorkspace(workspaceId),
     (conversations, labelsByConversation) => [
       for (final conversation in conversations)
         conversation.copyWith(
@@ -57,11 +57,11 @@ class ConversationLabelsRepository(final AppDatabase _database) {
   Future<ConversationLabelEntity> createLabel({
     required String workspaceId,
     required String name,
-  }) async {
+  }) {
     final normalized = _normalizeName(name);
 
     return _database.transaction(
-      () => this._createLabelInTransaction(workspaceId, normalized),
+      () => _createLabelInTransaction(workspaceId, normalized),
     );
   }
 
@@ -69,11 +69,11 @@ class ConversationLabelsRepository(final AppDatabase _database) {
     required String workspaceId,
     required String labelId,
     required String name,
-  }) async {
+  }) {
     final normalized = _normalizeName(name);
 
     return _database.transaction(
-      () => this._renameLabelInTransaction(workspaceId, labelId, normalized),
+      () => _renameLabelInTransaction(workspaceId, labelId, normalized),
     );
   }
 
@@ -81,7 +81,7 @@ class ConversationLabelsRepository(final AppDatabase _database) {
     required String workspaceId,
     required String labelId,
   }) => _database.transaction(
-    () => this._deleteLabelInTransaction(workspaceId, labelId),
+    () => _deleteLabelInTransaction(workspaceId, labelId),
   );
 
   Future<void> setConversationLabels({
@@ -89,7 +89,7 @@ class ConversationLabelsRepository(final AppDatabase _database) {
     required String conversationId,
     required Set<String> labelIds,
   }) => _database.transaction(
-    () => this._setConversationLabelsInTransaction((
+    () => _setConversationLabelsInTransaction((
       workspaceId: workspaceId,
       conversationId: conversationId,
       labelIds: labelIds,
@@ -100,20 +100,20 @@ class ConversationLabelsRepository(final AppDatabase _database) {
 extension on ConversationLabelsRepository {
   SimpleSelectStatement<$ConversationLabelsTable, ConversationLabelsTable>
   _labelsByWorkspace(String workspaceId) =>
-      this._database.select(this._database.conversationLabels)
+      _database.select(_database.conversationLabels)
         ..where((label) => label.workspaceId.equals(workspaceId))
         ..orderBy([(label) => OrderingTerm.asc(label.normalizedName)]);
 
   List<ConversationLabelEntity> _mapLabels(
     List<ConversationLabelsTable> rows,
-  ) => rows.map(this._mapLabel).toList();
+  ) => rows.map(_mapLabel).toList();
 
   Future<ConversationLabelEntity> _createLabelInTransaction(
     String workspaceId,
     String name,
   ) async {
     final normalizedName = name.toLowerCase();
-    final existing = await this._labelByNormalizedName(
+    final existing = await _labelByNormalizedName(
       workspaceId,
       normalizedName,
     );
@@ -121,8 +121,8 @@ extension on ConversationLabelsRepository {
       throw const ConversationLabelAlreadyExistsException();
     }
     final now = DateTime.now().toUtc();
-    final inserted = await this._database
-        .into(this._database.conversationLabels)
+    final inserted = await _database
+        .into(_database.conversationLabels)
         .insertReturning(
           ConversationLabelsCompanion.insert(
             createdAt: .new(now),
@@ -133,14 +133,14 @@ extension on ConversationLabelsRepository {
           ),
         );
 
-    return this._mapLabel(inserted);
+    return _mapLabel(inserted);
   }
 
   Future<ConversationLabelsTable?> _labelByNormalizedName(
     String workspaceId,
     String normalizedName,
   ) =>
-      (this._database.select(this._database.conversationLabels)..where(
+      (_database.select(_database.conversationLabels)..where(
             (label) =>
                 label.workspaceId.equals(workspaceId) &
                 label.normalizedName.equals(normalizedName),
@@ -152,15 +152,15 @@ extension on ConversationLabelsRepository {
     String labelId,
     String name,
   ) async {
-    await this._requireLabel(workspaceId, labelId);
-    await this._ensureLabelNameAvailable(
+    await _requireLabel(workspaceId, labelId);
+    await _ensureLabelNameAvailable(
       workspaceId,
       labelId,
       name.toLowerCase(),
     );
-    await this._updateLabelName(labelId, name);
+    await _updateLabelName(labelId, name);
 
-    return this._mapLabel(await this._labelById(labelId));
+    return _mapLabel(await _labelById(labelId));
   }
 
   Future<ConversationLabelsTable> _requireLabel(
@@ -168,7 +168,7 @@ extension on ConversationLabelsRepository {
     String labelId,
   ) async {
     final label =
-        await (this._database.select(this._database.conversationLabels)..where(
+        await (_database.select(_database.conversationLabels)..where(
               (row) =>
                   row.id.equals(labelId) & row.workspaceId.equals(workspaceId),
             ))
@@ -181,8 +181,8 @@ extension on ConversationLabelsRepository {
   }
 
   Future<ConversationLabelsTable> _labelById(String labelId) =>
-      (this._database.select(
-        this._database.conversationLabels,
+      (_database.select(
+        _database.conversationLabels,
       )..where((row) => row.id.equals(labelId))).getSingle();
 
   Future<void> _ensureLabelNameAvailable(
@@ -191,7 +191,7 @@ extension on ConversationLabelsRepository {
     String normalizedName,
   ) async {
     final duplicate =
-        await (this._database.select(this._database.conversationLabels)..where(
+        await (_database.select(_database.conversationLabels)..where(
               (row) =>
                   row.workspaceId.equals(workspaceId) &
                   row.normalizedName.equals(normalizedName) &
@@ -204,9 +204,8 @@ extension on ConversationLabelsRepository {
   }
 
   Future<void> _updateLabelName(String labelId, String name) async {
-    final _ =
-        await (this._database.update(
-          this._database.conversationLabels,
+    final updatedRows = await (_database.update(
+          _database.conversationLabels,
         )..where((row) => row.id.equals(labelId))).write(
           ConversationLabelsCompanion(
             updatedAt: .new(DateTime.now().toUtc()),
@@ -214,31 +213,37 @@ extension on ConversationLabelsRepository {
             normalizedName: .new(name.toLowerCase()),
           ),
         );
+    if (updatedRows != 1) {
+      throw const ConversationWorkspaceMismatchException();
+    }
   }
 
   Future<void> _deleteLabelInTransaction(
     String workspaceId,
     String labelId,
   ) async {
-    await this._requireLabel(workspaceId, labelId);
-    final _ = await (this._database.delete(
-      this._database.conversationLabelAssignments,
+    await _requireLabel(workspaceId, labelId);
+    // Deleting zero or more assignments is valid cleanup in this transaction.
+    // ignore: avoid_ignoring_return_values
+    final _ = await (_database.delete(
+      _database.conversationLabelAssignments,
     )..where((row) => row.labelId.equals(labelId))).go();
-    final _ = await (this._database.delete(
-      this._database.conversationLabels,
+    // ignore: avoid_ignoring_return_values
+    final _ = await (_database.delete(
+      _database.conversationLabels,
     )..where((row) => row.id.equals(labelId))).go();
   }
 
   Future<void> _setConversationLabelsInTransaction(
     _ConversationLabelAssignment assignment,
   ) async {
-    await this._requireConversation(
+    await _requireConversation(
       assignment.workspaceId,
       assignment.conversationId,
     );
-    final labels = await this._labelsForAssignment(assignment);
-    await this._clearConversationLabels(assignment);
-    await this._insertConversationLabels(assignment, labels);
+    final labels = await _labelsForAssignment(assignment);
+    await _clearConversationLabels(assignment);
+    await _insertConversationLabels(assignment, labels);
   }
 
   Future<void> _requireConversation(
@@ -246,7 +251,7 @@ extension on ConversationLabelsRepository {
     String conversationId,
   ) async {
     final conversation =
-        await (this._database.select(this._database.conversations)..where(
+        await (_database.select(_database.conversations)..where(
               (row) =>
                   row.id.equals(conversationId) &
                   row.workspaceId.equals(workspaceId),
@@ -262,7 +267,7 @@ extension on ConversationLabelsRepository {
   ) async {
     final labels = assignment.labelIds.isEmpty
         ? const <ConversationLabelsTable>[]
-        : await (this._database.select(this._database.conversationLabels)
+        : await (_database.select(_database.conversationLabels)
                 ..where(
                   (row) =>
                       row.workspaceId.equals(assignment.workspaceId) &
@@ -279,9 +284,11 @@ extension on ConversationLabelsRepository {
   Future<void> _clearConversationLabels(
     _ConversationLabelAssignment assignment,
   ) async {
+    // The deleted count is intentionally irrelevant when replacing assignments.
+    // ignore: avoid_ignoring_return_values
     final _ =
-        await (this._database.delete(
-              this._database.conversationLabelAssignments,
+        await (_database.delete(
+              _database.conversationLabelAssignments,
             )..where(
               (row) =>
                   row.workspaceId.equals(assignment.workspaceId) &
@@ -295,8 +302,8 @@ extension on ConversationLabelsRepository {
     List<ConversationLabelsTable> labels,
   ) async {
     for (final label in labels) {
-      final _ = await this._database
-          .into(this._database.conversationLabelAssignments)
+      final _ = await _database
+          .into(_database.conversationLabelAssignments)
           .insert(
             ConversationLabelAssignmentsCompanion.insert(
               workspaceId: assignment.workspaceId,
@@ -317,7 +324,7 @@ extension on ConversationLabelsRepository {
       );
 
   Stream<Map<String, List<ConversationLabelEntity>>>
-  _watchLabelAssignmentsByWorkspace(String workspaceId) => this._database
+  _watchLabelAssignmentsByWorkspace(String workspaceId) => _database
       .customSelect(
         '''
 SELECT labels.id AS label_id,
@@ -335,12 +342,12 @@ ORDER BY labels.normalized_name ASC
 ''',
         variables: [Variable<String>(workspaceId)],
         readsFrom: {
-          this._database.conversationLabels,
-          this._database.conversationLabelAssignments,
+          _database.conversationLabels,
+          _database.conversationLabelAssignments,
         },
       )
       .watch()
-      .map(this._mapLabelAssignments);
+      .map(_mapLabelAssignments);
 
   Map<String, List<ConversationLabelEntity>> _mapLabelAssignments(
     List<QueryRow> rows,
@@ -350,7 +357,7 @@ ORDER BY labels.normalized_name ASC
       final conversationId = row.read<String>('conversation_id');
       result
           .putIfAbsent(conversationId, () => [])
-          .add(this._mapLabelAssignment(row));
+          .add(_mapLabelAssignment(row));
     }
 
     return result;

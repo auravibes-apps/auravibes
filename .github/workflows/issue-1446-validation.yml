@@ -40,9 +40,24 @@ jobs:
           cd apps/auravibes_server
           python3 ../../tool/validation_lease.py --label issue-1446-create-serverpod-migration -- serverpod create-migration --tag issue-1446-labels --force
           cd ../..
-          changed_dart_files="$({ git diff --name-only --diff-filter=ACMRT; git ls-files --others --exclude-standard; } | sort -u | grep '\.dart$' || true)"
-          if [[ -n "$changed_dart_files" ]]; then
-            printf '%s\n' "$changed_dart_files" | xargs dart format --line-length 80
+          mapfile -t generated_dart_files < <(
+            { git diff --name-only --diff-filter=ACMRT; git ls-files --others --exclude-standard; } \
+              | sort -u | grep '\.dart$' || true
+          )
+          if [[ ${#generated_dart_files[@]} -gt 0 ]]; then
+            python3 tool/validation_lease.py --label issue-1446-format-generated -- \
+              dart format --line-length 80 "${generated_dart_files[@]}"
+          fi
+
+      - name: Format changed branch Dart files
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          base_sha="$(git merge-base HEAD refs/remotes/origin/main)"
+          mapfile -t changed_dart_files < <(git diff --name-only "$base_sha"...HEAD | grep '\.dart$' || true)
+          if [[ ${#changed_dart_files[@]} -gt 0 ]]; then
+            python3 tool/validation_lease.py --label issue-1446-format-branch -- \
+              dart format --line-length 80 "${changed_dart_files[@]}"
           fi
 
       - name: Export generated output patch

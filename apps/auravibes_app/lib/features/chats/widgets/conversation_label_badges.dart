@@ -19,22 +19,23 @@ class const ConversationLabelBadges({
 
     return Semantics(
       key: const ValueKey('conversation-labels-semantics'),
-      child: ExcludeSemantics(child: _labelBadges()),
+      child: ExcludeSemantics(
+        child: Wrap(
+          spacing: 6,
+          runSpacing: 4,
+          children: [
+            for (final label in labels)
+              AuraBadge.text(
+                child: Text(label.name),
+                key: ValueKey('conversation-label-${label.id}'),
+                variant: .neutral,
+                size: .small,
+              ),
+          ],
+        ),
+      ),
       container: true,
       label: '$localizedSemanticsLabel: $labelNames',
     );
   }
-
-  Widget _labelBadges() => Wrap(
-    spacing: 6,
-    runSpacing: 4,
-    children: [for (final label in labels) _badge(label)],
-  );
-
-  Widget _badge(ConversationLabelEntity label) => AuraBadge.text(
-    child: Text(label.name),
-    key: ValueKey('conversation-label-${label.id}'),
-    variant: .neutral,
-    size: .small,
-  );
 }
