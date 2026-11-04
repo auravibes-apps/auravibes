@@ -357,7 +357,7 @@ void main() {
     await tester.tap(find.byTooltip('More options'));
     await fixture.settle(tester);
     expect(find.text('Archive'), findsOneWidget);
-    await _capture(
+    await captureUxWidget(
       tester,
       'conversation-archive-before',
       router.routeInformationProvider.value.uri.toString(),
@@ -365,6 +365,10 @@ void main() {
       size: size,
       scale: 1,
       dark: false,
+      fixture:
+          'Persisted local workspace and seeded parent conversation; '
+          'conversation options open before device-local archive, '
+          'with no remote access',
     );
 
     await tester.tap(find.text('Archive'));
@@ -409,7 +413,7 @@ void main() {
     // the stable archived list rather than a transient notification.
     await tester.pump(const Duration(seconds: 5));
     await fixture.settle(tester);
-    await _capture(
+    await captureUxWidget(
       tester,
       'conversation-archive-after',
       router.routeInformationProvider.value.uri.toString(),
@@ -417,6 +421,9 @@ void main() {
       size: size,
       scale: 1,
       dark: false,
+      fixture:
+          'Same persisted local workspace after archiving the conversation; '
+          'archived conversation list visible, with no remote access',
     );
     await fixture.close(tester);
   });
@@ -1921,71 +1928,6 @@ double _contrast(Color foreground, Color background) {
 
   return ((a > b ? a : b) + 0.05) / ((a > b ? b : a) + 0.05);
 }
-
-String _fixtureDescription(String name) => switch (name) {
-  'queued-prompts-before' || 'queued-prompts-after' =>
-    'Persisted local conversation with three fixed text-only queued drafts; '
-        'no model requests, attachments, network access, or remote mutations',
-  'agent-editor-skills-failure' || 'skills-list-failure' =>
-    'Persisted local workspace with a controlled skills load failure',
-  'agent-editor-tools-failure' =>
-    'Persisted local workspace with a controlled tools load failure',
-  'connected-editor-tools-failure' || 'connected-editor-connections-failure' =>
-    'Connected data editor in a test dialog with a controlled load failure',
-  'skill-detail-failure' || 'skill-resource-parent-failure' =>
-    'Persisted local workspace with a controlled skill detail load failure',
-  'skill-resource-failure' =>
-    'Persisted local workspace with a controlled skill resource load failure',
-  'skill-resources-list-failure' =>
-    'Persisted local workspace with a controlled skill resources list failure',
-  'agent-editor-skills-failure-es-large-dark' =>
-    'Persisted local workspace with a controlled skills load failure',
-  'workspace-erasure-confirmation-disclosure' =>
-    'In-memory local workspace plus synthetic owner account and deleted cloud '
-        'workspace state; confirmation open with no remote access or deletion',
-  'conversation-archive-before' =>
-    'Persisted local workspace and seeded parent conversation; conversation '
-        'options open before device-local archive, with no remote access',
-  'conversation-archive-after' =>
-    'Same persisted local workspace after archiving the conversation; '
-        'archived conversation list visible, with no remote access',
-  'service-connections-services-entry' =>
-    'Persisted local workspace with three controlled service rows: '
-        'Notion needs reconnect, Linear connected, Sentry failed; '
-        'no remote access',
-  'service-connections-search-empty' =>
-    'Same Services route and rows after a query matching no service; '
-        'no remote access',
-  'service-connections-network-error' =>
-    'Same Services route and rows after a controlled network test failure; '
-        'no remote request',
-  'IntroRoute' => 'Empty in-memory database; no workspace or account',
-  'MixedConnections' =>
-    'Four controlled connection rows: model provider, '
-        'expired MCP, two saved credentials; no remote access '
-        'claim',
-  'MixedAccounts' =>
-    'Two origins with stored accounts; controlled expired and unknown health',
-  'CloudTools' =>
-    'Matching cloud mirror and session; controlled available gate '
-        'and empty tools; actual capability restriction',
-  'LocalEmptyTools' =>
-    'Persisted local workspace with controlled empty tool providers; '
-        'actual local capability, add control and empty hint',
-  'FailedWorkspace' =>
-    'Controlled missing local workspace failure and actual '
-        'route recovery screen',
-  'CloudWorkspaceDetailRoute' =>
-    'Controlled cloud workspace admin detail with '
-        'authoritative capability values; no remote mutation',
-  'ServiceConnectionEditRoute' =>
-    'Controlled saved generic service editor state',
-  _ =>
-    'Persisted local in-memory workspace, two agents '
-        'sharing a custom skill, disabled agent/skill, schema '
-        'without credential, template resource/tool, parent and '
-        'child chats; no models or cloud accounts',
-};
 
 class _CaptureQueuedDrafts(final String conversationId)
     extends ConversationSendQueue {
