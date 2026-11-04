@@ -12,13 +12,22 @@ class const ConversationBranchNavigationButton({
   required final ConversationEntity conversation,
   super.key,
 }) extends StatelessWidget {
+  static void showBranchNavigation(
+    BuildContext context,
+    String workspaceId,
+    ConversationEntity conversation,
+  ) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    _presentBranchNavigation(context, workspaceId, conversation);
+  }
+
   @override
   Widget build(BuildContext context) {
     final label = 'chats_screens.chat_conversation.branch_navigation'.tr();
 
     return AuraIconButton(
       icon: Icons.account_tree_outlined,
-      onPressed: () => _showBranchNavigation(context),
+      onPressed: () => showBranchNavigation(context, workspaceId, conversation),
       key: key ?? const ValueKey<String>('conversation-branch-navigation'),
       size: .large,
       semanticLabel: label,
@@ -26,12 +35,11 @@ class const ConversationBranchNavigationButton({
     );
   }
 
-  void _showBranchNavigation(BuildContext context) {
-    FocusManager.instance.primaryFocus?.unfocus();
-    _presentBranchNavigation(context);
-  }
-
-  void _presentBranchNavigation(BuildContext context) {
+  static void _presentBranchNavigation(
+    BuildContext context,
+    String workspaceId,
+    ConversationEntity conversation,
+  ) {
     final _ = showModalBottomSheet<void>(
       context: context,
       builder: (sheetContext) => _ConversationBranchNavigationSheet(
@@ -45,7 +53,7 @@ class const ConversationBranchNavigationButton({
     );
   }
 
-  void _openConversation(
+  static void _openConversation(
     BuildContext screenContext,
     BuildContext sheetContext,
     ConversationEntity target,

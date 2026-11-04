@@ -20,13 +20,12 @@ class const WorkspaceViewChatButton({
   required final String conversationId,
   super.key,
 }) extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) => AuraIconButton(
-    icon: Icons.dashboard_outlined,
-    onPressed: () => unawaited(_pick(context, ref)),
-    tooltip: LocaleKeys.workspace_views_title.tr(),
-  );
-  Future<void> _pick(BuildContext context, WidgetRef ref) async {
+  static Future<void> pick(
+    BuildContext context,
+    WidgetRef ref,
+    String workspaceId,
+    String conversationId,
+  ) async {
     final id = await showDialog<WorkspaceChatItem>(
       context: context,
       builder: (_) => _ViewPicker(workspaceId),
@@ -36,6 +35,13 @@ class const WorkspaceViewChatButton({
         .read(workspaceOpenViewProvider(workspaceId, conversationId).notifier)
         .openItem(id.id, id.kind);
   }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => AuraIconButton(
+    icon: Icons.dashboard_outlined,
+    onPressed: () => unawaited(pick(context, ref, workspaceId, conversationId)),
+    tooltip: LocaleKeys.workspace_views_title.tr(),
+  );
 }
 
 class const _ViewPicker(final String workspaceId) extends StatelessWidget {
