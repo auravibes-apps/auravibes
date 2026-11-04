@@ -421,10 +421,9 @@ void main() {
       });
     });
 
-    testWidgets('formats relative and supplied timestamps', (tester) async {
-      final now = DateTime(2026, 8, 28, 12);
-      final clock = DateTime.now();
-
+    testWidgets('shows supplied timestamps and a neutral fallback', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -433,7 +432,7 @@ void main() {
                 AuraMessageBubble(
                   content: 'Message with timestamp',
                   isUser: true,
-                  timestamp: clock.subtract(const Duration(minutes: 5)),
+                  timestamp: .new(2026, 8, 28, 11, 55),
                 ),
                 AuraMessageBubble(
                   content: 'Mensaje',
@@ -442,25 +441,12 @@ void main() {
                   timestampLabel: 'Ahora mismo',
                 ),
                 AuraMessageBubble(
-                  content: 'Fixed timestamp',
+                  content: 'Formatted message',
                   isUser: true,
                   timestamp: .new(2026, 8, 28, 11, 55),
-                  now: () => now,
-                ),
-                AuraMessageBubble(
-                  content: 'Recent message',
-                  isUser: true,
-                  timestamp: clock.subtract(const Duration(seconds: 30)),
-                ),
-                AuraMessageBubble(
-                  content: 'Half hour old message',
-                  isUser: true,
-                  timestamp: clock.subtract(const Duration(minutes: 30)),
-                ),
-                AuraMessageBubble(
-                  content: 'Three hours old message',
-                  isUser: true,
-                  timestamp: clock.subtract(const Duration(hours: 3)),
+                  timestampFormatter: (timestamp, now) =>
+                      '${now.difference(timestamp).inMinutes} minutos',
+                  now: () => DateTime(2026, 8, 28, 12),
                 ),
               ],
             ),
@@ -468,11 +454,9 @@ void main() {
         ),
       );
 
-      expect(find.text('5m ago'), findsNWidgets(2));
+      expect(find.text('2026-08-28T11:55:00.000'), findsOneWidget);
       expect(find.text('Ahora mismo'), findsOneWidget);
-      expect(find.text('Just now'), findsOneWidget);
-      expect(find.text('30m ago'), findsOneWidget);
-      expect(find.text('3h ago'), findsOneWidget);
+      expect(find.text('5 minutos'), findsOneWidget);
     });
   });
 }

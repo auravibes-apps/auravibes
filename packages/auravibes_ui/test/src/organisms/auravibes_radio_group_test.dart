@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:auravibes_ui/src/molecules/aura_radio_option.dart';
 import 'package:auravibes_ui/src/organisms/aura_radio_group.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
@@ -7,6 +9,34 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AuraRadioGroup', () {
+    testWidgets('announces visible option names when labels are omitted', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      String? selected;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AuraRadioGroup<String>(
+            value: 'first',
+            onChanged: (value) => selected = value,
+            options: const [
+              AuraRadioOption(value: 'first', label: Text('First option')),
+              AuraRadioOption(value: 'second', label: Text('Second option')),
+            ],
+          ),
+        ),
+      );
+      final first = tester.getSemantics(find.bySemanticsLabel('First option'));
+      expect(first.flagsCollection.isChecked, ui.CheckedState.isTrue);
+      final second = tester.getSemantics(
+        find.bySemanticsLabel('Second option'),
+      );
+      expect(second.getSemanticsData().hasAction(.tap), isTrue);
+      await tester.tap(find.text('Second option'));
+      expect(selected, 'second');
+      semantics.dispose();
+    });
+
     testWidgets('renders all options', (tester) async {
       await tester.pumpWidget(
         AuraThemeScope(

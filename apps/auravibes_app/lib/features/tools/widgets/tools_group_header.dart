@@ -155,13 +155,7 @@ String _groupSelectionLabel(
     (isSelected
             ? LocaleKeys.tools_screen_deselect_group
             : LocaleKeys.tools_screen_select_group)
-        .tr(
-          args: [
-            (groupWithTools.localizedDisplayNameKey?.tr() ??
-                    groupWithTools.group?.name)
-                .orPlaceholder(),
-          ],
-        );
+        .tr(args: [_groupDisplayName(groupWithTools)]);
 
 class const _GroupDetails({
   required final ToolsGroupWithTools groupWithTools,
@@ -172,7 +166,6 @@ class const _GroupDetails({
   Widget build(BuildContext context) => Expanded(
     child: _GroupDetailsContent(
       groupWithTools: groupWithTools,
-      fallbackName: groupWithTools.group?.name,
       onReconnect: onReconnect,
       onViewError: onViewError,
     ),
@@ -181,14 +174,13 @@ class const _GroupDetails({
 
 class const _GroupDetailsContent({
   required final ToolsGroupWithTools groupWithTools,
-  required final String? fallbackName,
   final VoidCallback? onReconnect,
   final VoidCallback? onViewError,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
-      _GroupName(groupWithTools: groupWithTools, fallbackName: fallbackName),
+      _GroupName(groupWithTools: groupWithTools),
       if (groupWithTools.isMcpGroup)
         _McpStatusBadge(
           groupWithTools: groupWithTools,
@@ -202,18 +194,11 @@ class const _GroupDetailsContent({
   );
 }
 
-class const _GroupName({
-  required final ToolsGroupWithTools groupWithTools,
-  required final String? fallbackName,
-}) extends StatelessWidget {
+class const _GroupName({required final ToolsGroupWithTools groupWithTools})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraText(
-    child: Text(
-      (groupWithTools.localizedDisplayNameKey?.tr()).orPlaceholder(
-        fallbackName.orPlaceholder(),
-      ),
-      overflow: .ellipsis,
-    ),
+    child: Text(_groupDisplayName(groupWithTools), overflow: .ellipsis),
     style: .heading6,
   );
 }
@@ -298,9 +283,18 @@ class const _GroupEnabledToggle({
       value: groupWithTools.isEnabled,
       onChanged: onToggleEnabled,
       size: .sm,
+      semanticLabel: LocaleKeys.common_enable_named.tr(
+        context: context,
+        args: [_groupDisplayName(groupWithTools)],
+      ),
     );
   }
 }
+
+String _groupDisplayName(ToolsGroupWithTools groupWithTools) =>
+    (groupWithTools.localizedDisplayNameKey?.tr()).orPlaceholder(
+      (groupWithTools.group?.name).orPlaceholder(),
+    );
 
 class const _GroupExpandButton({
   required final bool isExpanded,

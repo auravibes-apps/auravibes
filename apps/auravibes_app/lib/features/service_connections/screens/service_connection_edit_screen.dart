@@ -842,25 +842,21 @@ class const _ConnectionEditAppBar({
   @override
   Widget build(BuildContext context) {
     return AuraAppBarWithDrawer(
-      title: Text(
-        state == null
-            ? LocaleKeys.service_connections_edit_title.tr()
-            : 'connection_setup.edit_named'.tr(
-                namedArgs: {
-                  'name': switch (state) {
-                    final value? => _connectionEditName(value),
-                    null => '',
-                  },
-                },
-              ),
-      ),
+      title: Text(_connectionEditTitle(state)),
       leading: AuraIconButton(
         icon: Icons.arrow_back,
         onPressed: () => owner._handleBack(context),
+        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
       ),
     );
   }
 }
+
+String _connectionEditTitle(_ConnectionEditState? state) => state == null
+    ? LocaleKeys.service_connections_edit_title.tr()
+    : 'connection_setup.edit_named'.tr(
+        namedArgs: {'name': _connectionEditName(state)},
+      );
 
 String _connectionEditName(_ConnectionEditState state) => switch (state) {
   _ModelProviderEditState(:final connection) => connection.name,

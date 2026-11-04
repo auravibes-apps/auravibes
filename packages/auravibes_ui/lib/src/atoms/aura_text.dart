@@ -203,7 +203,7 @@ _AuraTextMetrics _bodyMetrics(
   AuraTypographyScale typography,
 ) => (
   fontSize: _bodyFontSize(style, typography),
-  fontWeight: _bodyFontWeight(style, typography),
+  fontWeight: typography.fontWeightRegular,
   letterSpacing: _bodyLetterSpacing(style, typography),
   height: _bodyLineHeight(style, typography),
 );
@@ -288,13 +288,6 @@ double _bodyFontSize(AuraTextStyle style, AuraTypographyScale typography) =>
       _ => typography.fontSizeXs,
     };
 
-FontWeight _bodyFontWeight(
-  AuraTextStyle style,
-  AuraTypographyScale typography,
-) => style == .overline
-    ? typography.fontWeightMedium
-    : typography.fontWeightRegular;
-
 double _bodyLetterSpacing(
   AuraTextStyle style,
   AuraTypographyScale typography,
@@ -342,7 +335,7 @@ enum AuraTextStyle {
   /// Caption text (12px).
   caption,
 
-  /// Overline text (12px, uppercase).
+  /// Legacy alias for caption text (12px).
   overline,
 
   /// Button text (16px, medium weight).

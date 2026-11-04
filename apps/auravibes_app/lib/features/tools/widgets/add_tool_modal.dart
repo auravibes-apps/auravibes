@@ -163,6 +163,7 @@ class const _AddToolModalHeaderClose() extends StatelessWidget {
   Widget build(BuildContext context) => AuraIconButton(
     icon: Icons.close,
     onPressed: () => Navigator.of(context).pop(),
+    tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
   );
 }
 

@@ -18,7 +18,7 @@ class AuraCheckbox extends StatelessWidget {
     this.tint,
     this.disabled = false,
     this.autofocus = false,
-    this.semanticLabel = 'Checkbox',
+    this.semanticLabel,
   });
 
   /// Whether the checkbox is selected.

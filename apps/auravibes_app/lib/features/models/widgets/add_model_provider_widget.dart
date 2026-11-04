@@ -1525,9 +1525,12 @@ class const _HiddenSectionToggle({
   required final VoidCallback onPressed,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext _) => AuraIconButton(
+  Widget build(BuildContext context) => AuraIconButton(
     icon: isVisible ? Icons.expand_less : Icons.expand_more,
     onPressed: onPressed,
+    tooltip: isVisible
+        ? MaterialLocalizations.of(context).expandedIconTapHint
+        : MaterialLocalizations.of(context).collapsedIconTapHint,
   );
 }
 

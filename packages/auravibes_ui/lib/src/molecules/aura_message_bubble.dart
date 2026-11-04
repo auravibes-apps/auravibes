@@ -24,8 +24,10 @@ class AuraMessageBubble extends StatelessWidget {
     required this.isUser,
     super.key,
     this.status = AuraMessageDeliveryStatus.sent,
+    this.statusSemanticLabel,
     this.timestamp,
     this.timestampLabel,
+    this.timestampFormatter,
     this.contentType = AuraMessageContentType.text,
     this.onTap,
     this.onLongPress,
@@ -33,8 +35,8 @@ class AuraMessageBubble extends StatelessWidget {
     this.manageAlignment = true,
     this.now,
     this.imageProvider,
-    this.imageSemanticLabel = 'Image message',
-    this.imageErrorLabel = 'Failed to load image',
+    this.imageSemanticLabel,
+    this.imageErrorLabel,
     this.contentPadding,
   });
 
@@ -47,11 +49,17 @@ class AuraMessageBubble extends StatelessWidget {
   /// The delivery status of the message.
   final AuraMessageDeliveryStatus status;
 
+  /// Optional localized semantic label for the delivery status.
+  final String? statusSemanticLabel;
+
   /// The timestamp when the message was sent.
   final DateTime? timestamp;
 
   /// Optional localized timestamp label supplied by the app.
   final String? timestampLabel;
+
+  /// Formats a timestamp when [timestampLabel] is not supplied.
+  final String Function(DateTime timestamp, DateTime now)? timestampFormatter;
 
   /// The type of content in the message.
   final AuraMessageContentType contentType;
@@ -71,7 +79,7 @@ class AuraMessageBubble extends StatelessWidget {
   /// an external alignment wrapper.
   final bool manageAlignment;
 
-  /// Supplies the current time for deterministic timestamp rendering.
+  /// Supplies the current time passed to [timestampFormatter].
   final DateTime Function()? now;
 
   /// An optional local image provider used instead of [content].
@@ -81,7 +89,7 @@ class AuraMessageBubble extends StatelessWidget {
   final String? imageSemanticLabel;
 
   /// Semantic label shown when image content fails to load.
-  final String imageErrorLabel;
+  final String? imageErrorLabel;
 
   /// Optional content inset. Defaults to the current inset for [contentType].
   final AuraEdgeInsetsGeometry? contentPadding;
@@ -144,18 +152,22 @@ class const _AuraMessageBubbleColumn({required final AuraMessageBubble message})
     children: [
       _AuraMessageBubbleCard(message: message),
       if (message.status != AuraMessageDeliveryStatus.sent)
-        _AuraMessageStatus(status: message.status),
+        _AuraMessageStatus(
+          status: message.status,
+          semanticLabel: message.statusSemanticLabel,
+        ),
     ],
   );
 }
 
 class const _AuraMessageStatus({
   required final AuraMessageDeliveryStatus status,
+  final String? semanticLabel,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: EdgeInsets.only(top: context.auraTheme.fromSpacing(.xs) / 2),
-    child: AuraMessageStatus(status: status),
+    child: AuraMessageStatus(status: status, semanticLabel: semanticLabel),
   );
 }
 
@@ -220,6 +232,7 @@ class const _AuraOptionalMessageTimestamp({
     final timestamp => _AuraMessageBubbleTimestamp(
       timestamp: timestamp,
       label: message.timestampLabel,
+      formatter: message.timestampFormatter,
       now: message.now,
     ),
   };
@@ -297,7 +310,7 @@ class const _AuraImageView({
 }
 
 class const _AuraImageError({
-  required final String label,
+  required final String? label,
   required final Color color,
 }) extends StatelessWidget {
   @override
@@ -308,7 +321,7 @@ class const _AuraImageError({
 }
 
 class const _AuraImageErrorRow({
-  required final String label,
+  required final String? label,
   required final Color color,
 }) extends StatelessWidget {
   @override
@@ -316,8 +329,10 @@ class const _AuraImageErrorRow({
     mainAxisSize: .min,
     children: [
       Icon(Icons.broken_image, size: _messageIconSize, color: color),
-      const AuraSizedBox(width: .sm),
-      Text(label, style: .new(color: color)),
+      if (label case final label?) ...[
+        const AuraSizedBox(width: .sm),
+        Text(label, style: .new(color: color)),
+      ],
     ],
   );
 }
@@ -363,6 +378,7 @@ class const _AuraFileName({
 class const _AuraMessageBubbleTimestamp({
   required final DateTime timestamp,
   required final String? label,
+  required final String Function(DateTime, DateTime)? formatter,
   required final DateTime Function()? now,
 }) extends StatelessWidget {
   @override
@@ -371,6 +387,7 @@ class const _AuraMessageBubbleTimestamp({
     child: _AuraMessageBubbleTimestampText(
       timestamp: timestamp,
       label: label,
+      formatter: formatter,
       now: now,
     ),
   );
@@ -379,11 +396,14 @@ class const _AuraMessageBubbleTimestamp({
 class const _AuraMessageBubbleTimestampText({
   required final DateTime timestamp,
   required final String? label,
+  required final String Function(DateTime, DateTime)? formatter,
   required final DateTime Function()? now,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
-    label ?? _formatMessageTimestamp(timestamp, now: now?.call()),
+    label ??
+        formatter?.call(timestamp, now?.call() ?? DateTime.now()) ??
+        timestamp.toIso8601String(),
     style: _messageTimestampStyle(context, context.auraColors.onSurfaceVariant),
   );
 }
@@ -525,20 +545,6 @@ Border? _messageBorder(AuraMessageBubble message, AuraColorScheme auraColors) =>
 List<BoxShadow> _messageBoxShadow(AuraMessageBubble message) => [
   if (message.status != AuraMessageDeliveryStatus.error) DesignShadows.sm,
 ];
-
-String _formatMessageTimestamp(DateTime timestamp, {DateTime? now}) {
-  final difference = (now ?? DateTime.now()).difference(timestamp);
-
-  if (difference.inMinutes < 1) {
-    return 'Just now';
-  } else if (difference.inHours < 1) {
-    return '${difference.inMinutes}m ago';
-  } else if (difference.inDays < 1) {
-    return '${difference.inHours}h ago';
-  } else {
-    return '${timestamp.day}/${timestamp.month}/${timestamp.year}';
-  }
-}
 
 /// The delivery status of a message.
 

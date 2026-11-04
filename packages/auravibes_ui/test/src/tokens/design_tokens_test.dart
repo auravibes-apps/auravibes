@@ -107,9 +107,9 @@ void main() {
 
   group('DesignInputSizes', () {
     test('has expected input size values', () {
-      expect(DesignInputSizes.heightSm, 32);
-      expect(DesignInputSizes.heightMd, 40);
-      expect(DesignInputSizes.heightLg, 48);
+      expect(DesignInputSizes.heightSm, 48);
+      expect(DesignInputSizes.heightMd, 56);
+      expect(DesignInputSizes.heightLg, 64);
     });
   });
 
@@ -120,7 +120,7 @@ void main() {
       expect(DesignShadows.lg.color, const Color(0x1A000000));
       expect(DesignShadows.xl.color, const Color(0x1A000000));
       expect(DesignShadows.inner.color, const Color(0x0F000000));
-      expect(DesignShadows.glass.color, const Color(0x5F1F2687));
+      expect(DesignShadows.glass, DesignShadows.lg);
     });
   });
 

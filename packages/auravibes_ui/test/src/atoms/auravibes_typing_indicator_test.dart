@@ -17,31 +17,23 @@ void main() {
                 body: Column(
                   mainAxisSize: .min,
                   children: [
-                    AuraTypingIndicator(key: ValueKey('default')),
+                    AuraTypingIndicator(
+                      key: ValueKey('default'),
+                      semanticLabel: 'Typing',
+                    ),
                     AuraTypingIndicator(
                       key: ValueKey('hidden'),
                       showContainer: false,
-                      semanticLabel: null,
                     ),
-                    AuraTypingIndicator(
-                      key: ValueKey('small'),
-                      size: .small,
-                      semanticLabel: null,
-                    ),
-                    AuraTypingIndicator(
-                      key: ValueKey('large'),
-                      size: .large,
-                      semanticLabel: null,
-                    ),
+                    AuraTypingIndicator(key: ValueKey('small'), size: .small),
+                    AuraTypingIndicator(key: ValueKey('large'), size: .large),
                     AuraTypingIndicator(
                       key: ValueKey('custom-color'),
                       color: Colors.red,
-                      semanticLabel: null,
                     ),
                     AuraTypingIndicator(
                       key: ValueKey('custom-duration'),
                       animationDuration: .new(milliseconds: 1000),
-                      semanticLabel: null,
                     ),
                   ],
                 ),
@@ -95,7 +87,7 @@ void main() {
           expect(decoration.color, DesignColors.neutral700);
         }
 
-        expect(find.bySemanticsLabel('AI is typing'), findsOneWidget);
+        expect(find.bySemanticsLabel('Typing'), findsOneWidget);
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 100));
 
