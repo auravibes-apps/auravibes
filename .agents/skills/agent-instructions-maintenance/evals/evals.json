@@ -132,6 +132,15 @@
         "AGENTS.md",
         "docs/agents/operations.md"
       ]
+    },
+    {
+      "id": 21,
+      "prompt": "Update the UX audit skill's guidance and add a regression scenario using its documented review format.",
+      "expected_output": "Adds an observable scenario to the existing UX Markdown review cards, runs harness verification, and reports any unrun behavioral trials. Does not create UX JSON eval files or a new runner.",
+      "files": [
+        ".agents/skills/ux-task-audit/SKILL.md",
+        ".agents/skills/ux-view-clarity/references/review-scenarios.md"
+      ]
     }
   ]
 }
