@@ -216,7 +216,7 @@ class _ConversationLabelFilterDialogState
             selectedLabelIds: _selected,
             enabled: true,
             maxHeight: 320,
-            onChanged: _toggleLabel,
+          onChanged: _toggleLabel,
           ),
         ],
       ),
@@ -235,13 +235,14 @@ class _ConversationLabelFilterDialogState
     ],
   );
 
-  void _toggleLabel(String labelId, bool selected) => setState(() {
-    if (selected) {
-      final _ = _selected.add(labelId);
-    } else {
-      final _ = _selected.remove(labelId);
-    }
-  });
+  void _toggleLabel({required String labelId, required bool selected}) =>
+      setState(() {
+        if (selected) {
+          final _ = _selected.add(labelId);
+        } else {
+          final _ = _selected.remove(labelId);
+        }
+      });
 }
 
 class const _ConversationLabelCheckboxList({
@@ -249,7 +250,10 @@ class const _ConversationLabelCheckboxList({
   required final Set<String> selectedLabelIds,
   required final bool enabled,
   required final double maxHeight,
-  required final void Function(String labelId, bool selected) onChanged,
+  required final void Function({
+    required String labelId,
+    required bool selected,
+  }) onChanged,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -258,15 +262,19 @@ class const _ConversationLabelCheckboxList({
     }
 
     return ConstrainedBox(
-      constraints: BoxConstraints(maxHeight: maxHeight),
+      constraints: .new(maxHeight: maxHeight),
       child: ListView.builder(
         itemBuilder: (_, index) {
           final label = labels[index];
+
           return _ConversationLabelCheckbox(
             label: label,
             selected: selectedLabelIds.contains(label.id),
             enabled: enabled,
-            onChanged: (selected) => onChanged(label.id, selected),
+            onChanged: (selected) => onChanged(
+              labelId: label.id,
+              selected: selected,
+            ),
           );
         },
         itemCount: labels.length,
@@ -329,8 +337,12 @@ class _ConversationLabelManagementDialogState
             _ConversationLabelManagementList(
               labels: labels,
               enabled: !_isWorking,
-              onRename: _rename,
-              onDelete: _delete,
+              onRename: (label) {
+                unawaited(_rename(label));
+              },
+              onDelete: (label) {
+                unawaited(_delete(label));
+              },
             ),
           ],
         ),
@@ -701,7 +713,7 @@ class _ConversationLabelAssignmentDialogState
     );
   }
 
-  void _toggleAssignment(String labelId, bool selected) {
+  void _toggleAssignment({required String labelId, required bool selected}) {
     setState(() {
       if (selected) {
         final _ = _selected.add(labelId);
@@ -741,7 +753,10 @@ class const _ConversationLabelAssignmentList({
   required final AsyncValue<List<ConversationLabelEntity>> labels,
   required final Set<String> selectedLabelIds,
   required final bool enabled,
-  required final void Function(String labelId, bool selected) onChanged,
+  required final void Function({
+    required String labelId,
+    required bool selected,
+  }) onChanged,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (labels) {
