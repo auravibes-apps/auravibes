@@ -173,12 +173,6 @@ String _fixtureDescription(String name) => switch (name) {
   'workspace-erasure-confirmation-disclosure' =>
     'In-memory local workspace plus synthetic owner account and deleted cloud '
         'workspace state; confirmation open with no remote access or deletion',
-  'conversation-archive-before' =>
-    'Persisted local workspace and seeded parent conversation; conversation '
-        'options open before device-local archive, with no remote access',
-  'conversation-archive-after' =>
-    'Same persisted local workspace after archiving the conversation; '
-        'archived conversation list visible, with no remote access',
   'service-connections-services-entry' =>
     'Persisted local workspace with three controlled service rows: '
         'Notion needs reconnect, Linear connected, Sentry failed; '
