@@ -16,6 +16,13 @@ const _conversationLabelToolbarInset = 16.0;
 const _conversationLabelToolbarTopInset = 12.0;
 const _conversationLabelToolbarSpacing = 8.0;
 const _conversationLabelFilterDialogWidth = 420.0;
+const _conversationLabelManageDialogWidth = 440.0;
+const _conversationLabelFilterListMaxHeight = 320.0;
+const _conversationLabelAssignmentListMaxHeight = 360.0;
+const _conversationLabelDialogSectionSpacing = 12.0;
+const _conversationLabelRowGap = 8.0;
+const _conversationLabelCountGap = 6.0;
+const _conversationLabelFieldInset = 8.0;
 const _conversationLabelNameMaxLength = 40;
 
 class const ConversationLabelsToolbar({
@@ -38,45 +45,49 @@ class _ConversationLabelsToolbarState
     );
     _removeStaleSelections(labels);
 
-    return Padding(
-      padding: const EdgeInsets.only(
-        left: _conversationLabelToolbarInset,
-        top: _conversationLabelToolbarTopInset,
-        right: _conversationLabelToolbarInset,
-      ),
-      child: Wrap(
-        spacing: _conversationLabelToolbarSpacing,
-        runSpacing: _conversationLabelToolbarSpacing,
-        crossAxisAlignment: .center,
-        children: [
-          _ConversationLabelFilterButton(
-            labels: labels,
-            count: widget.selectedLabelIds.length,
-            onPressed: _openFilter,
-          ),
-          AuraButton(
-            onPressed: _openManage,
-            child: Text(
-              LocaleKeys.chats_screens_conversation_labels_manage.tr(),
-            ),
-            variant: .ghost,
-            size: .small,
-            identifier: 'conversation-label-manage',
-          ),
-          if (widget.selectedLabelIds.isNotEmpty)
-            AuraButton(
-              onPressed: () => widget.onSelectedLabelIdsChanged(const {}),
-              child: Text(
-                LocaleKeys.chats_screens_conversation_labels_clear_filter.tr(),
-              ),
-              variant: .ghost,
-              size: .small,
-              identifier: 'conversation-label-clear-filter',
-            ),
-        ],
-      ),
-    );
+    return _toolbar(labels);
   }
+
+  Widget _toolbar(AsyncValue<List<ConversationLabelEntity>> labels) => Padding(
+    padding: const EdgeInsets.only(
+      left: _conversationLabelToolbarInset,
+      top: _conversationLabelToolbarTopInset,
+      right: _conversationLabelToolbarInset,
+    ),
+    child: Wrap(
+      spacing: _conversationLabelToolbarSpacing,
+      runSpacing: _conversationLabelToolbarSpacing,
+      crossAxisAlignment: .center,
+      children: _toolbarItems(labels),
+    ),
+  );
+
+  List<Widget> _toolbarItems(
+    AsyncValue<List<ConversationLabelEntity>> labels,
+  ) => [
+    _ConversationLabelFilterButton(
+      labels: labels,
+      count: widget.selectedLabelIds.length,
+      onPressed: _openFilter,
+    ),
+    AuraButton(
+      onPressed: _openManage,
+      child: Text(LocaleKeys.chats_screens_conversation_labels_manage.tr()),
+      variant: .ghost,
+      size: .small,
+      identifier: 'conversation-label-manage',
+    ),
+    if (widget.selectedLabelIds.isNotEmpty)
+      AuraButton(
+        onPressed: () => widget.onSelectedLabelIdsChanged(const {}),
+        child: Text(
+          LocaleKeys.chats_screens_conversation_labels_clear_filter.tr(),
+        ),
+        variant: .ghost,
+        size: .small,
+        identifier: 'conversation-label-clear-filter',
+      ),
+  ];
 
   void _removeStaleSelections(
     AsyncValue<List<ConversationLabelEntity>> labels,
@@ -132,41 +143,42 @@ class const _ConversationLabelFilterButton({
   required final VoidCallback onPressed,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) {
-    final semantics = count == 0
-        ? LocaleKeys.chats_screens_conversation_labels_filter_semantics.tr()
-        : LocaleKeys.chats_screens_conversation_labels_filter_count_semantics
-              .tr(args: [count.toString()]);
-    final selectedCountSemantics = LocaleKeys
-        .chats_screens_conversation_labels_selected_count_semantics
-        .tr(args: [count.toString()]);
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: onPressed,
+    child: _content(),
+    variant: count == 0 ? .secondary : .primary,
+    size: .small,
+    disabled: labels.isLoading || labels.hasError,
+    identifier: 'conversation-label-filter',
+    semanticLabel: _filterSemantics,
+  );
 
-    return AuraButton(
-      onPressed: onPressed,
-      child: Row(
-        mainAxisSize: .min,
-        children: [
-          const AuraIcon(Icons.label_outline, size: .small),
-          const SizedBox(width: 8),
-          Text(LocaleKeys.chats_screens_conversation_labels_filter.tr()),
-          if (count > 0) ...[
-            const SizedBox(width: 6),
-            AuraBadge.count(
-              count: count,
-              variant: .neutral,
-              size: .small,
-              semanticLabel: selectedCountSemantics,
-            ),
-          ],
-        ],
-      ),
-      variant: count == 0 ? .secondary : .primary,
-      size: .small,
-      disabled: labels.isLoading || labels.hasError,
-      identifier: 'conversation-label-filter',
-      semanticLabel: semantics,
-    );
-  }
+  String get _filterSemantics => count == 0
+      ? LocaleKeys.chats_screens_conversation_labels_filter_semantics.tr()
+      : LocaleKeys.chats_screens_conversation_labels_filter_count_semantics
+            .tr(args: [count.toString()]);
+
+  String get _selectedCountSemantics => LocaleKeys
+      .chats_screens_conversation_labels_selected_count_semantics
+      .tr(args: [count.toString()]);
+
+  Widget _content() => Row(
+    mainAxisSize: .min,
+    children: [
+      const AuraIcon(Icons.label_outline, size: .small),
+      const SizedBox(width: _conversationLabelRowGap),
+      Text(LocaleKeys.chats_screens_conversation_labels_filter.tr()),
+      if (count > 0) ...[
+        const SizedBox(width: _conversationLabelCountGap),
+        AuraBadge.count(
+          count: count,
+          variant: .neutral,
+          size: .small,
+          semanticLabel: _selectedCountSemantics,
+        ),
+      ],
+    ],
+  );
 }
 
 Future<Set<String>?> _showConversationLabelFilter(
@@ -202,38 +214,45 @@ class _ConversationLabelFilterDialogState
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: Text(LocaleKeys.chats_screens_conversation_labels_filter_title.tr()),
-    content: SizedBox(
-      width: _conversationLabelFilterDialogWidth,
-      child: Column(
-        mainAxisSize: .min,
-        crossAxisAlignment: .stretch,
-        children: [
-          Text(LocaleKeys.chats_screens_conversation_labels_filter_help.tr()),
-          const SizedBox(height: 12),
-          _ConversationLabelCheckboxList(
-            labels: widget.labels,
-            selectedLabelIds: _selected,
-            enabled: true,
-            maxHeight: 320,
-            onChanged: _toggleLabel,
-          ),
-        ],
+    title: _title,
+    content: _content,
+    actions: _actions(context),
+  );
+
+  Widget get _title =>
+      Text(LocaleKeys.chats_screens_conversation_labels_filter_title.tr());
+
+  Widget get _content => SizedBox(
+    width: _conversationLabelFilterDialogWidth,
+    child: Column(
+      mainAxisSize: .min,
+      crossAxisAlignment: .stretch,
+      children: [
+        Text(LocaleKeys.chats_screens_conversation_labels_filter_help.tr()),
+        const SizedBox(height: _conversationLabelDialogSectionSpacing),
+        _ConversationLabelCheckboxList(
+          labels: widget.labels,
+          selectedLabelIds: _selected,
+          enabled: true,
+          maxHeight: _conversationLabelFilterListMaxHeight,
+          onChanged: _toggleLabel,
+        ),
+      ],
+    ),
+  );
+
+  List<Widget> _actions(BuildContext context) => [
+    TextButton(
+      onPressed: () => Navigator.of(context).pop(),
+      child: const TextLocale(LocaleKeys.common_cancel),
+    ),
+    TextButton(
+      onPressed: () => Navigator.of(context).pop(_selected),
+      child: const TextLocale(
+        LocaleKeys.chats_screens_conversation_labels_apply,
       ),
     ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.of(context).pop(),
-        child: const TextLocale(LocaleKeys.common_cancel),
-      ),
-      TextButton(
-        onPressed: () => Navigator.of(context).pop(_selected),
-        child: const TextLocale(
-          LocaleKeys.chats_screens_conversation_labels_apply,
-        ),
-      ),
-    ],
-  );
+  ];
 
   void _toggleLabel({required String labelId, required bool selected}) =>
       setState(() {
@@ -262,24 +281,29 @@ class const _ConversationLabelCheckboxList({
       return Text(LocaleKeys.chats_screens_conversation_labels_empty.tr());
     }
 
-    return ConstrainedBox(
-      constraints: .new(maxHeight: maxHeight),
-      child: ListView.builder(
-        itemBuilder: (_, index) {
-          final label = labels[index];
+    return _list();
+  }
 
-          return _ConversationLabelCheckbox(
-            label: label,
-            selected: selectedLabelIds.contains(label.id),
-            enabled: enabled,
-            onChanged: (selected) =>
-                onChanged(labelId: label.id, selected: selected),
-          );
-        },
-        itemCount: labels.length,
-      ),
+  Widget _list() => ConstrainedBox(
+    constraints: .new(maxHeight: maxHeight),
+    child: ListView.builder(
+      itemBuilder: (_, index) => _checkbox(index),
+      itemCount: labels.length,
+    ),
+  );
+
+  Widget _checkbox(int index) {
+    final label = labels[index];
+
+    return _ConversationLabelCheckbox(
+      label: label,
+      selected: selectedLabelIds.contains(label.id),
+      enabled: enabled,
+      onChanged: (selected) =>
+          onChanged(labelId: label.id, selected: selected),
     );
   }
+
 }
 
 Future<void> _showManageConversationLabels(
@@ -314,48 +338,51 @@ class _ConversationLabelManagementDialogState
     );
 
     return AlertDialog(
-      title: Text(
-        LocaleKeys.chats_screens_conversation_labels_manage_title.tr(),
-      ),
-      content: SizedBox(
-        width: 440,
-        child: Column(
-          mainAxisSize: .min,
-          crossAxisAlignment: .stretch,
-          children: [
-            _NewConversationLabelField(
-              enabled: !_isWorking,
-              onCreate: (name) => _run(
-                () => widget.actions.create(
-                  workspaceId: widget.workspaceId,
-                  name: name,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            _ConversationLabelManagementList(
-              labels: labels,
-              enabled: !_isWorking,
-              onRename: (label) {
-                unawaited(_rename(label));
-              },
-              onDelete: (label) {
-                unawaited(_delete(label));
-              },
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: _isWorking ? null : () => Navigator.of(context).pop(),
-          child: const TextLocale(
-            LocaleKeys.chats_screens_conversation_labels_done,
-          ),
-        ),
-      ],
+      title: _title,
+      content: _content(labels),
+      actions: _actions(context),
     );
   }
+
+  Widget get _title =>
+      Text(LocaleKeys.chats_screens_conversation_labels_manage_title.tr());
+
+  Widget _content(AsyncValue<List<ConversationLabelEntity>> labels) => SizedBox(
+    width: _conversationLabelManageDialogWidth,
+    child: Column(
+      mainAxisSize: .min,
+      crossAxisAlignment: .stretch,
+      children: [
+        _newLabelField(),
+        const SizedBox(height: _conversationLabelDialogSectionSpacing),
+        _managementList(labels),
+      ],
+    ),
+  );
+
+  Widget _newLabelField() => _NewConversationLabelField(
+    enabled: !_isWorking,
+    onCreate: (name) => _run(
+      () => widget.actions.create(workspaceId: widget.workspaceId, name: name),
+    ),
+  );
+
+  Widget _managementList(AsyncValue<List<ConversationLabelEntity>> labels) =>
+      _ConversationLabelManagementList(
+        labels: labels,
+        enabled: !_isWorking,
+        onRename: (label) => unawaited(_rename(label)),
+        onDelete: (label) => unawaited(_delete(label)),
+      );
+
+  List<Widget> _actions(BuildContext context) => [
+    TextButton(
+      onPressed: _isWorking ? null : () => Navigator.of(context).pop(),
+      child: const TextLocale(
+        LocaleKeys.chats_screens_conversation_labels_done,
+      ),
+    ),
+  ];
 
   Future<void> _rename(ConversationLabelEntity label) async {
     final name = await _showLabelNameDialog(
@@ -436,27 +463,41 @@ class const _ConversationLabelManagementList({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (labels) {
-    AsyncData(:final value) when value.isEmpty => Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Text(LocaleKeys.chats_screens_conversation_labels_empty.tr()),
-    ),
-    AsyncData(:final value) => ConstrainedBox(
-      constraints: const BoxConstraints(maxHeight: 360),
-      child: ListView.builder(
-        itemBuilder: (context, index) => _ConversationLabelRow(
-          label: value[index],
-          enabled: enabled,
-          onRename: () => onRename(value[index]),
-          onDelete: () => onDelete(value[index]),
-        ),
-        itemCount: value.length,
-      ),
-    ),
-    AsyncError() => Text(
-      LocaleKeys.chats_screens_conversation_labels_load_error.tr(),
-    ),
-    AsyncLoading() => const Center(child: CircularProgressIndicator()),
+    AsyncData(:final value) => _dataState(value),
+    AsyncError() => _errorState(),
+    AsyncLoading() => _loadingState(),
   };
+
+  Widget _dataState(List<ConversationLabelEntity> values) => values.isEmpty
+      ? _emptyState()
+      : _loadedState(values);
+
+  Widget _emptyState() => Padding(
+    padding: const EdgeInsets.symmetric(
+      vertical: _conversationLabelDialogSectionSpacing,
+    ),
+    child: Text(LocaleKeys.chats_screens_conversation_labels_empty.tr()),
+  );
+
+  Widget _loadedState(List<ConversationLabelEntity> values) => ConstrainedBox(
+    constraints: const BoxConstraints(
+      maxHeight: _conversationLabelAssignmentListMaxHeight,
+    ),
+    child: ListView.builder(
+      itemBuilder: (context, index) => _ConversationLabelRow(
+        label: values[index],
+        enabled: enabled,
+        onRename: () => onRename(values[index]),
+        onDelete: () => onDelete(values[index]),
+      ),
+      itemCount: values.length,
+    ),
+  );
+
+  Widget _errorState() =>
+      Text(LocaleKeys.chats_screens_conversation_labels_load_error.tr());
+
+  Widget _loadingState() => const Center(child: CircularProgressIndicator());
 }
 
 class const _NewConversationLabelField({
@@ -499,9 +540,9 @@ class _NewConversationLabelFieldState
           enabled: widget.enabled,
         ),
       ),
-      const SizedBox(width: 8),
+      const SizedBox(width: _conversationLabelRowGap),
       Padding(
-        padding: const EdgeInsets.only(top: 8),
+        padding: const EdgeInsets.only(top: _conversationLabelFieldInset),
         child: AuraIconButton(
           icon: Icons.add,
           onPressed: widget.enabled ? _submitFromButton : null,
@@ -685,32 +726,40 @@ class _ConversationLabelAssignmentDialogState
     );
 
     return AlertDialog(
-      title: Text(
-        LocaleKeys.chats_screens_conversation_labels_assignment_title.tr(),
-      ),
-      content: SizedBox(
-        width: _conversationLabelFilterDialogWidth,
-        child: _ConversationLabelAssignmentList(
-          labels: labels,
-          selectedLabelIds: _selected,
-          enabled: !_isSaving,
-          onChanged: _toggleAssignment,
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
-          child: const TextLocale(LocaleKeys.common_cancel),
-        ),
-        TextButton(
-          onPressed: _isSaving ? null : () => unawaited(_save()),
-          child: const TextLocale(
-            LocaleKeys.chats_screens_conversation_labels_save_assignments,
-          ),
-        ),
-      ],
+      title: _assignmentTitle,
+      content: _assignmentContent(labels),
+      actions: _assignmentActions(context),
     );
   }
+
+  Widget get _assignmentTitle => Text(
+    LocaleKeys.chats_screens_conversation_labels_assignment_title.tr(),
+  );
+
+  Widget _assignmentContent(
+    AsyncValue<List<ConversationLabelEntity>> labels,
+  ) => SizedBox(
+    width: _conversationLabelFilterDialogWidth,
+    child: _ConversationLabelAssignmentList(
+      labels: labels,
+      selectedLabelIds: _selected,
+      enabled: !_isSaving,
+      onChanged: _toggleAssignment,
+    ),
+  );
+
+  List<Widget> _assignmentActions(BuildContext context) => [
+    TextButton(
+      onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
+      child: const TextLocale(LocaleKeys.common_cancel),
+    ),
+    TextButton(
+      onPressed: _isSaving ? null : () => unawaited(_save()),
+      child: const TextLocale(
+        LocaleKeys.chats_screens_conversation_labels_save_assignments,
+      ),
+    ),
+  ];
 
   void _toggleAssignment({required String labelId, required bool selected}) {
     setState(() {
@@ -764,7 +813,7 @@ class const _ConversationLabelAssignmentList({
       labels: value,
       selectedLabelIds: selectedLabelIds,
       enabled: enabled,
-      maxHeight: 360,
+      maxHeight: _conversationLabelAssignmentListMaxHeight,
       onChanged: onChanged,
     ),
     AsyncError() => Text(
