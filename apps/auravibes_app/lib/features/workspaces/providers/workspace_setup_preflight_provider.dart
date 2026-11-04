@@ -63,49 +63,55 @@ WorkspaceSetupPreflightSnapshot _preflightSnapshot(
   _SourceReads sources,
   String? selectedModelId,
 ) {
-  final modelRead = sources.modelRead;
-  final providerRead = sources.providerRead;
-  final mcpRead = sources.mcpRead;
-  final providers = _providerSnapshots(providerRead.value, scope.workspaceId);
+  final availability = _readAvailability(sources);
+  final providers = _providerSnapshots(
+    sources.providerRead.value,
+    scope.workspaceId,
+  );
 
   return .new(
     storageAvailable: _storageAvailable(scope, sources.cloudStorageAvailable),
     selectedModelId: selectedModelId,
-    selectedModelSourceAvailable: modelRead.available,
-    providerSourceAvailable: providerRead.available,
-    mcpSourceAvailable: mcpRead.available,
+    selectedModelSourceAvailable: availability.model,
+    providerSourceAvailable: availability.provider,
+    mcpSourceAvailable: availability.mcp,
     providers: providers,
-    selectedModel: modelRead.value,
-    mcpConnections: mcpRead.value,
+    selectedModel: sources.modelRead.value,
+    mcpConnections: sources.mcpRead.value,
   );
 }
 
 typedef _ReadResult<T> = ({bool available, T? value});
 
+typedef _ReadAvailability = ({bool model, bool provider, bool mcp});
+
 typedef _WorkspaceScope = ({
   String workspaceId,
   bool refreshRequested,
   _ReadResult<WorkspaceEntity?> workspaceRead,
-  WorkspaceEntity? workspace,
   _ReadResult<WorkspaceSession> sessionRead,
-  WorkspaceSession? session,
-  bool isRemote,
-  bool sourceAllowed,
 });
+
+extension _WorkspaceScopeValues on _WorkspaceScope {
+  WorkspaceEntity? get workspace => workspaceRead.value;
+
+  WorkspaceSession? get session => sessionRead.value;
+
+  bool get isRemote => workspace?.type == WorkspaceType.remote;
+
+  bool get sourceAllowed => _canReadSources(
+    workspace,
+    sessionRead,
+    isRemote,
+    refreshRequested,
+  );
+}
 
 typedef _SourceReads = ({
   bool? cloudStorageAvailable,
   _ReadResult<List<ModelConnectionEntity>> providerRead,
   _ReadResult<WorkspaceSetupModelSnapshot?> modelRead,
   _ReadResult<List<WorkspaceSetupMcpSnapshot>> mcpRead,
-});
-
-typedef _WorkspaceScopeInput = ({
-  String workspaceId,
-  bool refreshRequested,
-  _ReadResult<WorkspaceEntity?> workspaceRead,
-  WorkspaceEntity? workspace,
-  _ReadResult<WorkspaceSession> sessionRead,
 });
 
 Future<_WorkspaceScope> _readWorkspaceScope(Ref ref, String workspaceId) async {
@@ -116,13 +122,12 @@ Future<_WorkspaceScope> _readWorkspaceScope(Ref ref, String workspaceId) async {
   final workspace = workspaceRead.value;
   final sessionRead = await _readSession(ref, workspaceId, workspace);
 
-  return _workspaceScope((
+  return (
     workspaceId: workspaceId,
     refreshRequested: refreshRequested,
     workspaceRead: workspaceRead,
-    workspace: workspace,
     sessionRead: sessionRead,
-  ));
+  );
 }
 
 Future<_ReadResult<WorkspaceEntity?>> _readWorkspace(
@@ -146,28 +151,11 @@ Future<_ReadResult<WorkspaceSession>> _readSession(
   );
 }
 
-_WorkspaceScope _workspaceScope(_WorkspaceScopeInput input) {
-  final workspace = input.workspace;
-  final sessionRead = input.sessionRead;
-  final refreshRequested = input.refreshRequested;
-  final isRemote = workspace?.type == WorkspaceType.remote;
-
-  return (
-    workspaceId: input.workspaceId,
-    refreshRequested: refreshRequested,
-    workspaceRead: input.workspaceRead,
-    workspace: workspace,
-    sessionRead: sessionRead,
-    session: sessionRead.value,
-    isRemote: isRemote,
-    sourceAllowed: _canReadSources(
-      workspace,
-      sessionRead,
-      isRemote,
-      refreshRequested,
-    ),
-  );
-}
+_ReadAvailability _readAvailability(_SourceReads sources) => (
+  model: sources.modelRead.available,
+  provider: sources.providerRead.available,
+  mcp: sources.mcpRead.available,
+);
 
 bool _canReadSources(
   WorkspaceEntity? workspace,
