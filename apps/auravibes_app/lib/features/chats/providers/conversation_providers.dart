@@ -159,16 +159,20 @@ Stream<List<ConversationEntity>> _localConversationsWithLabels(
   _ConversationSessionRequest request,
 ) {
   final options = request.options;
+  final query = (
+    workspaceId: request.workspaceId,
+    search: options.search,
+    limit: options.pagination.limit,
+    offset: options.pagination.offset,
+    labelIds: options.labelIds,
+  );
 
   return request.ref
       .watch(conversationLabelsRepositoryProvider)
-      .watchConversationsByWorkspace((
-        workspaceId: request.workspaceId,
-        search: options.search,
-        limit: options.pagination.limit,
-        offset: options.pagination.offset,
-        labelIds: options.labelIds,
-      ), archivedOnly: options.scope == ConversationListScope.archived);
+      .watchConversationsByWorkspace(
+        query,
+        archivedOnly: options.scope == ConversationListScope.archived,
+      );
 }
 
 Stream<List<ConversationEntity>> _localConversationsWithAllLabels(
