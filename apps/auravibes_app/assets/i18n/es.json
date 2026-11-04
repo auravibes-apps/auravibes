@@ -2019,6 +2019,8 @@
     "remove_confirm": "¿Quitar {name} de esta app? Sus chats y archivos locales se eliminarán. Los datos en la nube permanecen en la nube.",
     "not_connected": "Sin conectar a esta aplicación",
     "connected": "Conectado a esta aplicación",
+    "account": "Cuenta: {email}",
+    "owner": "Propietario: {email}",
     "cloud_context": "El contenido y la ejecución del espacio están en este servidor de nube.",
     "device_connection": "Conexión con esta aplicación",
     "consequences": "Membresía y eliminación permanente"
@@ -2080,7 +2082,8 @@
     "delete_failed": "No se pudo completar la eliminación de esta cuenta. Revisa tu conexión e inténtalo otra vez.",
     "origin_unresolved": "Elige el servidor de esta cuenta. Este enlace no identifica un servidor único.",
     "status_checking": "Cuenta guardada · Comprobando el acceso…",
-    "status_verified": "Acceso verificado a las {time}",
+    "status_verified": "Acceso verificado: {time}",
+    "status_verified_without_time": "Acceso verificado",
     "status_unknown": "Acceso desconocido · No se pudo verificar el acceso",
     "verify": "Comprobar acceso",
     "wrong_identity": "Esta cuenta no coincide con la necesaria para esta tarea. Inicia sesión con el correo solicitado.",

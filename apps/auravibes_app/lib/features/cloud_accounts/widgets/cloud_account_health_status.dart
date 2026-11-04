@@ -95,25 +95,34 @@ class const _CloudAccountHealthLabel({
   required final DateTime? checkedAt,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => Text(
-    _cloudAccountHealthLabel(
-      isLoading,
-      status,
-    ).tr(namedArgs: {'time': checkedAt?.toLocal().toString() ?? ''}),
-  );
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return const TextLocale(LocaleKeys.cloud_accounts_status_checking);
+    }
+
+    return switch (status) {
+      .verified when checkedAt == null => const TextLocale(
+        LocaleKeys.cloud_accounts_status_verified_without_time,
+      ),
+      .verified => TextLocale(
+        LocaleKeys.cloud_accounts_status_verified,
+        namedArgs: {'time': _formatAccessTime(context, checkedAt)},
+      ),
+      .needsSignIn => const TextLocale(
+        LocaleKeys.cloud_accounts_status_needs_sign_in,
+      ),
+      .unknown ||
+      null => const TextLocale(LocaleKeys.cloud_accounts_status_unknown),
+    };
+  }
 }
 
-String _cloudAccountHealthLabel(
-  bool isLoading,
-  cloud_health.CloudAccountHealthStatus? status,
-) {
-  if (isLoading) return LocaleKeys.cloud_accounts_status_checking;
+String _formatAccessTime(BuildContext context, DateTime? checkedAt) {
+  if (checkedAt == null) return '';
 
-  return switch (status) {
-    .verified => LocaleKeys.cloud_accounts_status_verified,
-    .needsSignIn => LocaleKeys.cloud_accounts_status_needs_sign_in,
-    .unknown || null => LocaleKeys.cloud_accounts_status_unknown,
-  };
+  return DateFormat.yMMMd(Localizations.localeOf(context).toString())
+      .add_jm()
+      .format(checkedAt.toLocal());
 }
 
 class const _CloudAccountHealthAction({

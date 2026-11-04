@@ -91,6 +91,12 @@ class const _ResolvedDetail({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(cloudWorkspaceDetailProvider(_key));
+    final accountEmail = ref
+        .watch(cloudAccountsProvider)
+        .value
+        ?.where((item) => item.key == account)
+        .firstOrNull
+        ?.email;
     final mirrors =
         (ref.watch(allWorkspacesProvider).value ?? const <WorkspaceEntity>[])
             .where(
@@ -117,6 +123,7 @@ class const _ResolvedDetail({
         AsyncData(:final value?) => _DetailBody(
           state: value,
           account: account,
+          accountEmail: accountEmail,
           workspaceId: workspaceId,
           mirror: mirror,
           connectedElsewhere: mirror == null ? mirrors.firstOrNull : null,
@@ -131,6 +138,7 @@ class const _ResolvedDetail({
           children: [
             CloudAccountHealthStatus(
               account: account,
+              email: accountEmail,
               workspaceId: workspaceId,
               returnPath: CloudWorkspaceDetailRoute(
                 workspaceId: workspaceId,
@@ -161,6 +169,7 @@ class const _DetailBody({
   required final String workspaceId,
   required final CloudWorkspaceDetailState state,
   required final CloudAccountKey account,
+  required final String? accountEmail,
   required final WorkspaceEntity? mirror,
   required final WorkspaceEntity? connectedElsewhere,
   required final VoidCallback onChanged,
@@ -184,20 +193,21 @@ class const _DetailBody({
       padding: const EdgeInsets.all(16)
           .copyWith(bottom: BottomPadding.of(context)),
       children: [
-        AuraText(child: Text(workspace.name), style: AuraTextStyle.heading4),
         Text(_roleLabel(workspace.role).tr()),
         _WorkspaceRoleDescription(role: workspace.role),
-        Text(
-          ref
-                  .watch(cloudAccountsProvider)
-                  .value
-                  ?.where((item) => item.key == account)
-                  .firstOrNull
-                  ?.email ??
-              account.accountId,
+        const SizedBox(height: 16),
+        TextLocale(
+          LocaleKeys.cloud_workspaces_account,
+          namedArgs: {'email': accountEmail ?? account.accountId},
         ),
+        if (detail.ownerEmail case final email?)
+          TextLocale(
+            LocaleKeys.cloud_workspaces_owner,
+            namedArgs: {'email': email},
+          ),
         CloudAccountHealthStatus(
           account: account,
+          email: accountEmail,
           workspaceId: workspaceId,
           returnPath: CloudWorkspaceDetailRoute(
             workspaceId: workspaceId,
@@ -206,6 +216,12 @@ class const _DetailBody({
             serverUrl: account.serverUrl,
           ).location,
         ),
+        const SizedBox(height: 24),
+        const AuraText(
+          style: .heading6,
+          child: TextLocale(LocaleKeys.cloud_workspaces_device_connection),
+        ),
+        const SizedBox(height: 8),
         TextLocale(
           mirror == null && connectedElsewhere == null
               ? LocaleKeys.cloud_workspaces_not_connected
@@ -228,11 +244,6 @@ class const _DetailBody({
             ),
           ),
         const TextLocale(LocaleKeys.cloud_workspaces_cloud_context),
-        const AuraText(
-          style: .heading6,
-          child: TextLocale(LocaleKeys.cloud_workspaces_device_connection),
-        ),
-        if (detail.ownerEmail != null) Text(detail.ownerEmail!),
         const SizedBox(height: 16),
         if (connectedElsewhere case final existing?)
           AuraButton(
@@ -284,6 +295,13 @@ class const _DetailBody({
               LocaleKeys.workspace_management_cloud_invite,
             ),
           ),
+          if (state.invites.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const AuraText(
+              style: .heading6,
+              child: TextLocale(LocaleKeys.cloud_workspaces_pending_invites),
+            ),
+          ],
           for (final invite in state.invites)
             _OutgoingInviteTile(
               account: account,
@@ -478,6 +496,7 @@ class const _MemberTile({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => AuraTile(
+    variant: .surface,
     child: AuraColumn(
       children: [
         Text(member.email.orPlaceholder(member.userId.orPlaceholder())),
@@ -539,7 +558,14 @@ class const _MemberTile({
       context,
       message: const TextLocale(LocaleKeys.cloud_workspaces_change_role),
       title: _roleLabel(nextRole).tr(context: context),
-      detail: _WorkspaceRoleDescription(role: nextRole, showRoleLabel: true),
+      detail: AuraColumn(
+        crossAxisAlignment: .start,
+        spacing: .sm,
+        children: [
+          Text(member.email.orPlaceholder(member.userId.orPlaceholder())),
+          _WorkspaceRoleDescription(role: nextRole, showRoleLabel: true),
+        ],
+      ),
     )) {
       return;
     }
@@ -558,6 +584,7 @@ class const _MemberTile({
     if (!await _confirm(
       context,
       message: const TextLocale(LocaleKeys.cloud_workspaces_remove_member),
+      detail: Text(member.email.orPlaceholder(member.userId.orPlaceholder())),
     )) {
       return;
     }
@@ -575,6 +602,7 @@ class const _MemberTile({
     if (!await _confirm(
       context,
       message: const TextLocale(LocaleKeys.cloud_workspaces_transfer_confirm),
+      detail: Text(member.email.orPlaceholder(member.userId.orPlaceholder())),
     )) {
       return;
     }
@@ -597,7 +625,12 @@ class const _OutgoingInviteTile({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) => AuraTile(
-    child: Text(invite.email),
+    variant: .surface,
+    child: AuraColumn(
+      crossAxisAlignment: .start,
+      spacing: .xs,
+      children: [Text(invite.email), TextLocale(_roleLabel(invite.role))],
+    ),
     trailing: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -810,9 +843,12 @@ class const _WorkspaceInvitePrompt({
   @override
   Widget build(BuildContext context) {
     final controller = useTextEditingController();
+    final _ = useListenable(controller);
     final role = useState('member');
-    void submit() =>
-        Navigator.of(context).pop((email: controller.text, role: role.value));
+    void submit() {
+      if (controller.text.trim().isEmpty) return;
+      Navigator.of(context).pop((email: controller.text, role: role.value));
+    }
 
     return AlertDialog(
       title: Text(title),
@@ -823,6 +859,10 @@ class const _WorkspaceInvitePrompt({
           TextField(
             controller: controller,
             autofocus: true,
+            decoration: InputDecoration(
+              labelText: LocaleKeys.workspace_management_cloud_email.tr(),
+            ),
+            keyboardType: .emailAddress,
             textInputAction: .done,
             onSubmitted: (_) => submit(),
           ),
@@ -860,7 +900,7 @@ class const _WorkspaceInvitePrompt({
           child: const TextLocale(LocaleKeys.common_cancel),
         ),
         TextButton(
-          onPressed: submit,
+          onPressed: controller.text.trim().isEmpty ? null : submit,
           child: const TextLocale(LocaleKeys.common_add),
         ),
       ],

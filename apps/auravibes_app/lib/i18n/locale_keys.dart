@@ -2774,6 +2774,8 @@ abstract class LocaleKeys {
   static const cloud_workspaces_not_connected =
       'cloud_workspaces.not_connected';
   static const cloud_workspaces_connected = 'cloud_workspaces.connected';
+  static const cloud_workspaces_account = 'cloud_workspaces.account';
+  static const cloud_workspaces_owner = 'cloud_workspaces.owner';
   static const cloud_workspaces_cloud_context =
       'cloud_workspaces.cloud_context';
   static const cloud_workspaces_device_connection =
@@ -2864,6 +2866,8 @@ abstract class LocaleKeys {
       'cloud_accounts.status_checking';
   static const cloud_accounts_status_verified =
       'cloud_accounts.status_verified';
+  static const cloud_accounts_status_verified_without_time =
+      'cloud_accounts.status_verified_without_time';
   static const cloud_accounts_status_unknown = 'cloud_accounts.status_unknown';
   static const cloud_accounts_verify = 'cloud_accounts.verify';
   static const cloud_accounts_wrong_identity = 'cloud_accounts.wrong_identity';

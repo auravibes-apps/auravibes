@@ -2019,6 +2019,8 @@
     "remove_confirm": "Remove {name} from this app? Its local chats and files will be deleted. Cloud data stays in the cloud.",
     "not_connected": "Not connected to this app",
     "connected": "Connected to this app",
+    "account": "Account: {email}",
+    "owner": "Owner: {email}",
     "cloud_context": "Workspace content and execution are on this cloud server.",
     "device_connection": "Connection to this app",
     "consequences": "Membership and permanent deletion"
@@ -2080,7 +2082,8 @@
     "delete_failed": "Could not finish deleting this account. Check your connection and try again.",
     "origin_unresolved": "Choose the server for this account. This link does not identify a unique server.",
     "status_checking": "Account stored · Checking access…",
-    "status_verified": "Access verified at {time}",
+    "status_verified": "Access verified: {time}",
+    "status_verified_without_time": "Access verified",
     "status_unknown": "Access unknown · Could not verify access",
     "verify": "Check access",
     "wrong_identity": "This account does not match the account needed for this task. Sign in with the requested email.",

@@ -2,10 +2,12 @@ import 'package:auravibes_app/data/repositories/workspace_repository.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
 import 'package:auravibes_app/domain/repositories/workspace_selection_repository.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
-import 'package:auravibes_app/features/cloud_accounts/models/cloud_account_health.dart';
+import 'package:auravibes_app/features/cloud_accounts/models/cloud_account_health.dart'
+    show CloudAccountHealth;
 import 'package:auravibes_app/features/cloud_accounts/models/cloud_account_key.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/cloud_account_health_provider.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
+import 'package:auravibes_app/features/cloud_accounts/widgets/cloud_account_health_status.dart';
 import 'package:auravibes_app/features/cloud_workspaces/providers/cloud_workspace_providers.dart';
 import 'package:auravibes_app/features/cloud_workspaces/screens/cloud_workspace_detail_screen.dart';
 import 'package:auravibes_app/features/cloud_workspaces/usecases/cloud_workspace_usecases.dart';
@@ -530,9 +532,17 @@ void main() {
           accountId: 'same',
           workspaceId: 11,
         ));
-        expect(find.text('Team Studio'), findsWidgets);
-        expect(find.text('right@example.test'), findsOneWidget);
+        expect(find.text('Team Studio'), findsOneWidget);
+        expect(find.text('Account: right@example.test'), findsOneWidget);
         expect(find.text('wrong@example.test'), findsNothing);
+        expect(
+          tester
+              .widget<CloudAccountHealthStatus>(
+                find.byType(CloudAccountHealthStatus),
+              )
+              .email,
+          'right@example.test',
+        );
         expect(find.text('https://two.example'), findsOneWidget);
         expect(find.text('Not connected to this app'), findsOneWidget);
         final roleDescription = switch (role) {
@@ -563,6 +573,21 @@ void main() {
         if (canManage) {
           await tester.tap(find.text('Invite member'));
           final _ = await tester.pumpAndSettle();
+          expect(
+            tester
+                .widget<TextField>(find.byType(TextField))
+                .decoration
+                ?.labelText,
+            'Email',
+          );
+          final add = find.widgetWithText(TextButton, 'Add');
+          expect(tester.widget<TextButton>(add).onPressed, isNull);
+          await tester.testTextInput.receiveAction(.done);
+          final _ = await tester.pumpAndSettle();
+          expect(find.byType(AlertDialog), findsOneWidget);
+          await tester.enterText(find.byType(TextField), 'invite@example.test');
+          final _ = await tester.pumpAndSettle();
+          expect(tester.widget<TextButton>(add).onPressed, isNotNull);
           final inviteDescription = find.byKey(
             const ValueKey('workspace_invite_role_description'),
           );
@@ -600,9 +625,40 @@ void main() {
           await tester.tap(changeRole);
           final _ = await tester.pumpAndSettle();
           expect(
+            find.descendant(
+              of: find.byType(AlertDialog),
+              matching: find.text('member@example.test'),
+            ),
+            findsOneWidget,
+          );
+          expect(
             find.text(
               'Can view, invite, and remove members, but cannot manage admins, '
               'rename the workspace, or transfer ownership.',
+            ),
+            findsOneWidget,
+          );
+          await tester.tap(find.text('Cancel'));
+          final _ = await tester.pumpAndSettle();
+          await tester.tap(find.byTooltip('Transfer ownership'));
+          final _ = await tester.pumpAndSettle();
+          expect(
+            find.descendant(
+              of: find.byType(AlertDialog),
+              matching: find.text('member@example.test'),
+            ),
+            findsOneWidget,
+          );
+          await tester.tap(find.text('Cancel'));
+          final _ = await tester.pumpAndSettle();
+        }
+        if (canManage) {
+          await tester.tap(find.byTooltip('Remove'));
+          final _ = await tester.pumpAndSettle();
+          expect(
+            find.descendant(
+              of: find.byType(AlertDialog),
+              matching: find.text('member@example.test'),
             ),
             findsOneWidget,
           );
