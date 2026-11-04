@@ -1470,6 +1470,7 @@ class const _MessageTextContent({
           isUser: true,
           key: ValueKey(message.id),
           status: status,
+          statusSemanticLabel: _messageStatusLabel(context, status),
         ),
       );
     }
