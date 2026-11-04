@@ -11,8 +11,7 @@ class const ConversationLabelBadges({
   @override
   Widget build(BuildContext context) => _ConversationLabelBadgeContent(
     labels: labels,
-    semanticLabel: LocaleKeys
-        .chats_screens_conversation_labels_label_semantics
+    semanticLabel: LocaleKeys.chats_screens_conversation_labels_label_semantics
         .tr(context: context),
   );
 }
@@ -27,7 +26,9 @@ class const _ConversationLabelBadgeContent({
 
     return Semantics(
       key: const ValueKey('conversation-labels-semantics'),
-      child: ExcludeSemantics(child: _ConversationLabelBadgeWrap(labels: labels)),
+      child: ExcludeSemantics(
+        child: _ConversationLabelBadgeWrap(labels: labels),
+      ),
       container: true,
       label: '$semanticLabel: ${_conversationLabelNames(labels)}',
     );

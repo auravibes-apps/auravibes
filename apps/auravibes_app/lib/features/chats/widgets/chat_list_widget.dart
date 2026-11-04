@@ -968,9 +968,8 @@ class const _ChatListLoadedBody({required final _ChatListViewState state})
   );
 }
 
-class const _ChatListLoadMoreIfNeeded({
-  required final _ChatListViewState state,
-}) extends StatelessWidget {
+class const _ChatListLoadMoreIfNeeded({required final _ChatListViewState state})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext _) =>
       state.hasMore && !state.isRefreshing && !state.hasError

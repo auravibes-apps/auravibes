@@ -279,9 +279,10 @@ extension ConversationDaoLabelReadOperations on ConversationDao {
 
   Stream<List<ConversationWithLabels>> _watchConversationsWithLabels(
     ConversationLabelQuery query,
-  ) => _buildConversationPageQuery(query)
-    .watch()
-    .asyncMap((rows) => _loadConversationPage(rows, query.workspaceId));
+  ) =>
+      _buildConversationPageQuery(query)
+          .watch()
+          .asyncMap((rows) => _loadConversationPage(rows, query.workspaceId));
 
   Selectable<QueryRow> _buildConversationPageQuery(
     ConversationLabelQuery query,
@@ -344,30 +345,33 @@ extension ConversationDaoLabelReadOperations on ConversationDao {
       workspaceId,
     );
 
-    return _indexConversationLabels(
-      labelRows,
-      (
-        assignments: conversationLabelAssignments,
-        labels: conversationLabels,
-      ),
-    );
+    return _indexConversationLabels(labelRows, (
+      assignments: conversationLabelAssignments,
+      labels: conversationLabels,
+    ));
   }
 
   Future<List<TypedResult>> _labelsForConversations(
     List<String> conversationIds,
     String workspaceId,
-  ) => (select(conversationLabels).join([
-    innerJoin(
-      conversationLabelAssignments,
-      conversationLabelAssignments.labelId.equalsExp(conversationLabels.id) &
-          conversationLabelAssignments.workspaceId.equalsExp(
-            conversationLabels.workspaceId,
-          ),
-    ),
-  ])..where(
-    conversationLabelAssignments.workspaceId.equals(workspaceId) &
-        conversationLabelAssignments.conversationId.isIn(conversationIds),
-  )).get();
+  ) =>
+      (select(conversationLabels).join([
+            innerJoin(
+              conversationLabelAssignments,
+              conversationLabelAssignments.labelId.equalsExp(
+                    conversationLabels.id,
+                  ) &
+                  conversationLabelAssignments.workspaceId.equalsExp(
+                    conversationLabels.workspaceId,
+                  ),
+            ),
+          ])..where(
+            conversationLabelAssignments.workspaceId.equals(workspaceId) &
+                conversationLabelAssignments.conversationId.isIn(
+                  conversationIds,
+                ),
+          ))
+          .get();
 }
 
 String _conversationPageSql(
@@ -484,9 +488,7 @@ void _addConversationLabel(
 ) {
   final assignment = row.readTable(tables.assignments);
   final label = row.readTable(tables.labels);
-  result
-      .putIfAbsent(assignment.conversationId, () => [])
-      .add(_mapLabel(label));
+  result.putIfAbsent(assignment.conversationId, () => []).add(_mapLabel(label));
 }
 
 ConversationLabelEntity _mapLabel(ConversationLabelsTable label) =>
