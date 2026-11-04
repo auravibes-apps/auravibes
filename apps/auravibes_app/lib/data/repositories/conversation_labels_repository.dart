@@ -252,11 +252,9 @@ Future<void> _ensureRenameNameAvailable(
 Future<ConversationLabelsTable?> _duplicateLabelName(
   AppDatabase database,
   _ConversationLabelDuplicateName request,
-) =>
-    (database.select(database.conversationLabels)..where(
-          (row) => _isDuplicateLabelName(row, request),
-        ))
-        .getSingleOrNull();
+) => (database.select(
+  database.conversationLabels,
+)..where((row) => _isDuplicateLabelName(row, request))).getSingleOrNull();
 
 Expression<bool> _isDuplicateLabelName(
   $ConversationLabelsTable row,
@@ -382,11 +380,9 @@ Future<List<ConversationLabelsTable>> _loadLabelsForAssignment(
 Future<List<ConversationLabelsTable>> _queryLabelsForAssignment(
   AppDatabase database,
   _ConversationLabelAssignment assignment,
-) =>
-    (database.select(database.conversationLabels)..where(
-          (row) => _matchesAssignmentLabel(row, assignment),
-        ))
-        .get();
+) => (database.select(
+  database.conversationLabels,
+)..where((row) => _matchesAssignmentLabel(row, assignment))).get();
 
 Expression<bool> _matchesAssignmentLabel(
   $ConversationLabelsTable row,
@@ -500,4 +496,3 @@ class const ConversationLabelAlreadyExistsException() implements Exception;
 class const ConversationWorkspaceMismatchException() implements Exception;
 
 class const ConversationLabelNameInvalidException() implements Exception;
-
