@@ -77,6 +77,7 @@ import 'package:material_ui/material_ui.dart';
 
 final _a2uiLogger = Logger('chat_a2ui_actions');
 const _latestMessageScrollThreshold = 64.0;
+final _chatTranscriptScrollStorage = PageStorageBucket();
 
 String? _searchTargetMessageId(BuildContext context) {
   final arguments = ModalRoute.of(context)?.settings.arguments;
@@ -142,7 +143,10 @@ class const ChatPrimaryScrollController({
     final controller = useMemoized(_DisclosureScrollController.new);
     useEffect(() => controller.dispose, [controller]);
 
-    return PrimaryScrollController(controller: controller, child: child);
+    return PageStorage(
+      bucket: _chatTranscriptScrollStorage,
+      child: PrimaryScrollController(controller: controller, child: child),
+    );
   }
 }
 
@@ -514,6 +518,9 @@ class const ChatMessagesWidget({
     return Stack(
       children: [
         ListView.separated(
+          key: PageStorageKey<String>(
+            'chat_messages_${workspaceId}_$parentConversationId',
+          ),
           reverse: true,
           controller: controller,
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -581,11 +588,17 @@ class const ChatMessagesWidget({
           bottom: 16,
           child: ListenableBuilder(
             listenable: controller,
-            builder: (context, child) =>
-                controller.hasClients &&
-                    controller.offset > _latestMessageScrollThreshold
-                ? child!
-                : const SizedBox.shrink(),
+            builder: (context, child) {
+              // A route transition can temporarily leave both transcript
+              // scrollables attached to this controller. `offset` asserts
+              // that there is exactly one client.
+              final positions = controller.positions;
+              final hasSingleClient = positions.length == 1;
+              return hasSingleClient &&
+                      positions.single.pixels > _latestMessageScrollThreshold
+                  ? child!
+                  : const SizedBox.shrink();
+            },
             child: AuraIconButton(
               key: const ValueKey('chat_jump_to_latest'),
               icon: Icons.keyboard_arrow_down_rounded,
