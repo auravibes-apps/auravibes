@@ -1,6 +1,5 @@
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/conversation_archive_state_repository.dart';
-import 'package:auravibes_app/domain/enums/workspace_type.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
