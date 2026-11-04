@@ -70,10 +70,11 @@ different model and streaming states, and comprehension remain unverified.
 
 ## Before and after
 
-The before captures use production code from `923cb40ac`; the after captures
-use the changes described above. Their sidecar fingerprint is the SHA-256 of
-the tracked Dart diff against that commit. The same fixture and viewport are
-used for each pair. The narrow baseline intentionally fails the new positioning
+The before captures use production code from `68b02c5a8`; the after captures
+use the changes described above, merged onto that commit. Their sidecar
+fingerprint is the SHA-256 of the tracked Dart diff against `923cb40ac`. The
+same fixture and viewport are used for each pair; no drag is active in these
+captures. The narrow baseline intentionally fails the new positioning
 regression after writing its capture.
 
 ### Conversation header, 466 × 678
