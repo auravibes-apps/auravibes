@@ -166,12 +166,11 @@ abstract final class ConversationLabelMapper {
   static ConversationLabelEntity fromCloud(
     ConversationLabelSummary label,
     String localWorkspaceId,
-  ) =>
-      ConversationLabelEntity(
-        id: label.id,
-        workspaceId: localWorkspaceId,
-        name: label.name,
-        createdAt: label.createdAt,
-        updatedAt: label.updatedAt,
-      );
+  ) => ConversationLabelEntity(
+    id: label.id,
+    workspaceId: localWorkspaceId,
+    name: label.name,
+    createdAt: label.createdAt,
+    updatedAt: label.updatedAt,
+  );
 }

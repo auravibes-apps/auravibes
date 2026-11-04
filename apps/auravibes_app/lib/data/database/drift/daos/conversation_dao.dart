@@ -226,10 +226,7 @@ extension ConversationDaoReadOperations on ConversationDao {
     return query.watch();
   }
 
-  Stream<
-    List<ConversationWithLabels>
-  >
-  watchConversationsWithLabelsByWorkspace(
+  Stream<List<ConversationWithLabels>> watchConversationsWithLabelsByWorkspace(
     ConversationLabelQuery query,
   ) => _watchConversationsWithLabels(query);
 

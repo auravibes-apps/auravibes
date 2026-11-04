@@ -490,15 +490,14 @@ ConversationEntity _cloudConversationFields(
 ConversationEntity _cloudConversationBase(
   ConversationSummary conversation,
   String localWorkspaceId,
-) =>
-    ConversationEntity(
-    id: conversation.id,
-    title: conversation.title,
-    workspaceId: localWorkspaceId,
-    isPinned: conversation.isPinned,
-    createdAt: conversation.createdAt,
-    updatedAt: conversation.updatedAt,
-  );
+) => ConversationEntity(
+  id: conversation.id,
+  title: conversation.title,
+  workspaceId: localWorkspaceId,
+  isPinned: conversation.isPinned,
+  createdAt: conversation.createdAt,
+  updatedAt: conversation.updatedAt,
+);
 
 List<ConversationLabelEntity> _cloudConversationLabels(
   List<ConversationLabelSummary>? labels,

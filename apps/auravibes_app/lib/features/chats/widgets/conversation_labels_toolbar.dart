@@ -12,10 +12,10 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-const _conversationLabelToolbarInset = 16;
-const _conversationLabelToolbarTopInset = 12;
-const _conversationLabelToolbarSpacing = 8;
-const _conversationLabelFilterDialogWidth = 420;
+const _conversationLabelToolbarInset = 16.0;
+const _conversationLabelToolbarTopInset = 12.0;
+const _conversationLabelToolbarSpacing = 8.0;
+const _conversationLabelFilterDialogWidth = 420.0;
 const _conversationLabelNameMaxLength = 40;
 
 class const ConversationLabelsToolbar({
@@ -586,15 +586,14 @@ abstract final class ConversationLabelDialogs {
     required String workspaceId,
     required ConversationEntity conversation,
     required ConversationLabelActions actions,
-  }) =>
-      showDialog<Set<String>>(
-        context: context,
-        builder: (_) => _ConversationLabelAssignmentDialog(
-          workspaceId: workspaceId,
-          conversation: conversation,
-          actions: actions,
-        ),
-      );
+  }) => showDialog<Set<String>>(
+    context: context,
+    builder: (_) => _ConversationLabelAssignmentDialog(
+      workspaceId: workspaceId,
+      conversation: conversation,
+      actions: actions,
+    ),
+  );
 }
 
 class const _ConversationLabelAssignmentDialog({

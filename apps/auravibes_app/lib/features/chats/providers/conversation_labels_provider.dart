@@ -12,8 +12,7 @@ part 'conversation_labels_provider.g.dart';
 Stream<List<ConversationLabelEntity>> conversationLabelsStream(
   Ref ref,
   String workspaceId,
-) =>
-    _conversationLabelsForWorkspace(ref, workspaceId);
+) => _conversationLabelsForWorkspace(ref, workspaceId);
 
 Stream<List<ConversationLabelEntity>> _conversationLabelsForWorkspace(
   Ref ref,

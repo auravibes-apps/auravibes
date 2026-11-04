@@ -161,10 +161,13 @@ void main() {
 
       final page = await labelsRepository()
           .watchConversationsByWorkspace(
-            workspaceId(),
-            labelIds: {urgent.id, ideas.id},
-            limit: 1,
-            offset: 1,
+            (
+              workspaceId: workspaceId(),
+              search: '',
+              limit: 1,
+              offset: 1,
+              labelIds: {urgent.id, ideas.id},
+            ),
           )
           .first;
       expect(page.map((conversation) => conversation.title), ['Older match']);
@@ -172,15 +175,26 @@ void main() {
       expect(
         await labelsRepository()
             .watchConversationsByWorkspace(
-              otherWorkspaceId(),
-              labelIds: {urgent.id},
+              (
+                workspaceId: otherWorkspaceId(),
+                search: '',
+                limit: null,
+                offset: 0,
+                labelIds: {urgent.id},
+              ),
             )
             .first,
         isEmpty,
       );
       expect(
         (await labelsRepository()
-                .watchConversationsByWorkspace(otherWorkspaceId())
+                .watchConversationsByWorkspace((
+                  workspaceId: otherWorkspaceId(),
+                  search: '',
+                  limit: null,
+                  offset: 0,
+                  labelIds: const {},
+                ))
                 .first)
             .single
             .title,
@@ -217,7 +231,13 @@ void main() {
       );
       expect(
         await labelsRepository()
-            .watchConversationsByWorkspace(workspaceId(), labelIds: {label.id})
+            .watchConversationsByWorkspace((
+              workspaceId: workspaceId(),
+              search: '',
+              limit: null,
+              offset: 0,
+              labelIds: {label.id},
+            ))
             .first,
         isEmpty,
       );
@@ -242,8 +262,13 @@ void main() {
       expect(
         await labelsRepository()
             .watchConversationsByWorkspace(
-              workspaceId(),
-              labelIds: {secondLabel.id},
+              (
+                workspaceId: workspaceId(),
+                search: '',
+                limit: null,
+                offset: 0,
+                labelIds: {secondLabel.id},
+              ),
             )
             .first,
         isEmpty,

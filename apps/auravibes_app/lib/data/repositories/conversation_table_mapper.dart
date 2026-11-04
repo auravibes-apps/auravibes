@@ -18,14 +18,13 @@ abstract final class ConversationTableMapper {
     );
   }
 
-  static ConversationEntity _core(ConversationsTable row) => _fields(
-    row,
-  ).copyWith(
-    toolAccessMode: ConversationToolAccessModeStorage.decode(
-      row.toolAccessMode,
-    ),
-    taskBrief: row.taskBrief,
-  );
+  static ConversationEntity _core(ConversationsTable row) =>
+      _fields(row).copyWith(
+        toolAccessMode: ConversationToolAccessModeStorage.decode(
+          row.toolAccessMode,
+        ),
+        taskBrief: row.taskBrief,
+      );
 
   static ConversationEntity _fields(ConversationsTable row) =>
       ConversationEntity(
