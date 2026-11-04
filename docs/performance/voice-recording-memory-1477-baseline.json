@@ -1,0 +1,1733 @@
+{
+  "schema": 1,
+  "run_url": "https://github.com/auravibes-apps/auravibes/actions/runs/41686488660",
+  "artifact_id": 13257766564,
+  "baseline_sha": "f00fc7b9159cc35713db498ad319200a5ed4052e",
+  "probe_revision_sha": "3f85acb7b69f1262ca45bc1d07e3e4aff1e4f284",
+  "product_service_sha256": "6d411f89d5f5ff53fcb19ce8dddd19454ce2f6683e5125c9ec837c03dc5ea3b2",
+  "probe_sha256": "994169ec7a477dc05481635da664af6be11f2ee3e69950d5467265d80c1241df",
+  "lockfile_sha256": "a9de2d11d5c370729a26c416ae5bf28ae4595bdbf8a51d4fd2ddca09a84acba7",
+  "source": "Per-case VOICE_MEMORY_RESULT records from completed hosted job log",
+  "cases": [
+    {
+      "label": "baseline",
+      "seconds": 5,
+      "repetition": 1,
+      "irregular": false,
+      "command": [
+        "flutter",
+        "test",
+        "test/performance/voice_recording_memory_test.dart",
+        "--no-pub",
+        "--concurrency=1",
+        "--reporter=expanded",
+        "--enable-vmservice",
+        "--dart-define=VOICE_MEMORY_PROBE=true",
+        "--dart-define=VOICE_MEMORY_SECONDS=5",
+        "--dart-define=VOICE_MEMORY_IRREGULAR=false"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 30.989,
+      "result": {
+        "schema": 1,
+        "pid": 4671,
+        "platform": "macos",
+        "dart": "3.13.7 (stable) (Thu Oct 22 14:28:57 2026 -0700) on \"macos_arm64\"",
+        "seconds": 5,
+        "irregular": false,
+        "sample_rate": 44100,
+        "channels": 1,
+        "pcm_bytes": 441000,
+        "packets": 250,
+        "output_bytes": 441044,
+        "output_sha256": "b22afca8f801e6dbab19c4403395e3e0a5c03d4dad2488223fbce1a6e6160421",
+        "decoded": {
+          "frames": 220500,
+          "rate": 44100,
+          "channels": 1,
+          "width": 2
+        },
+        "stop_microseconds": 8375,
+        "process_max_rss_bytes": 244318208,
+        "sampled_peak_rss_bytes": 244318208,
+        "sampled_peak_heap_bytes": 93045920,
+        "sampled_peak_external_bytes": 168432,
+        "sampled_peak_heap_plus_external_bytes": 93214352,
+        "finalization_peak_rss_bytes": 244318208,
+        "finalization_peak_heap_plus_external_bytes": 92361568,
+        "vm_samples": 498,
+        "phases": {
+          "idle": {
+            "phase": "idle",
+            "elapsed_us": 143701,
+            "rss_bytes": 228179968,
+            "max_rss_bytes": 228196352,
+            "heap_bytes": 84614560,
+            "external_bytes": 131920
+          },
+          "recording-started": {
+            "phase": "recording-started",
+            "elapsed_us": 147034,
+            "rss_bytes": 228278272,
+            "max_rss_bytes": 228278272,
+            "heap_bytes": 85704992,
+            "external_bytes": 132064
+          },
+          "pre-stop": {
+            "phase": "pre-stop",
+            "elapsed_us": 5149165,
+            "rss_bytes": 240402432,
+            "max_rss_bytes": 242171904,
+            "heap_bytes": 91075552,
+            "external_bytes": 157200
+          },
+          "finalized": {
+            "phase": "finalized",
+            "elapsed_us": 5160225,
+            "rss_bytes": 244318208,
+            "max_rss_bytes": 244318208,
+            "heap_bytes": 92203296,
+            "external_bytes": 157424
+          }
+        },
+        "cleanup_files_remaining": 0,
+        "source": "synthetic PCM through unmodified macOS IO service"
+      }
+    },
+    {
+      "label": "candidate",
+      "seconds": 5,
+      "repetition": 1,
+      "irregular": false,
+      "command": [
+        "flutter",
+        "test",
+        "test/performance/voice_recording_memory_test.dart",
+        "--no-pub",
+        "--concurrency=1",
+        "--reporter=expanded",
+        "--enable-vmservice",
+        "--dart-define=VOICE_MEMORY_PROBE=true",
+        "--dart-define=VOICE_MEMORY_SECONDS=5",
+        "--dart-define=VOICE_MEMORY_IRREGULAR=false"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 21.679,
+      "result": {
+        "schema": 1,
+        "pid": 5011,
+        "platform": "macos",
+        "dart": "3.13.7 (stable) (Thu Oct 22 14:28:57 2026 -0700) on \"macos_arm64\"",
+        "seconds": 5,
+        "irregular": false,
+        "sample_rate": 44100,
+        "channels": 1,
+        "pcm_bytes": 441000,
+        "packets": 250,
+        "output_bytes": 441044,
+        "output_sha256": "b22afca8f801e6dbab19c4403395e3e0a5c03d4dad2488223fbce1a6e6160421",
+        "decoded": {
+          "frames": 220500,
+          "rate": 44100,
+          "channels": 1,
+          "width": 2
+        },
+        "stop_microseconds": 19791,
+        "process_max_rss_bytes": 239353856,
+        "sampled_peak_rss_bytes": 239353856,
+        "sampled_peak_heap_bytes": 92681120,
+        "sampled_peak_external_bytes": 166560,
+        "sampled_peak_heap_plus_external_bytes": 92847680,
+        "finalization_peak_rss_bytes": 239353856,
+        "finalization_peak_heap_plus_external_bytes": 92412224,
+        "vm_samples": 493,
+        "phases": {
+          "idle": {
+            "phase": "idle",
+            "elapsed_us": 148056,
+            "rss_bytes": 224509952,
+            "max_rss_bytes": 224608256,
+            "heap_bytes": 84603168,
+            "external_bytes": 131920
+          },
+          "recording-started": {
+            "phase": "recording-started",
+            "elapsed_us": 151102,
+            "rss_bytes": 224559104,
+            "max_rss_bytes": 224608256,
+            "heap_bytes": 85693600,
+            "external_bytes": 132064
+          },
+          "pre-stop": {
+            "phase": "pre-stop",
+            "elapsed_us": 5154325,
+            "rss_bytes": 235339776,
+            "max_rss_bytes": 237338624,
+            "heap_bytes": 91084720,
+            "external_bytes": 157344
+          },
+          "finalized": {
+            "phase": "finalized",
+            "elapsed_us": 5177341,
+            "rss_bytes": 239353856,
+            "max_rss_bytes": 239353856,
+            "heap_bytes": 92254368,
+            "external_bytes": 157856
+          }
+        },
+        "cleanup_files_remaining": 0,
+        "source": "synthetic PCM through unmodified macOS IO service"
+      }
+    },
+    {
+      "label": "baseline",
+      "seconds": 5,
+      "repetition": 2,
+      "irregular": false,
+      "command": [
+        "flutter",
+        "test",
+        "test/performance/voice_recording_memory_test.dart",
+        "--no-pub",
+        "--concurrency=1",
+        "--reporter=expanded",
+        "--enable-vmservice",
+        "--dart-define=VOICE_MEMORY_PROBE=true",
+        "--dart-define=VOICE_MEMORY_SECONDS=5",
+        "--dart-define=VOICE_MEMORY_IRREGULAR=false"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 10.109,
+      "result": {
+        "schema": 1,
+        "pid": 5209,
+        "platform": "macos",
+        "dart": "3.13.7 (stable) (Thu Oct 22 14:28:57 2026 -0700) on \"macos_arm64\"",
+        "seconds": 5,
+        "irregular": false,
+        "sample_rate": 44100,
+        "channels": 1,
+        "pcm_bytes": 441000,
+        "packets": 250,
+        "output_bytes": 441044,
+        "output_sha256": "b22afca8f801e6dbab19c4403395e3e0a5c03d4dad2488223fbce1a6e6160421",
+        "decoded": {
+          "frames": 220500,
+          "rate": 44100,
+          "channels": 1,
+          "width": 2
+        },
+        "stop_microseconds": 16664,
+        "process_max_rss_bytes": 240500736,
+        "sampled_peak_rss_bytes": 240041984,
+        "sampled_peak_heap_bytes": 92975584,
+        "sampled_peak_external_bytes": 168288,
+        "sampled_peak_heap_plus_external_bytes": 93143872,
+        "finalization_peak_rss_bytes": 240041984,
+        "finalization_peak_heap_plus_external_bytes": 92500672,
+        "vm_samples": 504,
+        "phases": {
+          "idle": {
+            "phase": "idle",
+            "elapsed_us": 167200,
+            "rss_bytes": 228048896,
+            "max_rss_bytes": 228048896,
+            "heap_bytes": 84708896,
+            "external_bytes": 131872
+          },
+          "recording-started": {
+            "phase": "recording-started",
+            "elapsed_us": 170411,
+            "rss_bytes": 228114432,
+            "max_rss_bytes": 228114432,
+            "heap_bytes": 85799072,
+            "external_bytes": 132016
+          },
+          "pre-stop": {
+            "phase": "pre-stop",
+            "elapsed_us": 5177377,
+            "rss_bytes": 237600768,
+            "max_rss_bytes": 240500736,
+            "heap_bytes": 91181280,
+            "external_bytes": 158064
+          },
+          "finalized": {
+            "phase": "finalized",
+            "elapsed_us": 5197258,
+            "rss_bytes": 240041984,
+            "max_rss_bytes": 240500736,
+            "heap_bytes": 92342096,
+            "external_bytes": 158576
+          }
+        },
+        "cleanup_files_remaining": 0,
+        "source": "synthetic PCM through unmodified macOS IO service"
+      }
+    },
+    {
+      "label": "candidate",
+      "seconds": 5,
+      "repetition": 2,
+      "irregular": false,
+      "command": [
+        "flutter",
+        "test",
+        "test/performance/voice_recording_memory_test.dart",
+        "--no-pub",
+        "--concurrency=1",
+        "--reporter=expanded",
+        "--enable-vmservice",
+        "--dart-define=VOICE_MEMORY_PROBE=true",
+        "--dart-define=VOICE_MEMORY_SECONDS=5",
+        "--dart-define=VOICE_MEMORY_IRREGULAR=false"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 9.546,
+      "result": {
+        "schema": 1,
+        "pid": 5391,
+        "platform": "macos",
+        "dart": "3.13.7 (stable) (Thu Oct 22 14:28:57 2026 -0700) on \"macos_arm64\"",
+        "seconds": 5,
+        "irregular": false,
+        "sample_rate": 44100,
+        "channels": 1,
+        "pcm_bytes": 441000,
+        "packets": 250,
+        "output_bytes": 441044,
+        "output_sha256": "b22afca8f801e6dbab19c4403395e3e0a5c03d4dad2488223fbce1a6e6160421",
+        "decoded": {
+          "frames": 220500,
+          "rate": 44100,
+          "channels": 1,
+          "width": 2
+        },
+        "stop_microseconds": 9186,
+        "process_max_rss_bytes": 240795648,
+        "sampled_peak_rss_bytes": 240680960,
+        "sampled_peak_heap_bytes": 92726304,
+        "sampled_peak_external_bytes": 166992,
+        "sampled_peak_heap_plus_external_bytes": 92893296,
+        "finalization_peak_rss_bytes": 240680960,
+        "finalization_peak_heap_plus_external_bytes": 92641024,
+        "vm_samples": 505,
+        "phases": {
+          "idle": {
+            "phase": "idle",
+            "elapsed_us": 145146,
+            "rss_bytes": 227131392,
+            "max_rss_bytes": 227262464,
+            "heap_bytes": 84584352,
+            "external_bytes": 131872
+          },
+          "recording-started": {
+            "phase": "recording-started",
+            "elapsed_us": 148048,
+            "rss_bytes": 227246080,
+            "max_rss_bytes": 227262464,
+            "heap_bytes": 85674528,
+            "external_bytes": 132016
+          },
+          "pre-stop": {
+            "phase": "pre-stop",
+            "elapsed_us": 5151380,
+            "rss_bytes": 238485504,
+            "max_rss_bytes": 240795648,
+            "heap_bytes": 91344880,
+            "external_bytes": 158784
+          },
+          "finalized": {
+            "phase": "finalized",
+            "elapsed_us": 5162043,
+            "rss_bytes": 240680960,
+            "max_rss_bytes": 240795648,
+            "heap_bytes": 92481872,
+            "external_bytes": 159152
+          }
+        },
+        "cleanup_files_remaining": 0,
+        "source": "synthetic PCM through unmodified macOS IO service"
+      }
+    },
+    {
+      "label": "baseline",
+      "seconds": 5,
+      "repetition": 3,
+      "irregular": false,
+      "command": [
+        "flutter",
+        "test",
+        "test/performance/voice_recording_memory_test.dart",
+        "--no-pub",
+        "--concurrency=1",
+        "--reporter=expanded",
+        "--enable-vmservice",
+        "--dart-define=VOICE_MEMORY_PROBE=true",
+        "--dart-define=VOICE_MEMORY_SECONDS=5",
+        "--dart-define=VOICE_MEMORY_IRREGULAR=false"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 9.911,
+      "result": {
+        "schema": 1,
+        "pid": 5575,
+        "platform": "macos",
+        "dart": "3.13.7 (stable) (Thu Oct 22 14:28:57 2026 -0700) on \"macos_arm64\"",
+        "seconds": 5,
+        "irregular": false,
+        "sample_rate": 44100,
+        "channels": 1,
+        "pcm_bytes": 441000,
+        "packets": 250,
+        "output_bytes": 441044,
+        "output_sha256": "b22afca8f801e6dbab19c4403395e3e0a5c03d4dad2488223fbce1a6e6160421",
+        "decoded": {
+          "frames": 220500,
+          "rate": 44100,
+          "channels": 1,
+          "width": 2
+        },
+        "stop_microseconds": 15288,
+        "process_max_rss_bytes": 240926720,
+        "sampled_peak_rss_bytes": 240926720,
+        "sampled_peak_heap_bytes": 92875136,
+        "sampled_peak_external_bytes": 167856,
+        "sampled_peak_heap_plus_external_bytes": 93042992,
+        "finalization_peak_rss_bytes": 240926720,
+        "finalization_peak_heap_plus_external_bytes": 92493520,
+        "vm_samples": 506,
+        "phases": {
+          "idle": {
+            "phase": "idle",
+            "elapsed_us": 160324,
+            "rss_bytes": 228229120,
+            "max_rss_bytes": 228229120,
+            "heap_bytes": 84733456,
+            "external_bytes": 131920
+          },
+          "recording-started": {
+            "phase": "recording-started",
+            "elapsed_us": 163720,
+            "rss_bytes": 228278272,
+            "max_rss_bytes": 228278272,
+            "heap_bytes": 85823632,
+            "external_bytes": 132064
+          },
+          "pre-stop": {
+            "phase": "pre-stop",
+            "elapsed_us": 5169245,
+            "rss_bytes": 237289472,
+            "max_rss_bytes": 239157248,
+            "heap_bytes": 91168992,
+            "external_bytes": 157920
+          },
+          "finalized": {
+            "phase": "finalized",
+            "elapsed_us": 5187456,
+            "rss_bytes": 240926720,
+            "max_rss_bytes": 240926720,
+            "heap_bytes": 92335088,
+            "external_bytes": 158432
+          }
+        },
+        "cleanup_files_remaining": 0,
+        "source": "synthetic PCM through unmodified macOS IO service"
+      }
+    },
+    {
+      "label": "candidate",
+      "seconds": 5,
+      "repetition": 3,
+      "irregular": false,
+      "command": [
+        "flutter",
+        "test",
+        "test/performance/voice_recording_memory_test.dart",
+        "--no-pub",
+        "--concurrency=1",
+        "--reporter=expanded",
+        "--enable-vmservice",
+        "--dart-define=VOICE_MEMORY_PROBE=true",
+        "--dart-define=VOICE_MEMORY_SECONDS=5",
+        "--dart-define=VOICE_MEMORY_IRREGULAR=false"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 10.363,
+      "result": {
+        "schema": 1,
+        "pid": 5844,
+        "platform": "macos",
+        "dart": "3.13.7 (stable) (Thu Oct 22 14:28:57 2026 -0700) on \"macos_arm64\"",
+        "seconds": 5,
+        "irregular": false,
+        "sample_rate": 44100,
+        "channels": 1,
+        "pcm_bytes": 441000,
+        "packets": 250,
+        "output_bytes": 441044,
+        "output_sha256": "b22afca8f801e6dbab19c4403395e3e0a5c03d4dad2488223fbce1a6e6160421",
+        "decoded": {
+          "frames": 220500,
+          "rate": 44100,
+          "channels": 1,
+          "width": 2
+        },
+        "stop_microseconds": 10550,
+        "process_max_rss_bytes": 241385472,
+        "sampled_peak_rss_bytes": 241385472,
+        "sampled_peak_heap_bytes": 93076704,
+        "sampled_peak_external_bytes": 168576,
+        "sampled_peak_heap_plus_external_bytes": 93245280,
+        "finalization_peak_rss_bytes": 241385472,
+        "finalization_peak_heap_plus_external_bytes": 92312944,
+        "vm_samples": 499,
+        "phases": {
+          "idle": {
+            "phase": "idle",
+            "elapsed_us": 167880,
+            "rss_bytes": 225312768,
+            "max_rss_bytes": 225329152,
+            "heap_bytes": 84710240,
+            "external_bytes": 131920
+          },
+          "recording-started": {
+            "phase": "recording-started",
+            "elapsed_us": 171005,
+            "rss_bytes": 225394688,
+            "max_rss_bytes": 225394688,
+            "heap_bytes": 85800720,
+            "external_bytes": 132064
+          },
+          "pre-stop": {
+            "phase": "pre-stop",
+            "elapsed_us": 5176431,
+            "rss_bytes": 236060672,
+            "max_rss_bytes": 237879296,
+            "heap_bytes": 90980608,
+            "external_bytes": 157056
+          },
+          "finalized": {
+            "phase": "finalized",
+            "elapsed_us": 5189440,
+            "rss_bytes": 241369088,
+            "max_rss_bytes": 241369088,
+            "heap_bytes": 92125136,
+            "external_bytes": 157424
+          }
+        },
+        "cleanup_files_remaining": 0,
+        "source": "synthetic PCM through unmodified macOS IO service"
+      }
+    },
+    {
+      "label": "baseline",
+      "seconds": 30,
+      "repetition": 1,
+      "irregular": false,
+      "command": [
+        "flutter",
+        "test",
+        "test/performance/voice_recording_memory_test.dart",
+        "--no-pub",
+        "--concurrency=1",
+        "--reporter=expanded",
+        "--enable-vmservice",
+        "--dart-define=VOICE_MEMORY_PROBE=true",
+        "--dart-define=VOICE_MEMORY_SECONDS=30",
+        "--dart-define=VOICE_MEMORY_IRREGULAR=false"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 45.058,
+      "result": {
+        "schema": 1,
+        "pid": 6168,
+        "platform": "macos",
+        "dart": "3.13.7 (stable) (Thu Oct 22 14:28:57 2026 -0700) on \"macos_arm64\"",
+        "seconds": 30,
+        "irregular": false,
+        "sample_rate": 44100,
+        "channels": 1,
+        "pcm_bytes": 2646000,
+        "packets": 1500,
+        "output_bytes": 2646044,
+        "output_sha256": "b1085c5184a75f5dd39a0e6173b6a943550445ea5db396cd502edcbb4f6931b4",
+        "decoded": {
+          "frames": 1323000,
+          "rate": 44100,
+          "channels": 1,
+          "width": 2
+        },
+        "stop_microseconds": 18237,
+        "process_max_rss_bytes": 269729792,
+        "sampled_peak_rss_bytes": 269729792,
+        "sampled_peak_heap_bytes": 97917280,
+        "sampled_peak_external_bytes": 173632,
+        "sampled_peak_heap_plus_external_bytes": 98063632,
+        "finalization_peak_rss_bytes": 269729792,
+        "finalization_peak_heap_plus_external_bytes": 98063632,
+        "vm_samples": 2921,
+        "phases": {
+          "idle": {
+            "phase": "idle",
+            "elapsed_us": 150240,
+            "rss_bytes": 224854016,
+            "max_rss_bytes": 224854016,
+            "heap_bytes": 84734320,
+            "external_bytes": 131920
+          },
+          "recording-started": {
+            "phase": "recording-started",
+            "elapsed_us": 153645,
+            "rss_bytes": 224919552,
+            "max_rss_bytes": 224919552,
+            "heap_bytes": 85824752,
+            "external_bytes": 132064
+          },
+          "pre-stop": {
+            "phase": "pre-stop",
+            "elapsed_us": 30157166,
+            "rss_bytes": 261734400,
+            "max_rss_bytes": 261816320,
+            "heap_bytes": 92361664,
+            "external_bytes": 145840
+          },
+          "finalized": {
+            "phase": "finalized",
+            "elapsed_us": 30177193,
+            "rss_bytes": 269729792,
+            "max_rss_bytes": 269729792,
+            "heap_bytes": 97917280,
+            "external_bytes": 146352
+          }
+        },
+        "cleanup_files_remaining": 0,
+        "source": "synthetic PCM through unmodified macOS IO service"
+      }
+    },
+    {
+      "label": "candidate",
+      "seconds": 30,
+      "repetition": 1,
+      "irregular": false,
+      "command": [
+        "flutter",
+        "test",
+        "test/performance/voice_recording_memory_test.dart",
+        "--no-pub",
+        "--concurrency=1",
+        "--reporter=expanded",
+        "--enable-vmservice",
+        "--dart-define=VOICE_MEMORY_PROBE=true",
+        "--dart-define=VOICE_MEMORY_SECONDS=30",
+        "--dart-define=VOICE_MEMORY_IRREGULAR=false"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 46.971,
+      "result": {
+        "schema": 1,
+        "pid": 7075,
+        "platform": "macos",
+        "dart": "3.13.7 (stable) (Thu Oct 22 14:28:57 2026 -0700) on \"macos_arm64\"",
+        "seconds": 30,
+        "irregular": false,
+        "sample_rate": 44100,
+        "channels": 1,
+        "pcm_bytes": 2646000,
+        "packets": 1500,
+        "output_bytes": 2646044,
+        "output_sha256": "b1085c5184a75f5dd39a0e6173b6a943550445ea5db396cd502edcbb4f6931b4",
+        "decoded": {
+          "frames": 1323000,
+          "rate": 44100,
+          "channels": 1,
+          "width": 2
+        },
+        "stop_microseconds": 16351,
+        "process_max_rss_bytes": 276840448,
+        "sampled_peak_rss_bytes": 276840448,
+        "sampled_peak_heap_bytes": 97769472,
+        "sampled_peak_external_bytes": 175216,
+        "sampled_peak_heap_plus_external_bytes": 97944688,
+        "finalization_peak_rss_bytes": 276840448,
+        "finalization_peak_heap_plus_external_bytes": 96467888,
+        "vm_samples": 2946,
+        "phases": {
+          "idle": {
+            "phase": "idle",
+            "elapsed_us": 161632,
+            "rss_bytes": 227262464,
+            "max_rss_bytes": 227311616,
+            "heap_bytes": 84729632,
+            "external_bytes": 131920
+          },
+          "recording-started": {
+            "phase": "recording-started",
+            "elapsed_us": 167325,
+            "rss_bytes": 227328000,
+            "max_rss_bytes": 227328000,
+            "heap_bytes": 85820368,
+            "external_bytes": 132064
+          },
+          "pre-stop": {
+            "phase": "pre-stop",
+            "elapsed_us": 30169303,
+            "rss_bytes": 268845056,
+            "max_rss_bytes": 268845056,
+            "heap_bytes": 90787680,
+            "external_bytes": 137344
+          },
+          "finalized": {
+            "phase": "finalized",
+            "elapsed_us": 30189309,
+            "rss_bytes": 276840448,
+            "max_rss_bytes": 276840448,
+            "heap_bytes": 96329216,
+            "external_bytes": 137712
+          }
+        },
+        "cleanup_files_remaining": 0,
+        "source": "synthetic PCM through unmodified macOS IO service"
+      }
+    },
+    {
+      "label": "baseline",
+      "seconds": 30,
+      "repetition": 2,
+      "irregular": false,
+      "command": [
+        "flutter",
+        "test",
+        "test/performance/voice_recording_memory_test.dart",
+        "--no-pub",
+        "--concurrency=1",
+        "--reporter=expanded",
+        "--enable-vmservice",
+        "--dart-define=VOICE_MEMORY_PROBE=true",
+        "--dart-define=VOICE_MEMORY_SECONDS=30",
+        "--dart-define=VOICE_MEMORY_IRREGULAR=false"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 36.769,
+      "result": {
+        "schema": 1,
+        "pid": 8075,
+        "platform": "macos",
+        "dart": "3.13.7 (stable) (Thu Oct 22 14:28:57 2026 -0700) on \"macos_arm64\"",
+        "seconds": 30,
+        "irregular": false,
+        "sample_rate": 44100,
+        "channels": 1,
+        "pcm_bytes": 2646000,
+        "packets": 1500,
+        "output_bytes": 2646044,
+        "output_sha256": "b1085c5184a75f5dd39a0e6173b6a943550445ea5db396cd502edcbb4f6931b4",
+        "decoded": {
+          "frames": 1323000,
+          "rate": 44100,
+          "channels": 1,
+          "width": 2
+        },
+        "stop_microseconds": 13575,
+        "process_max_rss_bytes": 266977280,
+        "sampled_peak_rss_bytes": 266977280,
+        "sampled_peak_heap_bytes": 97745408,
+        "sampled_peak_external_bytes": 175344,
+        "sampled_peak_heap_plus_external_bytes": 97920752,
+        "finalization_peak_rss_bytes": 266977280,
+        "finalization_peak_heap_plus_external_bytes": 97566112,
+        "vm_samples": 2977,
+        "phases": {
+          "idle": {
+            "phase": "idle",
+            "elapsed_us": 163237,
+            "rss_bytes": 224739328,
+            "max_rss_bytes": 224739328,
+            "heap_bytes": 84596816,
+            "external_bytes": 131920
+          },
+          "recording-started": {
+            "phase": "recording-started",
+            "elapsed_us": 166390,
+            "rss_bytes": 224804864,
+            "max_rss_bytes": 224804864,
+            "heap_bytes": 85686992,
+            "external_bytes": 132064
+          },
+          "pre-stop": {
+            "phase": "pre-stop",
+            "elapsed_us": 30170225,
+            "rss_bytes": 256344064,
+            "max_rss_bytes": 256344064,
+            "heap_bytes": 91861472,
+            "external_bytes": 142960
+          },
+          "finalized": {
+            "phase": "finalized",
+            "elapsed_us": 30185473,
+            "rss_bytes": 266977280,
+            "max_rss_bytes": 266977280,
+            "heap_bytes": 97393712,
+            "external_bytes": 143328
+          }
+        },
+        "cleanup_files_remaining": 0,
+        "source": "synthetic PCM through unmodified macOS IO service"
+      }
+    },
+    {
+      "label": "candidate",
+      "seconds": 30,
+      "repetition": 2,
+      "irregular": false,
+      "command": [
+        "flutter",
+        "test",
+        "test/performance/voice_recording_memory_test.dart",
+        "--no-pub",
+        "--concurrency=1",
+        "--reporter=expanded",
+        "--enable-vmservice",
+        "--dart-define=VOICE_MEMORY_PROBE=true",
+        "--dart-define=VOICE_MEMORY_SECONDS=30",
+        "--dart-define=VOICE_MEMORY_IRREGULAR=false"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 34.757,
+      "result": {
+        "schema": 1,
+        "pid": 8726,
+        "platform": "macos",
+        "dart": "3.13.7 (stable) (Thu Oct 22 14:28:57 2026 -0700) on \"macos_arm64\"",
+        "seconds": 30,
+        "irregular": false,
+        "sample_rate": 44100,
+        "channels": 1,
+        "pcm_bytes": 2646000,
+        "packets": 1500,
+        "output_bytes": 2646044,
+        "output_sha256": "b1085c5184a75f5dd39a0e6173b6a943550445ea5db396cd502edcbb4f6931b4",
+        "decoded": {
+          "frames": 1323000,
+          "rate": 44100,
+          "channels": 1,
+          "width": 2
+        },
+        "stop_microseconds": 13932,
+        "process_max_rss_bytes": 273383424,
+        "sampled_peak_rss_bytes": 273383424,
+        "sampled_peak_heap_bytes": 97714688,
+        "sampled_peak_external_bytes": 174800,
+        "sampled_peak_heap_plus_external_bytes": 97889488,
+        "finalization_peak_rss_bytes": 273383424,
+        "finalization_peak_heap_plus_external_bytes": 96842704,
+        "vm_samples": 2945,
+        "phases": {
+          "idle": {
+            "phase": "idle",
+            "elapsed_us": 159868,
+            "rss_bytes": 223690752,
+            "max_rss_bytes": 223690752,
+            "heap_bytes": 84586528,
+            "external_bytes": 131920
+          },
+          "recording-started": {
+            "phase": "recording-started",
+            "elapsed_us": 165229,
+            "rss_bytes": 223707136,
+            "max_rss_bytes": 223707136,
+            "heap_bytes": 85676704,
+            "external_bytes": 132064
+          },
+          "pre-stop": {
+            "phase": "pre-stop",
+            "elapsed_us": 30168122,
+            "rss_bytes": 262750208,
+            "max_rss_bytes": 262750208,
+            "heap_bytes": 91160464,
+            "external_bytes": 139376
+          },
+          "finalized": {
+            "phase": "finalized",
+            "elapsed_us": 30184066,
+            "rss_bytes": 273383424,
+            "max_rss_bytes": 273383424,
+            "heap_bytes": 96702112,
+            "external_bytes": 139744
+          }
+        },
+        "cleanup_files_remaining": 0,
+        "source": "synthetic PCM through unmodified macOS IO service"
+      }
+    },
+    {
+      "label": "baseline",
+      "seconds": 30,
+      "repetition": 3,
+      "irregular": false,
+      "command": [
+        "flutter",
+        "test",
+        "test/performance/voice_recording_memory_test.dart",
+        "--no-pub",
+        "--concurrency=1",
+        "--reporter=expanded",
+        "--enable-vmservice",
+        "--dart-define=VOICE_MEMORY_PROBE=true",
+        "--dart-define=VOICE_MEMORY_SECONDS=30",
+        "--dart-define=VOICE_MEMORY_IRREGULAR=false"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 35.298,
+      "result": {
+        "schema": 1,
+        "pid": 9490,
+        "platform": "macos",
+        "dart": "3.13.7 (stable) (Thu Oct 22 14:28:57 2026 -0700) on \"macos_arm64\"",
+        "seconds": 30,
+        "irregular": false,
+        "sample_rate": 44100,
+        "channels": 1,
+        "pcm_bytes": 2646000,
+        "packets": 1500,
+        "output_bytes": 2646044,
+        "output_sha256": "b1085c5184a75f5dd39a0e6173b6a943550445ea5db396cd502edcbb4f6931b4",
+        "decoded": {
+          "frames": 1323000,
+          "rate": 44100,
+          "channels": 1,
+          "width": 2
+        },
+        "stop_microseconds": 31284,
+        "process_max_rss_bytes": 261636096,
+        "sampled_peak_rss_bytes": 261636096,
+        "sampled_peak_heap_bytes": 101213728,
+        "sampled_peak_external_bytes": 174352,
+        "sampled_peak_heap_plus_external_bytes": 101377808,
+        "finalization_peak_rss_bytes": 261636096,
+        "finalization_peak_heap_plus_external_bytes": 101377808,
+        "vm_samples": 2797,
+        "phases": {
+          "idle": {
+            "phase": "idle",
+            "elapsed_us": 160648,
+            "rss_bytes": 225116160,
+            "max_rss_bytes": 225116160,
+            "heap_bytes": 84581168,
+            "external_bytes": 131920
+          },
+          "recording-started": {
+            "phase": "recording-started",
+            "elapsed_us": 165304,
+            "rss_bytes": 225181696,
+            "max_rss_bytes": 225181696,
+            "heap_bytes": 85671344,
+            "external_bytes": 132064
+          },
+          "pre-stop": {
+            "phase": "pre-stop",
+            "elapsed_us": 30204577,
+            "rss_bytes": 253591552,
+            "max_rss_bytes": 254197760,
+            "heap_bytes": 95625472,
+            "external_bytes": 163296
+          },
+          "finalized": {
+            "phase": "finalized",
+            "elapsed_us": 30238455,
+            "rss_bytes": 261636096,
+            "max_rss_bytes": 261636096,
+            "heap_bytes": 101213728,
+            "external_bytes": 164080
+          }
+        },
+        "cleanup_files_remaining": 0,
+        "source": "synthetic PCM through unmodified macOS IO service"
+      }
+    },
+    {
+      "label": "candidate",
+      "seconds": 30,
+      "repetition": 3,
+      "irregular": false,
+      "command": [
+        "flutter",
+        "test",
+        "test/performance/voice_recording_memory_test.dart",
+        "--no-pub",
+        "--concurrency=1",
+        "--reporter=expanded",
+        "--enable-vmservice",
+        "--dart-define=VOICE_MEMORY_PROBE=true",
+        "--dart-define=VOICE_MEMORY_SECONDS=30",
+        "--dart-define=VOICE_MEMORY_IRREGULAR=false"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 35.825,
+      "result": {
+        "schema": 1,
+        "pid": 10360,
+        "platform": "macos",
+        "dart": "3.13.7 (stable) (Thu Oct 22 14:28:57 2026 -0700) on \"macos_arm64\"",
+        "seconds": 30,
+        "irregular": false,
+        "sample_rate": 44100,
+        "channels": 1,
+        "pcm_bytes": 2646000,
+        "packets": 1500,
+        "output_bytes": 2646044,
+        "output_sha256": "b1085c5184a75f5dd39a0e6173b6a943550445ea5db396cd502edcbb4f6931b4",
+        "decoded": {
+          "frames": 1323000,
+          "rate": 44100,
+          "channels": 1,
+          "width": 2
+        },
+        "stop_microseconds": 10271,
+        "process_max_rss_bytes": 267468800,
+        "sampled_peak_rss_bytes": 267468800,
+        "sampled_peak_heap_bytes": 102455008,
+        "sampled_peak_external_bytes": 174208,
+        "sampled_peak_heap_plus_external_bytes": 102625552,
+        "finalization_peak_rss_bytes": 267468800,
+        "finalization_peak_heap_plus_external_bytes": 102625552,
+        "vm_samples": 2859,
+        "phases": {
+          "idle": {
+            "phase": "idle",
+            "elapsed_us": 160351,
+            "rss_bytes": 224329728,
+            "max_rss_bytes": 224329728,
+            "heap_bytes": 84725200,
+            "external_bytes": 131920
+          },
+          "recording-started": {
+            "phase": "recording-started",
+            "elapsed_us": 163129,
+            "rss_bytes": 224346112,
+            "max_rss_bytes": 224346112,
+            "heap_bytes": 85815376,
+            "external_bytes": 132064
+          },
+          "pre-stop": {
+            "phase": "pre-stop",
+            "elapsed_us": 30166076,
+            "rss_bytes": 259473408,
+            "max_rss_bytes": 259735552,
+            "heap_bytes": 96922768,
+            "external_bytes": 170176
+          },
+          "finalized": {
+            "phase": "finalized",
+            "elapsed_us": 30177562,
+            "rss_bytes": 267468800,
+            "max_rss_bytes": 267468800,
+            "heap_bytes": 102455008,
+            "external_bytes": 170544
+          }
+        },
+        "cleanup_files_remaining": 0,
+        "source": "synthetic PCM through unmodified macOS IO service"
+      }
+    },
+    {
+      "label": "baseline",
+      "seconds": 120,
+      "repetition": 1,
+      "irregular": false,
+      "command": [
+        "flutter",
+        "test",
+        "test/performance/voice_recording_memory_test.dart",
+        "--no-pub",
+        "--concurrency=1",
+        "--reporter=expanded",
+        "--enable-vmservice",
+        "--dart-define=VOICE_MEMORY_PROBE=true",
+        "--dart-define=VOICE_MEMORY_SECONDS=120",
+        "--dart-define=VOICE_MEMORY_IRREGULAR=false"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 135.138,
+      "result": {
+        "schema": 1,
+        "pid": 11719,
+        "platform": "macos",
+        "dart": "3.13.7 (stable) (Thu Oct 22 14:28:57 2026 -0700) on \"macos_arm64\"",
+        "seconds": 120,
+        "irregular": false,
+        "sample_rate": 44100,
+        "channels": 1,
+        "pcm_bytes": 10584000,
+        "packets": 6000,
+        "output_bytes": 10584044,
+        "output_sha256": "4d8feb33e50840074ec1bc8e8736cf239037390753180d8a5a6ec44c50275e5d",
+        "decoded": {
+          "frames": 5292000,
+          "rate": 44100,
+          "channels": 1,
+          "width": 2
+        },
+        "stop_microseconds": 32258,
+        "process_max_rss_bytes": 285556736,
+        "sampled_peak_rss_bytes": 285556736,
+        "sampled_peak_heap_bytes": 121202208,
+        "sampled_peak_external_bytes": 175952,
+        "sampled_peak_heap_plus_external_bytes": 121358640,
+        "finalization_peak_rss_bytes": 285556736,
+        "finalization_peak_heap_plus_external_bytes": 121358640,
+        "vm_samples": 11601,
+        "phases": {
+          "idle": {
+            "phase": "idle",
+            "elapsed_us": 145374,
+            "rss_bytes": 227213312,
+            "max_rss_bytes": 227213312,
+            "heap_bytes": 84703984,
+            "external_bytes": 131872
+          },
+          "recording-started": {
+            "phase": "recording-started",
+            "elapsed_us": 147926,
+            "rss_bytes": 227229696,
+            "max_rss_bytes": 227229696,
+            "heap_bytes": 85794416,
+            "external_bytes": 132016
+          },
+          "pre-stop": {
+            "phase": "pre-stop",
+            "elapsed_us": 120151382,
+            "rss_bytes": 249544704,
+            "max_rss_bytes": 266747904,
+            "heap_bytes": 99752944,
+            "external_bytes": 155776
+          },
+          "finalized": {
+            "phase": "finalized",
+            "elapsed_us": 120185356,
+            "rss_bytes": 285556736,
+            "max_rss_bytes": 285556736,
+            "heap_bytes": 121202208,
+            "external_bytes": 156432
+          }
+        },
+        "cleanup_files_remaining": 0,
+        "source": "synthetic PCM through unmodified macOS IO service"
+      }
+    },
+    {
+      "label": "candidate",
+      "seconds": 120,
+      "repetition": 1,
+      "irregular": false,
+      "command": [
+        "flutter",
+        "test",
+        "test/performance/voice_recording_memory_test.dart",
+        "--no-pub",
+        "--concurrency=1",
+        "--reporter=expanded",
+        "--enable-vmservice",
+        "--dart-define=VOICE_MEMORY_PROBE=true",
+        "--dart-define=VOICE_MEMORY_SECONDS=120",
+        "--dart-define=VOICE_MEMORY_IRREGULAR=false"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 136.452,
+      "result": {
+        "schema": 1,
+        "pid": 14953,
+        "platform": "macos",
+        "dart": "3.13.7 (stable) (Thu Oct 22 14:28:57 2026 -0700) on \"macos_arm64\"",
+        "seconds": 120,
+        "irregular": false,
+        "sample_rate": 44100,
+        "channels": 1,
+        "pcm_bytes": 10584000,
+        "packets": 6000,
+        "output_bytes": 10584044,
+        "output_sha256": "4d8feb33e50840074ec1bc8e8736cf239037390753180d8a5a6ec44c50275e5d",
+        "decoded": {
+          "frames": 5292000,
+          "rate": 44100,
+          "channels": 1,
+          "width": 2
+        },
+        "stop_microseconds": 27643,
+        "process_max_rss_bytes": 307019776,
+        "sampled_peak_rss_bytes": 307019776,
+        "sampled_peak_heap_bytes": 118166560,
+        "sampled_peak_external_bytes": 175920,
+        "sampled_peak_heap_plus_external_bytes": 118306432,
+        "finalization_peak_rss_bytes": 307019776,
+        "finalization_peak_heap_plus_external_bytes": 118306432,
+        "vm_samples": 11907,
+        "phases": {
+          "idle": {
+            "phase": "idle",
+            "elapsed_us": 165443,
+            "rss_bytes": 224886784,
+            "max_rss_bytes": 224886784,
+            "heap_bytes": 84719008,
+            "external_bytes": 131920
+          },
+          "recording-started": {
+            "phase": "recording-started",
+            "elapsed_us": 168349,
+            "rss_bytes": 224903168,
+            "max_rss_bytes": 224903168,
+            "heap_bytes": 85809440,
+            "external_bytes": 132064
+          },
+          "pre-stop": {
+            "phase": "pre-stop",
+            "elapsed_us": 120173269,
+            "rss_bytes": 271024128,
+            "max_rss_bytes": 271122432,
+            "heap_bytes": 96718560,
+            "external_bytes": 139216
+          },
+          "finalized": {
+            "phase": "finalized",
+            "elapsed_us": 120202472,
+            "rss_bytes": 307019776,
+            "max_rss_bytes": 307019776,
+            "heap_bytes": 118166560,
+            "external_bytes": 139872
+          }
+        },
+        "cleanup_files_remaining": 0,
+        "source": "synthetic PCM through unmodified macOS IO service"
+      }
+    },
+    {
+      "label": "baseline",
+      "seconds": 120,
+      "repetition": 2,
+      "irregular": false,
+      "command": [
+        "flutter",
+        "test",
+        "test/performance/voice_recording_memory_test.dart",
+        "--no-pub",
+        "--concurrency=1",
+        "--reporter=expanded",
+        "--enable-vmservice",
+        "--dart-define=VOICE_MEMORY_PROBE=true",
+        "--dart-define=VOICE_MEMORY_SECONDS=120",
+        "--dart-define=VOICE_MEMORY_IRREGULAR=false"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 125.904,
+      "result": {
+        "schema": 1,
+        "pid": 17731,
+        "platform": "macos",
+        "dart": "3.13.7 (stable) (Thu Oct 22 14:28:57 2026 -0700) on \"macos_arm64\"",
+        "seconds": 120,
+        "irregular": false,
+        "sample_rate": 44100,
+        "channels": 1,
+        "pcm_bytes": 10584000,
+        "packets": 6000,
+        "output_bytes": 10584044,
+        "output_sha256": "4d8feb33e50840074ec1bc8e8736cf239037390753180d8a5a6ec44c50275e5d",
+        "decoded": {
+          "frames": 5292000,
+          "rate": 44100,
+          "channels": 1,
+          "width": 2
+        },
+        "stop_microseconds": 31967,
+        "process_max_rss_bytes": 309444608,
+        "sampled_peak_rss_bytes": 309444608,
+        "sampled_peak_heap_bytes": 118664096,
+        "sampled_peak_external_bytes": 175792,
+        "sampled_peak_heap_plus_external_bytes": 118806704,
+        "finalization_peak_rss_bytes": 309444608,
+        "finalization_peak_heap_plus_external_bytes": 118806704,
+        "vm_samples": 11921,
+        "phases": {
+          "idle": {
+            "phase": "idle",
+            "elapsed_us": 143000,
+            "rss_bytes": 224804864,
+            "max_rss_bytes": 224804864,
+            "heap_bytes": 84716928,
+            "external_bytes": 131920
+          },
+          "recording-started": {
+            "phase": "recording-started",
+            "elapsed_us": 146922,
+            "rss_bytes": 224821248,
+            "max_rss_bytes": 224821248,
+            "heap_bytes": 85807104,
+            "external_bytes": 132064
+          },
+          "pre-stop": {
+            "phase": "pre-stop",
+            "elapsed_us": 120151492,
+            "rss_bytes": 273432576,
+            "max_rss_bytes": 273481728,
+            "heap_bytes": 97205728,
+            "external_bytes": 141952
+          },
+          "finalized": {
+            "phase": "finalized",
+            "elapsed_us": 120185844,
+            "rss_bytes": 309444608,
+            "max_rss_bytes": 309444608,
+            "heap_bytes": 118663136,
+            "external_bytes": 142608
+          }
+        },
+        "cleanup_files_remaining": 0,
+        "source": "synthetic PCM through unmodified macOS IO service"
+      }
+    },
+    {
+      "label": "candidate",
+      "seconds": 120,
+      "repetition": 2,
+      "irregular": false,
+      "command": [
+        "flutter",
+        "test",
+        "test/performance/voice_recording_memory_test.dart",
+        "--no-pub",
+        "--concurrency=1",
+        "--reporter=expanded",
+        "--enable-vmservice",
+        "--dart-define=VOICE_MEMORY_PROBE=true",
+        "--dart-define=VOICE_MEMORY_SECONDS=120",
+        "--dart-define=VOICE_MEMORY_IRREGULAR=false"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 125.205,
+      "result": {
+        "schema": 1,
+        "pid": 20388,
+        "platform": "macos",
+        "dart": "3.13.7 (stable) (Thu Oct 22 14:28:57 2026 -0700) on \"macos_arm64\"",
+        "seconds": 120,
+        "irregular": false,
+        "sample_rate": 44100,
+        "channels": 1,
+        "pcm_bytes": 10584000,
+        "packets": 6000,
+        "output_bytes": 10584044,
+        "output_sha256": "4d8feb33e50840074ec1bc8e8736cf239037390753180d8a5a6ec44c50275e5d",
+        "decoded": {
+          "frames": 5292000,
+          "rate": 44100,
+          "channels": 1,
+          "width": 2
+        },
+        "stop_microseconds": 29164,
+        "process_max_rss_bytes": 309936128,
+        "sampled_peak_rss_bytes": 309936128,
+        "sampled_peak_heap_bytes": 120069280,
+        "sampled_peak_external_bytes": 175776,
+        "sampled_peak_heap_plus_external_bytes": 120219520,
+        "finalization_peak_rss_bytes": 309936128,
+        "finalization_peak_heap_plus_external_bytes": 120219520,
+        "vm_samples": 11976,
+        "phases": {
+          "idle": {
+            "phase": "idle",
+            "elapsed_us": 143913,
+            "rss_bytes": 223985664,
+            "max_rss_bytes": 223985664,
+            "heap_bytes": 84597872,
+            "external_bytes": 131920
+          },
+          "recording-started": {
+            "phase": "recording-started",
+            "elapsed_us": 147625,
+            "rss_bytes": 224002048,
+            "max_rss_bytes": 224002048,
+            "heap_bytes": 85688240,
+            "external_bytes": 132064
+          },
+          "pre-stop": {
+            "phase": "pre-stop",
+            "elapsed_us": 120151446,
+            "rss_bytes": 273924096,
+            "max_rss_bytes": 273989632,
+            "heap_bytes": 98621920,
+            "external_bytes": 149584
+          },
+          "finalized": {
+            "phase": "finalized",
+            "elapsed_us": 120182250,
+            "rss_bytes": 309936128,
+            "max_rss_bytes": 309936128,
+            "heap_bytes": 120069280,
+            "external_bytes": 150240
+          }
+        },
+        "cleanup_files_remaining": 0,
+        "source": "synthetic PCM through unmodified macOS IO service"
+      }
+    },
+    {
+      "label": "baseline",
+      "seconds": 120,
+      "repetition": 3,
+      "irregular": false,
+      "command": [
+        "flutter",
+        "test",
+        "test/performance/voice_recording_memory_test.dart",
+        "--no-pub",
+        "--concurrency=1",
+        "--reporter=expanded",
+        "--enable-vmservice",
+        "--dart-define=VOICE_MEMORY_PROBE=true",
+        "--dart-define=VOICE_MEMORY_SECONDS=120",
+        "--dart-define=VOICE_MEMORY_IRREGULAR=false"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 124.495,
+      "result": {
+        "schema": 1,
+        "pid": 22977,
+        "platform": "macos",
+        "dart": "3.13.7 (stable) (Thu Oct 22 14:28:57 2026 -0700) on \"macos_arm64\"",
+        "seconds": 120,
+        "irregular": false,
+        "sample_rate": 44100,
+        "channels": 1,
+        "pcm_bytes": 10584000,
+        "packets": 6000,
+        "output_bytes": 10584044,
+        "output_sha256": "4d8feb33e50840074ec1bc8e8736cf239037390753180d8a5a6ec44c50275e5d",
+        "decoded": {
+          "frames": 5292000,
+          "rate": 44100,
+          "channels": 1,
+          "width": 2
+        },
+        "stop_microseconds": 29690,
+        "process_max_rss_bytes": 310345728,
+        "sampled_peak_rss_bytes": 310345728,
+        "sampled_peak_heap_bytes": 119850048,
+        "sampled_peak_external_bytes": 175776,
+        "sampled_peak_heap_plus_external_bytes": 119999136,
+        "finalization_peak_rss_bytes": 310345728,
+        "finalization_peak_heap_plus_external_bytes": 119999136,
+        "vm_samples": 11961,
+        "phases": {
+          "idle": {
+            "phase": "idle",
+            "elapsed_us": 147170,
+            "rss_bytes": 225443840,
+            "max_rss_bytes": 225443840,
+            "heap_bytes": 84726256,
+            "external_bytes": 131920
+          },
+          "recording-started": {
+            "phase": "recording-started",
+            "elapsed_us": 150260,
+            "rss_bytes": 225460224,
+            "max_rss_bytes": 225460224,
+            "heap_bytes": 85816432,
+            "external_bytes": 132064
+          },
+          "pre-stop": {
+            "phase": "pre-stop",
+            "elapsed_us": 120154297,
+            "rss_bytes": 274333696,
+            "max_rss_bytes": 274432000,
+            "heap_bytes": 98402048,
+            "external_bytes": 148432
+          },
+          "finalized": {
+            "phase": "finalized",
+            "elapsed_us": 120185385,
+            "rss_bytes": 310345728,
+            "max_rss_bytes": 310345728,
+            "heap_bytes": 119850048,
+            "external_bytes": 149088
+          }
+        },
+        "cleanup_files_remaining": 0,
+        "source": "synthetic PCM through unmodified macOS IO service"
+      }
+    },
+    {
+      "label": "candidate",
+      "seconds": 120,
+      "repetition": 3,
+      "irregular": false,
+      "command": [
+        "flutter",
+        "test",
+        "test/performance/voice_recording_memory_test.dart",
+        "--no-pub",
+        "--concurrency=1",
+        "--reporter=expanded",
+        "--enable-vmservice",
+        "--dart-define=VOICE_MEMORY_PROBE=true",
+        "--dart-define=VOICE_MEMORY_SECONDS=120",
+        "--dart-define=VOICE_MEMORY_IRREGULAR=false"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 124.468,
+      "result": {
+        "schema": 1,
+        "pid": 25828,
+        "platform": "macos",
+        "dart": "3.13.7 (stable) (Thu Oct 22 14:28:57 2026 -0700) on \"macos_arm64\"",
+        "seconds": 120,
+        "irregular": false,
+        "sample_rate": 44100,
+        "channels": 1,
+        "pcm_bytes": 10584000,
+        "packets": 6000,
+        "output_bytes": 10584044,
+        "output_sha256": "4d8feb33e50840074ec1bc8e8736cf239037390753180d8a5a6ec44c50275e5d",
+        "decoded": {
+          "frames": 5292000,
+          "rate": 44100,
+          "channels": 1,
+          "width": 2
+        },
+        "stop_microseconds": 26756,
+        "process_max_rss_bytes": 312049664,
+        "sampled_peak_rss_bytes": 312049664,
+        "sampled_peak_heap_bytes": 119917936,
+        "sampled_peak_external_bytes": 175920,
+        "sampled_peak_heap_plus_external_bytes": 120067456,
+        "finalization_peak_rss_bytes": 312049664,
+        "finalization_peak_heap_plus_external_bytes": 120067456,
+        "vm_samples": 11939,
+        "phases": {
+          "idle": {
+            "phase": "idle",
+            "elapsed_us": 145135,
+            "rss_bytes": 229605376,
+            "max_rss_bytes": 229621760,
+            "heap_bytes": 84712704,
+            "external_bytes": 131920
+          },
+          "recording-started": {
+            "phase": "recording-started",
+            "elapsed_us": 147874,
+            "rss_bytes": 229720064,
+            "max_rss_bytes": 229720064,
+            "heap_bytes": 85802880,
+            "external_bytes": 132064
+          },
+          "pre-stop": {
+            "phase": "pre-stop",
+            "elapsed_us": 120153626,
+            "rss_bytes": 276054016,
+            "max_rss_bytes": 276119552,
+            "heap_bytes": 98470576,
+            "external_bytes": 148864
+          },
+          "finalized": {
+            "phase": "finalized",
+            "elapsed_us": 120182103,
+            "rss_bytes": 312049664,
+            "max_rss_bytes": 312049664,
+            "heap_bytes": 119917936,
+            "external_bytes": 149520
+          }
+        },
+        "cleanup_files_remaining": 0,
+        "source": "synthetic PCM through unmodified macOS IO service"
+      }
+    },
+    {
+      "label": "baseline",
+      "seconds": 120,
+      "repetition": 1,
+      "irregular": true,
+      "command": [
+        "flutter",
+        "test",
+        "test/performance/voice_recording_memory_test.dart",
+        "--no-pub",
+        "--concurrency=1",
+        "--reporter=expanded",
+        "--enable-vmservice",
+        "--dart-define=VOICE_MEMORY_PROBE=true",
+        "--dart-define=VOICE_MEMORY_SECONDS=120",
+        "--dart-define=VOICE_MEMORY_IRREGULAR=true"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 129.882,
+      "result": {
+        "schema": 1,
+        "pid": 28485,
+        "platform": "macos",
+        "dart": "3.13.7 (stable) (Thu Oct 22 14:28:57 2026 -0700) on \"macos_arm64\"",
+        "seconds": 120,
+        "irregular": true,
+        "sample_rate": 44100,
+        "channels": 1,
+        "pcm_bytes": 10584000,
+        "packets": 5991,
+        "output_bytes": 10584044,
+        "output_sha256": "4d8feb33e50840074ec1bc8e8736cf239037390753180d8a5a6ec44c50275e5d",
+        "decoded": {
+          "frames": 5292000,
+          "rate": 44100,
+          "channels": 1,
+          "width": 2
+        },
+        "stop_microseconds": 26981,
+        "process_max_rss_bytes": 309149696,
+        "sampled_peak_rss_bytes": 309149696,
+        "sampled_peak_heap_bytes": 118946896,
+        "sampled_peak_external_bytes": 176064,
+        "sampled_peak_heap_plus_external_bytes": 119091088,
+        "finalization_peak_rss_bytes": 309149696,
+        "finalization_peak_heap_plus_external_bytes": 119091088,
+        "vm_samples": 11971,
+        "phases": {
+          "idle": {
+            "phase": "idle",
+            "elapsed_us": 139197,
+            "rss_bytes": 227983360,
+            "max_rss_bytes": 228163584,
+            "heap_bytes": 84600992,
+            "external_bytes": 131920
+          },
+          "recording-started": {
+            "phase": "recording-started",
+            "elapsed_us": 141611,
+            "rss_bytes": 227999744,
+            "max_rss_bytes": 228163584,
+            "heap_bytes": 85691424,
+            "external_bytes": 132064
+          },
+          "pre-stop": {
+            "phase": "pre-stop",
+            "elapsed_us": 120149388,
+            "rss_bytes": 273137664,
+            "max_rss_bytes": 273137664,
+            "heap_bytes": 97498432,
+            "external_bytes": 143536
+          },
+          "finalized": {
+            "phase": "finalized",
+            "elapsed_us": 120177932,
+            "rss_bytes": 309149696,
+            "max_rss_bytes": 309149696,
+            "heap_bytes": 118946896,
+            "external_bytes": 144192
+          }
+        },
+        "cleanup_files_remaining": 0,
+        "source": "synthetic PCM through unmodified macOS IO service"
+      }
+    },
+    {
+      "label": "candidate",
+      "seconds": 120,
+      "repetition": 1,
+      "irregular": true,
+      "command": [
+        "flutter",
+        "test",
+        "test/performance/voice_recording_memory_test.dart",
+        "--no-pub",
+        "--concurrency=1",
+        "--reporter=expanded",
+        "--enable-vmservice",
+        "--dart-define=VOICE_MEMORY_PROBE=true",
+        "--dart-define=VOICE_MEMORY_SECONDS=120",
+        "--dart-define=VOICE_MEMORY_IRREGULAR=true"
+      ],
+      "status": "passed",
+      "exit_code": 0,
+      "elapsed_seconds": 131.138,
+      "result": {
+        "schema": 1,
+        "pid": 31447,
+        "platform": "macos",
+        "dart": "3.13.7 (stable) (Thu Oct 22 14:28:57 2026 -0700) on \"macos_arm64\"",
+        "seconds": 120,
+        "irregular": true,
+        "sample_rate": 44100,
+        "channels": 1,
+        "pcm_bytes": 10584000,
+        "packets": 5991,
+        "output_bytes": 10584044,
+        "output_sha256": "4d8feb33e50840074ec1bc8e8736cf239037390753180d8a5a6ec44c50275e5d",
+        "decoded": {
+          "frames": 5292000,
+          "rate": 44100,
+          "channels": 1,
+          "width": 2
+        },
+        "stop_microseconds": 28480,
+        "process_max_rss_bytes": 318357504,
+        "sampled_peak_rss_bytes": 318357504,
+        "sampled_peak_heap_bytes": 118917360,
+        "sampled_peak_external_bytes": 176064,
+        "sampled_peak_heap_plus_external_bytes": 119061408,
+        "finalization_peak_rss_bytes": 318357504,
+        "finalization_peak_heap_plus_external_bytes": 119061408,
+        "vm_samples": 11972,
+        "phases": {
+          "idle": {
+            "phase": "idle",
+            "elapsed_us": 151148,
+            "rss_bytes": 223805440,
+            "max_rss_bytes": 223821824,
+            "heap_bytes": 84698896,
+            "external_bytes": 131872
+          },
+          "recording-started": {
+            "phase": "recording-started",
+            "elapsed_us": 154245,
+            "rss_bytes": 223854592,
+            "max_rss_bytes": 223854592,
+            "heap_bytes": 85789632,
+            "external_bytes": 132016
+          },
+          "pre-stop": {
+            "phase": "pre-stop",
+            "elapsed_us": 120159662,
+            "rss_bytes": 282345472,
+            "max_rss_bytes": 282345472,
+            "heap_bytes": 97491040,
+            "external_bytes": 143536
+          },
+          "finalized": {
+            "phase": "finalized",
+            "elapsed_us": 120189758,
+            "rss_bytes": 318357504,
+            "max_rss_bytes": 318357504,
+            "heap_bytes": 118917360,
+            "external_bytes": 144048
+          }
+        },
+        "cleanup_files_remaining": 0,
+        "source": "synthetic PCM through unmodified macOS IO service"
+      }
+    }
+  ]
+}
