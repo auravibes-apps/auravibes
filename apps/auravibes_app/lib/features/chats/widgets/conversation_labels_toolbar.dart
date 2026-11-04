@@ -573,11 +573,7 @@ Future<Object?> _renameConversationLabel(
   String workspaceId,
   ConversationLabelEntity label,
   String name,
-) => actions.rename(
-  workspaceId: workspaceId,
-  labelId: label.id,
-  name: name,
-);
+) => actions.rename(workspaceId: workspaceId, labelId: label.id, name: name);
 
 Future<Object?> _deleteConversationLabel(
   ConversationLabelActions actions,
