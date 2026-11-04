@@ -226,11 +226,16 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
   }) async {
     _validateConversationIds(conversationIds);
     final snapshots = await _loadConversationSnapshots(
+      this,
       workspaceId: workspaceId,
       conversationIds: conversationIds,
     );
     _requireMatchingPreview(expectedPreview, snapshots);
-    final archives = await _createArchives(snapshots, includeAttachments);
+    final archives = await _createArchives(
+      this,
+      snapshots,
+      includeAttachments,
+    );
 
     return ConversationArchiveCodec.encodeMany(archives);
   }
@@ -260,6 +265,7 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
     String? workspaceId,
   }) async {
     final conversation = await _loadConversationForExport(
+      conversationRepository,
       conversationId,
       workspaceId: workspaceId,
     );
@@ -271,66 +277,6 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
     );
 
     return (conversation: conversation, transcript: transcript);
-  }
-
-  Future<List<_ConversationArchiveExportSnapshot>> _loadConversationSnapshots({
-    required String workspaceId,
-    required List<String> conversationIds,
-  }) async {
-    final snapshots = <_ConversationArchiveExportSnapshot>[];
-    for (final id in conversationIds) {
-      snapshots.add(
-        await _loadConversationSnapshot(id, workspaceId: workspaceId),
-      );
-    }
-
-    return snapshots;
-  }
-
-  Future<List<ConversationArchive>> _createArchives(
-    List<_ConversationArchiveExportSnapshot> snapshots,
-    bool includeAttachments,
-  ) async {
-    final archives = <ConversationArchive>[];
-    for (final snapshot in snapshots) {
-      archives.add(
-        await _createArchive(
-          snapshot.conversation,
-          snapshot.transcript,
-          includeAttachments: includeAttachments,
-        ),
-      );
-    }
-
-    return archives;
-  }
-
-  Future<ConversationEntity> _loadConversationForExport(
-    String conversationId, {
-    String? workspaceId,
-  }) async {
-    final conversation = await conversationRepository.getConversationById(
-      conversationId,
-    );
-    if (conversation == null) {
-      if (workspaceId == null) throw StateError('Conversation not found');
-
-      throw const MalformedConversationArchiveException();
-    }
-    if (workspaceId != null) {
-      _requireConversationWorkspace(conversation, workspaceId);
-    }
-
-    return conversation;
-  }
-
-  void _requireConversationWorkspace(
-    ConversationEntity conversation,
-    String workspaceId,
-  ) {
-    if (conversation.workspaceId != workspaceId) {
-      throw const MalformedConversationArchiveException();
-    }
   }
 
   Future<String> _exportSnapshot(
@@ -408,6 +354,60 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
       toolSelectionsInput: selections.selections,
     );
   }
+}
+
+Future<List<_ConversationArchiveExportSnapshot>> _loadConversationSnapshots(
+  _ConversationArchiveExporter exporter, {
+  required String workspaceId,
+  required List<String> conversationIds,
+}) async {
+  final snapshots = <_ConversationArchiveExportSnapshot>[];
+  for (final id in conversationIds) {
+    snapshots.add(
+      await exporter._loadConversationSnapshot(id, workspaceId: workspaceId),
+    );
+  }
+
+  return snapshots;
+}
+
+Future<List<ConversationArchive>> _createArchives(
+  _ConversationArchiveExporter exporter,
+  List<_ConversationArchiveExportSnapshot> snapshots,
+  bool includeAttachments,
+) async {
+  final archives = <ConversationArchive>[];
+  for (final snapshot in snapshots) {
+    archives.add(
+      await exporter._createArchive(
+        snapshot.conversation,
+        snapshot.transcript,
+        includeAttachments: includeAttachments,
+      ),
+    );
+  }
+
+  return archives;
+}
+
+Future<ConversationEntity> _loadConversationForExport(
+  ConversationRepository conversationRepository,
+  String conversationId, {
+  String? workspaceId,
+}) async {
+  final conversation = await conversationRepository.getConversationById(
+    conversationId,
+  );
+  if (conversation == null) {
+    if (workspaceId == null) throw StateError('Conversation not found');
+
+    throw const MalformedConversationArchiveException();
+  }
+  if (workspaceId != null && conversation.workspaceId != workspaceId) {
+    throw const MalformedConversationArchiveException();
+  }
+
+  return conversation;
 }
 
 void _validateConversationIds(List<String> conversationIds) {

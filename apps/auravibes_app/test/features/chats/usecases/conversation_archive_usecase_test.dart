@@ -140,6 +140,43 @@ void main() {
     expect(archive, isNot(contains('report.pdf')));
   });
 
+  test('exports selected conversations as one archive bundle', () async {
+    final workspace = await database.workspaceDao.insertWorkspace(
+      .insert(name: 'Bulk archive export', type: .local),
+    );
+    final repository = ConversationRepository(database);
+    final conversations = [
+      await repository.createConversation(
+        .new(title: 'First chat', workspaceId: workspace.id),
+      ),
+      await repository.createConversation(
+        .new(title: 'Second chat', workspaceId: workspace.id),
+      ),
+    ];
+    final conversationIds = conversations
+        .map((conversation) => conversation.id)
+        .toList();
+    final usecase = _usecase(database);
+    final preview = await usecase.previewConversations(
+      workspaceId: workspace.id,
+      conversationIds: conversationIds,
+    );
+
+    final exported = await usecase.exportConversations(
+      workspaceId: workspace.id,
+      conversationIds: conversationIds,
+      expectedPreview: preview,
+      includeAttachments: false,
+    );
+    final archives = ConversationArchiveCodec.decodeMany(exported);
+
+    expect(
+      archives.map((archive) => archive.title),
+      ['First chat', 'Second chat'],
+    );
+    expect(archives.map((archive) => archive.messages), [[], []]);
+  });
+
   test('rejects an export when attachments changed after review', () async {
     final workspace = await database.workspaceDao.insertWorkspace(
       .insert(name: 'Stale archive preview', type: .local),
