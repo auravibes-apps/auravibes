@@ -23,7 +23,7 @@ class const ChatsListScreen({required final String workspaceId, super.key})
     extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final showArchiveActions = switch (ref.watch(
+    final showBackupActions = switch (ref.watch(
       workspaceSessionForRouteProvider(workspaceId),
     )) {
       AsyncData(value: final session) => session.cloud == null,
@@ -33,7 +33,7 @@ class const ChatsListScreen({required final String workspaceId, super.key})
     return AppScreen(
       child: _ChatsListBody(
         workspaceId: workspaceId,
-        showArchiveActions: showArchiveActions,
+        showBackupActions: showBackupActions,
       ),
       appBar: AuraAppBarWithDrawer(
         title: const TextLocale(LocaleKeys.chats_screens_chats_list_title),
@@ -51,6 +51,7 @@ class const _ChatsListActions({required final String workspaceId})
     children: [
       _ChatsListSavedMessagesButton(workspaceId: workspaceId),
       _ChatsListSearchButton(workspaceId: workspaceId),
+      _ChatsListArchivedConversationsButton(workspaceId: workspaceId),
     ],
   );
 }
@@ -77,9 +78,21 @@ class const _ChatsListSearchButton({required final String workspaceId})
   );
 }
 
+class const _ChatsListArchivedConversationsButton({
+  required final String workspaceId,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.archive_outlined,
+    onPressed: () =>
+        ArchivedConversationsRoute(workspaceId: workspaceId).go(context),
+    tooltip: LocaleKeys.chats_screens_archived_conversations_title.tr(),
+  );
+}
+
 class const _ChatsListBody({
   required final String workspaceId,
-  required final bool showArchiveActions,
+  required final bool showBackupActions,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -87,7 +100,7 @@ class const _ChatsListBody({
       children: [
         _ChatsListAddChatButton(
           workspaceId: workspaceId,
-          showArchiveActions: showArchiveActions,
+          showBackupActions: showBackupActions,
         ),
         Expanded(child: ChatListWidget(workspaceId: workspaceId)),
       ],
@@ -97,7 +110,7 @@ class const _ChatsListBody({
 
 class const _ChatsListAddChatButton({
   required final String workspaceId,
-  required final bool showArchiveActions,
+  required final bool showBackupActions,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -105,7 +118,7 @@ class const _ChatsListAddChatButton({
       child: AppContent(
         child: _ChatsListNewChatButton(
           workspaceId: workspaceId,
-          showArchiveActions: showArchiveActions,
+          showBackupActions: showBackupActions,
         ),
       ),
       padding: const .horizontal(.md),
@@ -115,7 +128,7 @@ class const _ChatsListAddChatButton({
 
 class const _ChatsListNewChatButton({
   required final String workspaceId,
-  required final bool showArchiveActions,
+  required final bool showBackupActions,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
@@ -126,7 +139,7 @@ class const _ChatsListNewChatButton({
           child: const TextLocale(LocaleKeys.chats_screens_chats_list_add_chat),
         ),
       ),
-      if (showArchiveActions) ...[
+      if (showBackupActions) ...[
         const SizedBox(width: 8),
         _ConversationArchiveImportButton(workspaceId: workspaceId),
       ],

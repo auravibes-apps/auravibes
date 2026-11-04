@@ -5421,6 +5421,303 @@ class ConversationsCompanion extends UpdateCompanion<ConversationsTable> {
   }
 }
 
+class $ConversationArchiveStatesTable extends ConversationArchiveStates
+    with
+        TableInfo<
+          $ConversationArchiveStatesTable,
+          ConversationArchiveStateTable
+        > {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ConversationArchiveStatesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _workspaceIdMeta = const VerificationMeta(
+    'workspaceId',
+  );
+  @override
+  late final GeneratedColumn<String> workspaceId = GeneratedColumn<String>(
+    'workspace_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES workspaces (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _conversationIdMeta = const VerificationMeta(
+    'conversationId',
+  );
+  @override
+  late final GeneratedColumn<String> conversationId = GeneratedColumn<String>(
+    'conversation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _archivedAtMeta = const VerificationMeta(
+    'archivedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> archivedAt = GeneratedColumn<DateTime>(
+    'archived_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    workspaceId,
+    conversationId,
+    archivedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'conversation_archive_states';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ConversationArchiveStateTable> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('workspace_id')) {
+      context.handle(
+        _workspaceIdMeta,
+        workspaceId.isAcceptableOrUnknown(
+          data['workspace_id']!,
+          _workspaceIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_workspaceIdMeta);
+    }
+    if (data.containsKey('conversation_id')) {
+      context.handle(
+        _conversationIdMeta,
+        conversationId.isAcceptableOrUnknown(
+          data['conversation_id']!,
+          _conversationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_conversationIdMeta);
+    }
+    if (data.containsKey('archived_at')) {
+      context.handle(
+        _archivedAtMeta,
+        archivedAt.isAcceptableOrUnknown(data['archived_at']!, _archivedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {workspaceId, conversationId};
+  @override
+  ConversationArchiveStateTable map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ConversationArchiveStateTable(
+      workspaceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}workspace_id'],
+      )!,
+      conversationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}conversation_id'],
+      )!,
+      archivedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}archived_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ConversationArchiveStatesTable createAlias(String alias) {
+    return $ConversationArchiveStatesTable(attachedDatabase, alias);
+  }
+}
+
+class ConversationArchiveStateTable extends DataClass
+    implements Insertable<ConversationArchiveStateTable> {
+  final String workspaceId;
+  final String conversationId;
+  final DateTime archivedAt;
+  const ConversationArchiveStateTable({
+    required this.workspaceId,
+    required this.conversationId,
+    required this.archivedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['workspace_id'] = Variable<String>(workspaceId);
+    map['conversation_id'] = Variable<String>(conversationId);
+    map['archived_at'] = Variable<DateTime>(archivedAt);
+    return map;
+  }
+
+  ConversationArchiveStatesCompanion toCompanion(bool nullToAbsent) {
+    return ConversationArchiveStatesCompanion(
+      workspaceId: Value(workspaceId),
+      conversationId: Value(conversationId),
+      archivedAt: Value(archivedAt),
+    );
+  }
+
+  factory ConversationArchiveStateTable.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ConversationArchiveStateTable(
+      workspaceId: serializer.fromJson<String>(json['workspaceId']),
+      conversationId: serializer.fromJson<String>(json['conversationId']),
+      archivedAt: serializer.fromJson<DateTime>(json['archivedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'workspaceId': serializer.toJson<String>(workspaceId),
+      'conversationId': serializer.toJson<String>(conversationId),
+      'archivedAt': serializer.toJson<DateTime>(archivedAt),
+    };
+  }
+
+  ConversationArchiveStateTable copyWith({
+    String? workspaceId,
+    String? conversationId,
+    DateTime? archivedAt,
+  }) => ConversationArchiveStateTable(
+    workspaceId: workspaceId ?? this.workspaceId,
+    conversationId: conversationId ?? this.conversationId,
+    archivedAt: archivedAt ?? this.archivedAt,
+  );
+  ConversationArchiveStateTable copyWithCompanion(
+    ConversationArchiveStatesCompanion data,
+  ) {
+    return ConversationArchiveStateTable(
+      workspaceId: data.workspaceId.present
+          ? data.workspaceId.value
+          : this.workspaceId,
+      conversationId: data.conversationId.present
+          ? data.conversationId.value
+          : this.conversationId,
+      archivedAt: data.archivedAt.present
+          ? data.archivedAt.value
+          : this.archivedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ConversationArchiveStateTable(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('archivedAt: $archivedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(workspaceId, conversationId, archivedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ConversationArchiveStateTable &&
+          other.workspaceId == this.workspaceId &&
+          other.conversationId == this.conversationId &&
+          other.archivedAt == this.archivedAt);
+}
+
+class ConversationArchiveStatesCompanion
+    extends UpdateCompanion<ConversationArchiveStateTable> {
+  final Value<String> workspaceId;
+  final Value<String> conversationId;
+  final Value<DateTime> archivedAt;
+  final Value<int> rowid;
+  const ConversationArchiveStatesCompanion({
+    this.workspaceId = const Value.absent(),
+    this.conversationId = const Value.absent(),
+    this.archivedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ConversationArchiveStatesCompanion.insert({
+    required String workspaceId,
+    required String conversationId,
+    this.archivedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : workspaceId = Value(workspaceId),
+       conversationId = Value(conversationId);
+  static Insertable<ConversationArchiveStateTable> custom({
+    Expression<String>? workspaceId,
+    Expression<String>? conversationId,
+    Expression<DateTime>? archivedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (workspaceId != null) 'workspace_id': workspaceId,
+      if (conversationId != null) 'conversation_id': conversationId,
+      if (archivedAt != null) 'archived_at': archivedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ConversationArchiveStatesCompanion copyWith({
+    Value<String>? workspaceId,
+    Value<String>? conversationId,
+    Value<DateTime>? archivedAt,
+    Value<int>? rowid,
+  }) {
+    return ConversationArchiveStatesCompanion(
+      workspaceId: workspaceId ?? this.workspaceId,
+      conversationId: conversationId ?? this.conversationId,
+      archivedAt: archivedAt ?? this.archivedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (workspaceId.present) {
+      map['workspace_id'] = Variable<String>(workspaceId.value);
+    }
+    if (conversationId.present) {
+      map['conversation_id'] = Variable<String>(conversationId.value);
+    }
+    if (archivedAt.present) {
+      map['archived_at'] = Variable<DateTime>(archivedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ConversationArchiveStatesCompanion(')
+          ..write('workspaceId: $workspaceId, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('archivedAt: $archivedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $SkillsTable extends Skills with TableInfo<$SkillsTable, SkillsTable> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -24860,6 +25157,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ApiModelsTable apiModels = $ApiModelsTable(this);
   late final $AgentsTable agents = $AgentsTable(this);
   late final $ConversationsTable conversations = $ConversationsTable(this);
+  late final $ConversationArchiveStatesTable conversationArchiveStates =
+      $ConversationArchiveStatesTable(this);
   late final $SkillsTable skills = $SkillsTable(this);
   late final $AgentSkillsTable agentSkills = $AgentSkillsTable(this);
   late final $McpServersTable mcpServers = $McpServersTable(this);
@@ -25006,6 +25305,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final ConversationDao conversationDao = ConversationDao(
     this as AppDatabase,
   );
+  late final ConversationArchiveStateDao conversationArchiveStateDao =
+      ConversationArchiveStateDao(this as AppDatabase);
   late final AgentsDao agentsDao = AgentsDao(this as AppDatabase);
   late final AgentToolsDao agentToolsDao = AgentToolsDao(this as AppDatabase);
   late final MessageDao messageDao = MessageDao(this as AppDatabase);
@@ -25048,6 +25349,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     apiModels,
     agents,
     conversations,
+    conversationArchiveStates,
     skills,
     agentSkills,
     mcpServers,
@@ -25160,6 +25462,15 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('conversations', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'workspaces',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('conversation_archive_states', kind: UpdateKind.delete),
+      ],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -25602,6 +25913,31 @@ final class $$WorkspacesTableReferences
     ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_conversationsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $ConversationArchiveStatesTable,
+    List<ConversationArchiveStateTable>
+  >
+  _conversationArchiveStatesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.conversationArchiveStates,
+        aliasName: 'workspaces__id__conversation_archive_states__workspace_id',
+      );
+
+  $$ConversationArchiveStatesTableProcessedTableManager
+  get conversationArchiveStatesRefs {
+    final manager = $$ConversationArchiveStatesTableTableManager(
+      $_db,
+      $_db.conversationArchiveStates,
+    ).filter((f) => f.workspaceId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _conversationArchiveStatesRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -26243,6 +26579,33 @@ class $$WorkspacesTableFilterComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<bool> conversationArchiveStatesRefs(
+    Expression<bool> Function($$ConversationArchiveStatesTableFilterComposer f)
+    f,
+  ) {
+    final $$ConversationArchiveStatesTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.conversationArchiveStates,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ConversationArchiveStatesTableFilterComposer(
+                $db: $db,
+                $table: $db.conversationArchiveStates,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 
@@ -27011,6 +27374,33 @@ class $$WorkspacesTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> conversationArchiveStatesRefs<T extends Object>(
+    Expression<T> Function($$ConversationArchiveStatesTableAnnotationComposer a)
+    f,
+  ) {
+    final $$ConversationArchiveStatesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.conversationArchiveStates,
+          getReferencedColumn: (t) => t.workspaceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ConversationArchiveStatesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.conversationArchiveStates,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
   Expression<T> skillsRefs<T extends Object>(
     Expression<T> Function($$SkillsTableAnnotationComposer a) f,
   ) {
@@ -27635,6 +28025,7 @@ class $$WorkspacesTableTableManager
             bool serviceConnectionsRefs,
             bool agentsRefs,
             bool conversationsRefs,
+            bool conversationArchiveStatesRefs,
             bool skillsRefs,
             bool mcpServersRefs,
             bool toolsGroupsRefs,
@@ -27728,6 +28119,7 @@ class $$WorkspacesTableTableManager
                 serviceConnectionsRefs = false,
                 agentsRefs = false,
                 conversationsRefs = false,
+                conversationArchiveStatesRefs = false,
                 skillsRefs = false,
                 mcpServersRefs = false,
                 toolsGroupsRefs = false,
@@ -27758,6 +28150,8 @@ class $$WorkspacesTableTableManager
                     if (serviceConnectionsRefs) db.serviceConnections,
                     if (agentsRefs) db.agents,
                     if (conversationsRefs) db.conversations,
+                    if (conversationArchiveStatesRefs)
+                      db.conversationArchiveStates,
                     if (skillsRefs) db.skills,
                     if (mcpServersRefs) db.mcpServers,
                     if (toolsGroupsRefs) db.toolsGroups,
@@ -27851,6 +28245,27 @@ class $$WorkspacesTableTableManager
                                 table,
                                 p0,
                               ).conversationsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.workspaceId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (conversationArchiveStatesRefs)
+                        await $_getPrefetchedData<
+                          WorkspacesTable,
+                          $WorkspacesTable,
+                          ConversationArchiveStateTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$WorkspacesTableReferences
+                              ._conversationArchiveStatesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$WorkspacesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).conversationArchiveStatesRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.workspaceId == item.id,
@@ -28364,6 +28779,7 @@ typedef $$WorkspacesTableProcessedTableManager =
         bool serviceConnectionsRefs,
         bool agentsRefs,
         bool conversationsRefs,
+        bool conversationArchiveStatesRefs,
         bool skillsRefs,
         bool mcpServersRefs,
         bool toolsGroupsRefs,
@@ -33084,6 +33500,318 @@ typedef $$ConversationsTableProcessedTableManager =
         bool workspaceContextSelectionsRefs,
         bool workspaceCommandReceiptsRefs,
       })
+    >;
+typedef $$ConversationArchiveStatesTableCreateCompanionBuilder =
+    ConversationArchiveStatesCompanion Function({
+      required String workspaceId,
+      required String conversationId,
+      Value<DateTime> archivedAt,
+      Value<int> rowid,
+    });
+typedef $$ConversationArchiveStatesTableUpdateCompanionBuilder =
+    ConversationArchiveStatesCompanion Function({
+      Value<String> workspaceId,
+      Value<String> conversationId,
+      Value<DateTime> archivedAt,
+      Value<int> rowid,
+    });
+
+final class $$ConversationArchiveStatesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ConversationArchiveStatesTable,
+          ConversationArchiveStateTable
+        > {
+  $$ConversationArchiveStatesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $WorkspacesTable _workspaceIdTable(_$AppDatabase db) => db.workspaces
+      .createAlias('conversation_archive_states__workspace_id__workspaces__id');
+
+  $$WorkspacesTableProcessedTableManager get workspaceId {
+    final $_column = $_itemColumn<String>('workspace_id')!;
+
+    final manager = $$WorkspacesTableTableManager(
+      $_db,
+      $_db.workspaces,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_workspaceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ConversationArchiveStatesTableFilterComposer
+    extends Composer<_$AppDatabase, $ConversationArchiveStatesTable> {
+  $$ConversationArchiveStatesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get conversationId => $composableBuilder(
+    column: $table.conversationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get archivedAt => $composableBuilder(
+    column: $table.archivedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$WorkspacesTableFilterComposer get workspaceId {
+    final $$WorkspacesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableFilterComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ConversationArchiveStatesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ConversationArchiveStatesTable> {
+  $$ConversationArchiveStatesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get conversationId => $composableBuilder(
+    column: $table.conversationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get archivedAt => $composableBuilder(
+    column: $table.archivedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$WorkspacesTableOrderingComposer get workspaceId {
+    final $$WorkspacesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableOrderingComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ConversationArchiveStatesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ConversationArchiveStatesTable> {
+  $$ConversationArchiveStatesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get conversationId => $composableBuilder(
+    column: $table.conversationId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get archivedAt => $composableBuilder(
+    column: $table.archivedAt,
+    builder: (column) => column,
+  );
+
+  $$WorkspacesTableAnnotationComposer get workspaceId {
+    final $$WorkspacesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.workspaceId,
+      referencedTable: $db.workspaces,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WorkspacesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.workspaces,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ConversationArchiveStatesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ConversationArchiveStatesTable,
+          ConversationArchiveStateTable,
+          $$ConversationArchiveStatesTableFilterComposer,
+          $$ConversationArchiveStatesTableOrderingComposer,
+          $$ConversationArchiveStatesTableAnnotationComposer,
+          $$ConversationArchiveStatesTableCreateCompanionBuilder,
+          $$ConversationArchiveStatesTableUpdateCompanionBuilder,
+          (
+            ConversationArchiveStateTable,
+            $$ConversationArchiveStatesTableReferences,
+          ),
+          ConversationArchiveStateTable,
+          PrefetchHooks Function({bool workspaceId})
+        > {
+  $$ConversationArchiveStatesTableTableManager(
+    _$AppDatabase db,
+    $ConversationArchiveStatesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ConversationArchiveStatesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$ConversationArchiveStatesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ConversationArchiveStatesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> workspaceId = const Value.absent(),
+                Value<String> conversationId = const Value.absent(),
+                Value<DateTime> archivedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ConversationArchiveStatesCompanion(
+                workspaceId: workspaceId,
+                conversationId: conversationId,
+                archivedAt: archivedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String workspaceId,
+                required String conversationId,
+                Value<DateTime> archivedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ConversationArchiveStatesCompanion.insert(
+                workspaceId: workspaceId,
+                conversationId: conversationId,
+                archivedAt: archivedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $ConversationArchiveStatesTable,
+                    ConversationArchiveStateTable
+                  >(table),
+                  $$ConversationArchiveStatesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({workspaceId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (workspaceId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.workspaceId,
+                        referencedTable:
+                            $$ConversationArchiveStatesTableReferences
+                                ._workspaceIdTable(db),
+                        referencedColumn:
+                            $$ConversationArchiveStatesTableReferences
+                                ._workspaceIdTable(db)
+                                .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ConversationArchiveStatesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ConversationArchiveStatesTable,
+      ConversationArchiveStateTable,
+      $$ConversationArchiveStatesTableFilterComposer,
+      $$ConversationArchiveStatesTableOrderingComposer,
+      $$ConversationArchiveStatesTableAnnotationComposer,
+      $$ConversationArchiveStatesTableCreateCompanionBuilder,
+      $$ConversationArchiveStatesTableUpdateCompanionBuilder,
+      (
+        ConversationArchiveStateTable,
+        $$ConversationArchiveStatesTableReferences,
+      ),
+      ConversationArchiveStateTable,
+      PrefetchHooks Function({bool workspaceId})
     >;
 typedef $$SkillsTableCreateCompanionBuilder = SkillsCompanion Function({
   Value<String> id,
@@ -49823,6 +50551,11 @@ class $AppDatabaseManager {
       $$AgentsTableTableManager(_db, _db.agents);
   $$ConversationsTableTableManager get conversations =>
       $$ConversationsTableTableManager(_db, _db.conversations);
+  $$ConversationArchiveStatesTableTableManager get conversationArchiveStates =>
+      $$ConversationArchiveStatesTableTableManager(
+        _db,
+        _db.conversationArchiveStates,
+      );
   $$SkillsTableTableManager get skills =>
       $$SkillsTableTableManager(_db, _db.skills);
   $$AgentSkillsTableTableManager get agentSkills =>

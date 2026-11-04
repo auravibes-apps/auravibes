@@ -156,14 +156,18 @@ void main() {
               routerProvider.overrideWithValue(router),
               cloudAccountUseCasesProvider.overrideWithValue(usecases),
               cloudEmailDeliveryProvider.overrideWithValue(.email),
-              conversationsStreamProvider(
+              conversationsStreamProvider((
                 workspaceId: workspace,
+                search: '',
+                scope: .active,
                 pagination: (limit: 10, offset: 0),
-              ).overrideWith((_) => Stream.value([])),
-              conversationsStreamProvider(
+              )).overrideWith((_) => Stream.value([])),
+              conversationsStreamProvider((
                 workspaceId: workspace,
+                search: '',
+                scope: .active,
                 pagination: (limit: 21, offset: 0),
-              ).overrideWith((_) => Stream.value([])),
+              )).overrideWith((_) => Stream.value([])),
               cloudAccountsProvider.overrideWith((_) async => []),
               workspaceSessionForRouteProvider(workspace)
                   .overrideWith((_) async => session),
@@ -302,10 +306,12 @@ void main() {
         overrides: [
           appDatabaseProvider.overrideWithValue(database),
           routerProvider.overrideWithValue(router),
-          conversationsStreamProvider(
+          conversationsStreamProvider((
             workspaceId: workspace,
+            search: '',
+            scope: .active,
             pagination: (limit: 10, offset: 0),
-          ).overrideWith((_) => Stream.value([])),
+          )).overrideWith((_) => Stream.value([])),
           cloudAccountsProvider.overrideWith((_) async => []),
           workspaceSessionForRouteProvider(workspace)
               .overrideWith((_) => throw StateError('expired-session-secret')),
@@ -339,10 +345,12 @@ void main() {
         overrides: [
           appDatabaseProvider.overrideWithValue(database),
           routerProvider.overrideWithValue(router),
-          conversationsStreamProvider(
+          conversationsStreamProvider((
             workspaceId: workspace,
+            search: '',
+            scope: .active,
             pagination: (limit: 10, offset: 0),
-          ).overrideWith((_) => Stream.value([])),
+          )).overrideWith((_) => Stream.value([])),
           cloudAccountsProvider.overrideWith(
             (_) async => [
               const CloudAccountSession(
@@ -522,10 +530,12 @@ void main() {
         overrides: [
           appDatabaseProvider.overrideWithValue(database),
           routerProvider.overrideWithValue(router),
-          conversationsStreamProvider(
+          conversationsStreamProvider((
             workspaceId: workspace,
+            search: '',
+            scope: .active,
             pagination: (limit: 10, offset: 0),
-          ).overrideWith((_) => Stream.value([])),
+          )).overrideWith((_) => Stream.value([])),
           cloudAccountsProvider.overrideWith(
             (_) async => [
               const CloudAccountSession(
@@ -576,10 +586,12 @@ void main() {
         overrides: [
           appDatabaseProvider.overrideWithValue(database),
           routerProvider.overrideWithValue(router),
-          conversationsStreamProvider(
+          conversationsStreamProvider((
             workspaceId: workspace,
+            search: '',
+            scope: .active,
             pagination: (limit: 10, offset: 0),
-          ).overrideWith((_) => Stream.value([])),
+          )).overrideWith((_) => Stream.value([])),
           cloudAccountsProvider.overrideWith((_) async => []),
           workspaceSessionForRouteProvider(
             workspace,
