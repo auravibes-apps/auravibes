@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class _ConversationArchiveStateRepository extends Mock
-    implements ConversationArchiveStateRepository {}
+    implements ConversationArchiveStateRepository;
 
 void main() {
   test(
