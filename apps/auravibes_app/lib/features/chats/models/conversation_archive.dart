@@ -143,6 +143,8 @@ abstract final class ConversationArchiveCodec {
   static const version = 2;
   static const legacyVersion = 1;
   static const bundleVersion = 1;
+  static const legacyTranscriptContextVersion = 1;
+  static const transcriptContextVersion = 2;
   static const agentContextVersion = 1;
   static const int maxArchiveBytes = 8 * 1024 * 1024;
   static const int maxAttachmentBytes = 5 * 1024 * 1024;
@@ -919,7 +921,8 @@ void _validateAgentContextUpdate(Map<String, Object?> json) {
     const {'version', 'toolsAdded', 'toolsRemoved'},
   );
   final version = _integer(json['version']);
-  if (version != ConversationArchiveCodec.agentContextVersion) {
+  if (version != ConversationArchiveCodec.legacyTranscriptContextVersion &&
+      version != ConversationArchiveCodec.transcriptContextVersion) {
     throw UnsupportedArchiveVersionException(version);
   }
   _limitedList(
@@ -930,6 +933,8 @@ void _validateAgentContextUpdate(Map<String, Object?> json) {
     json['toolsRemoved'],
     ConversationArchiveCodec.maxAgentContextTools,
   ).forEach(_nonEmptyString);
+  // A v1 record may carry an additive provenance field from an intermediate
+  // exporter; the v1 transcript decoder ignores it and returns unknown.
   _validateOptionalAgentContextLists(json);
   _validateAgentContextApprovals(json['approvalStates']);
 }
@@ -976,7 +981,7 @@ void _validateAgentContextMessage(Object? value) {
   final item = _jsonMap(value);
   _requireAllowedKeys(
     item,
-    const {'role', 'content', 'kind'},
+    const {'role', 'content', 'kind', 'provenance'},
     const {'role', 'content'},
   );
   final role = _string(item['role']);

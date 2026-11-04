@@ -15,6 +15,24 @@ class const WorkspaceTrashRestoreButton({
   required final String batchId,
   super.key,
 }) extends HookConsumerWidget {
+  static Future<void> restoreBatch(
+    BuildContext context,
+    WidgetRef ref,
+    String workspaceId,
+    String batchId,
+  ) async {
+    final result = await WorkspaceTrashActions.restore(
+      ref,
+      workspaceId,
+      batchId,
+    );
+    if (!context.mounted || !_needsNotice(result)) return;
+    await showDialog<void>(
+      context: context,
+      builder: (_) => _RestorationNotice(result: result),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final action = WorkspaceTableActions.use(context);
@@ -23,7 +41,14 @@ class const WorkspaceTrashRestoreButton({
       action: action,
       batchId: batchId,
       onPressed: () => unawaited(
-        action.run(() => restoreTrashBatch(context, ref, workspaceId, batchId)),
+        action.run(
+          () => WorkspaceTrashRestoreButton.restoreBatch(
+            context,
+            ref,
+            workspaceId,
+            batchId,
+          ),
+        ),
       ),
     );
   }
@@ -57,20 +82,6 @@ class const _RestoreButton({
     isLoading: action.pending,
     disabled: action.pending,
     identifier: 'workspace_trash_restore_$batchId',
-  );
-}
-
-Future<void> restoreTrashBatch(
-  BuildContext context,
-  WidgetRef ref,
-  String workspaceId,
-  String batchId,
-) async {
-  final result = await WorkspaceTrashActions.restore(ref, workspaceId, batchId);
-  if (!context.mounted || !_needsNotice(result)) return;
-  await showDialog<void>(
-    context: context,
-    builder: (_) => _RestorationNotice(result: result),
   );
 }
 

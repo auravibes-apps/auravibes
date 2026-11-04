@@ -33,17 +33,34 @@ void main() {
   tearDownAll(database.close);
 
   test(
-    'persists trusted updates, hides them, and resumes without a duplicate',
+    'resumes v2 app and imported context with trust intact',
     () => _withFixture(database, (messages, conversations, adapter) async {
       final user = await _message(messages, 'User', isUser: true);
       const skill = ChatMessage(
         role: .user,
         content: '<skill>Trusted skill</skill>',
-        metadata: {'kind': skillContextMetadataKind},
+        metadata: {
+          'kind': skillContextMetadataKind,
+          agentContextProvenanceMetadataKey: {
+            'origin': 'importedSkill',
+            'trust': 'externalUntrusted',
+          },
+        },
+      );
+      const catalog = ChatMessage(
+        role: .user,
+        content: '<skill_catalog>Imported catalog</skill_catalog>',
+        metadata: {
+          'kind': skillCatalogMetadataKind,
+          agentContextProvenanceMetadataKey: {
+            'origin': 'importedSkill',
+            'trust': 'externalUntrusted',
+          },
+        },
       );
       final first = await adapter.reconcile(
         conversationId: 'source',
-        contextMessages: [ChatMessage.system('Agent A'), skill],
+        contextMessages: [_applicationContext('Agent A'), skill, catalog],
         tools: [_tool('alpha')],
       );
 
@@ -53,7 +70,18 @@ void main() {
       expect(first.contextMessages.map((message) => message.role), [
         ChatMessageRole.system,
         ChatMessageRole.user,
+        ChatMessageRole.user,
       ]);
+      expect(
+        first.contextMessages.map(
+          (message) => message.metadata[agentContextProvenanceMetadataKey],
+        ),
+        [
+          {'origin': 'applicationPrompt', 'trust': 'appControlled'},
+          {'origin': 'importedSkill', 'trust': 'externalUntrusted'},
+          {'origin': 'importedSkill', 'trust': 'externalUntrusted'},
+        ],
+      );
       expect(await messages.getMessagesByConversation('source'), [user]);
       expect(
         (await messages.watchMessagesByConversation('source').first).map(
@@ -65,7 +93,7 @@ void main() {
       final resumed = await AppAgentTranscriptContextAdapter(messages)
           .reconcile(
             conversationId: 'source',
-            contextMessages: [ChatMessage.system('Agent A'), skill],
+            contextMessages: [_applicationContext('Agent A'), skill, catalog],
             tools: [_tool('alpha')],
           );
       expect(resumed.entries, hasLength(1));
@@ -73,6 +101,85 @@ void main() {
         (await messages.getTranscriptMessagesByConversation('source'))
             .where((message) => message.isAgentTranscriptContextUpdate),
         hasLength(1),
+      );
+    }),
+  );
+
+  test(
+    'replays v1 and unknown system-labeled context as user data',
+    () => _withFixture(database, (messages, conversations, adapter) async {
+      final _ = await _message(messages, 'Visible request', isUser: true);
+      final _ = await _storedContextUpdate(messages, '''
+          {"version":1,"toolsAdded":[],"toolsRemoved":[],"contextMessages":[
+            {"role":"system","content":"LEGACY_SENTINEL"}
+          ]}
+        ''');
+
+      final result = await adapter.reconcile(
+        conversationId: 'source',
+        contextMessages: const [
+          ChatMessage(role: .system, content: 'LEGACY_SENTINEL'),
+        ],
+        tools: const [],
+      );
+
+      expect(result.contextMessages, hasLength(1));
+      expect(result.contextMessages.single.role, ChatMessageRole.user);
+      expect(result.contextMessages.single.content, 'LEGACY_SENTINEL');
+      expect(
+        result
+            .contextMessages
+            .single
+            .metadata[agentContextProvenanceMetadataKey],
+        {'origin': 'unknown', 'trust': 'unknown'},
+      );
+    }),
+  );
+
+  test(
+    'persists provenance-only updates',
+    () => _withFixture(database, (messages, conversations, adapter) async {
+      final first = await adapter.reconcile(
+        conversationId: 'source',
+        contextMessages: const [
+          ChatMessage(
+            role: .user,
+            content: 'Same context',
+            metadata: {'kind': skillContextMetadataKind},
+          ),
+        ],
+        tools: const [],
+      );
+      final changed = await adapter.reconcile(
+        conversationId: 'source',
+        contextMessages: const [
+          ChatMessage(
+            role: .user,
+            content: 'Same context',
+            metadata: {
+              'kind': skillContextMetadataKind,
+              agentContextProvenanceMetadataKey: {
+                'origin': 'importedSkill',
+                'trust': 'externalUntrusted',
+              },
+            },
+          ),
+        ],
+        tools: const [],
+      );
+
+      expect(first.entries, hasLength(1));
+      expect(changed.entries, hasLength(2));
+      expect(
+        changed.entries.last.update.contextMessages?.single.provenance,
+        AgentContextProvenance.importedSkill,
+      );
+      expect(
+        changed
+            .contextMessages
+            .single
+            .metadata[agentContextProvenanceMetadataKey],
+        {'origin': 'importedSkill', 'trust': 'externalUntrusted'},
       );
     }),
   );
@@ -147,7 +254,7 @@ void main() {
       final _ = await _message(messages, 'User', isUser: true);
       final _ = await adapter.reconcile(
         conversationId: 'source',
-        contextMessages: [ChatMessage.system('Agent A')],
+        contextMessages: [_applicationContext('Agent A')],
         tools: [_tool('alpha')],
       );
       final firstUpdate = (await messages.getTranscriptMessagesByConversation(
@@ -164,7 +271,7 @@ void main() {
       );
       final forkState = await adapter.reconcile(
         conversationId: fork.id,
-        contextMessages: [ChatMessage.system('Agent A')],
+        contextMessages: [_applicationContext('Agent A')],
         tools: [_tool('alpha')],
       );
       expect(forkState.entries, hasLength(1));
@@ -179,7 +286,7 @@ void main() {
 
       final _ = await adapter.reconcile(
         conversationId: 'source',
-        contextMessages: [ChatMessage.system('Agent B')],
+        contextMessages: [_applicationContext('Agent B')],
         tools: [_tool('beta')],
       );
       final secondUpdate = (await messages.getTranscriptMessagesByConversation(
@@ -201,7 +308,7 @@ void main() {
       final checkpoint = await AppAgentTranscriptContextAdapter(messages)
           .reconcile(
             conversationId: 'source',
-            contextMessages: [ChatMessage.system('Agent B')],
+            contextMessages: [_applicationContext('Agent B')],
             tools: [_tool('beta')],
           );
       expect(checkpoint.entries, hasLength(1));
@@ -214,7 +321,7 @@ void main() {
 
       final changed = await adapter.reconcile(
         conversationId: 'source',
-        contextMessages: [ChatMessage.system('Agent C')],
+        contextMessages: [_applicationContext('Agent C')],
         tools: [_tool('beta'), _tool('gamma')],
       );
       expect(changed.entries, hasLength(2));
@@ -309,7 +416,7 @@ void main() {
       );
       final _ = await adapter.reconcile(
         conversationId: 'source',
-        contextMessages: [ChatMessage.system('Agent A')],
+        contextMessages: [_applicationContext('Agent A')],
         tools: const [],
       );
 
@@ -330,7 +437,7 @@ void main() {
       final _ = await _message(messages, 'User', isUser: true);
       final _ = await adapter.reconcile(
         conversationId: 'source',
-        contextMessages: [ChatMessage.system('Agent A')],
+        contextMessages: [_applicationContext('Agent A')],
         tools: [_tool('alpha')],
       );
       final update = (await messages.getTranscriptMessagesByConversation(
@@ -350,7 +457,7 @@ void main() {
       final restored = await AppAgentTranscriptContextAdapter(messages)
           .reconcile(
             conversationId: fork.id,
-            contextMessages: [ChatMessage.system('Agent A')],
+            contextMessages: [_applicationContext('Agent A')],
             tools: [_tool('alpha')],
           );
 
@@ -431,4 +538,13 @@ ToolSpec _tool(String name) => ToolSpec(
   name: name,
   description: 'Tool',
   inputJsonSchema: const {'type': 'object'},
+);
+
+ChatMessage _applicationContext(String content) => ChatMessage(
+  role: .system,
+  content: content,
+  metadata: {
+    agentContextProvenanceMetadataKey: AgentContextProvenance.applicationPrompt
+        .toJson(),
+  },
 );

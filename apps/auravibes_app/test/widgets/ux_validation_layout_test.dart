@@ -6,6 +6,8 @@ import 'dart:ui' as ui;
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
+import 'package:auravibes_app/data/repositories/skill_resources_repository.dart';
+import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
@@ -47,6 +49,7 @@ import 'package:auravibes_app/features/models/providers/chat_model_connections_p
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/cloud_service_connection.dart';
+import 'package:auravibes_app/features/service_connections/models/connector_connection_candidate.dart';
 import 'package:auravibes_app/features/service_connections/models/mcp_connection_test_status.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
@@ -57,6 +60,10 @@ import 'package:auravibes_app/features/service_connections/screens/service_conne
 import 'package:auravibes_app/features/service_connections/usecases/test_mcp_connection_usecase.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
 import 'package:auravibes_app/features/settings/screens/workspace_settings_screen.dart';
+import 'package:auravibes_app/features/skills/models/skill_detail.dart';
+import 'package:auravibes_app/features/skills/providers/skill_detail_provider.dart';
+import 'package:auravibes_app/features/skills/providers/skill_resources_provider.dart';
+import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/skills/screens/skill_detail_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_resource_edit_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skills_screen.dart';
@@ -66,9 +73,13 @@ import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.
 import 'package:auravibes_app/features/tools/screens/tools_screen.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_route_failure.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_view.dart'
+    as app;
+import 'package:auravibes_app/features/workspaces/providers/workspace_connected_view_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/create_workspace_screen.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_management_screen.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_connected_editor.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/services/cloud_auth_protocol.dart';
@@ -79,6 +90,7 @@ import 'package:auravibes_app/widgets/app_with_responsive_drawer.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_app/widgets/route_recovery_view.dart';
 import 'package:auravibes_app/widgets/setup_page_frame.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:crypto/crypto.dart';
@@ -125,6 +137,453 @@ void main() {
       await _sdkRoboto(),
     );
   });
+  for (final scenario in const [
+    (
+      name: 'agent-editor-skills-failure',
+      route: 'AgentDetailRoute',
+      tools: false,
+    ),
+    (
+      name: 'agent-editor-tools-failure',
+      route: 'AgentDetailRoute',
+      tools: true,
+    ),
+    (name: 'skills-list-failure', route: 'SkillsRoute', tools: false),
+  ]) {
+    testWidgets('${scenario.name} can retry', (tester) async {
+      final fixture = await UxValidationFixture.create();
+      final route = _scenario(scenario.route, fixture);
+      var fails = true;
+      const size = Size(466, 678);
+      final router = await fixture.pump(
+        tester,
+        route.location,
+        size: size,
+        overrides: [
+          if (scenario.tools)
+            workspaceToolsProvider(fixture.workspaceId)
+                .overrideWith(() => _ControlledTools(() => fails))
+          else
+            workspaceSkillsProvider(fixture.workspaceId)
+                .overrideWith((_) async {
+                  if (fails) throw StateError('Controlled skills load failure');
+
+                  return [];
+                }),
+        ],
+      );
+      await _capture(
+        tester,
+        scenario.name,
+        router.routeInformationProvider.value.uri.toString(),
+        locale: 'en',
+        size: size,
+        scale: 1,
+        dark: false,
+      );
+      expect(
+        find.text(
+          scenario.tools
+              ? 'Could not load tools. Try again.'
+              : 'Could not load skills. Try again.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Retry'), findsOneWidget);
+      fails = false;
+      await tester.tap(find.text('Retry'));
+      await fixture.settle(tester);
+      expect(
+        find.text(
+          scenario.route == 'SkillsRoute'
+              ? 'No skills available'
+              : 'Agent details',
+        ),
+        findsOneWidget,
+      );
+      if (scenario.route == 'AgentDetailRoute') {
+        await tester.enterText(find.byType(AuraInput).first, 'Unsaved draft');
+        fails = true;
+        final container = ProviderScope.containerOf(
+          tester.element(find.byType(AgentDetailScreen)),
+        );
+        if (scenario.tools) {
+          container.invalidate(workspaceToolsProvider(fixture.workspaceId));
+        } else {
+          container.invalidate(workspaceSkillsProvider(fixture.workspaceId));
+        }
+        await fixture.settle(tester);
+        expect(find.text('Retry'), findsOneWidget);
+        fails = false;
+        await tester.tap(find.text('Retry'));
+        await fixture.settle(tester);
+        expect(find.text('Unsaved draft'), findsOneWidget);
+      }
+      await fixture.close(tester);
+    });
+  }
+  testWidgets('skill-resources-list-failure can retry', (tester) async {
+    final fixture = await UxValidationFixture.create();
+    final resources = await SkillResourcesRepository(fixture.database)
+        .getSkillResources(fixture.skillId);
+    var fails = true;
+    const size = Size(466, 678);
+    final router = await fixture.pump(
+      tester,
+      _scenario('SkillDetailRoute', fixture).location,
+      size: size,
+      overrides: [
+        skillResourcesProvider(
+          fixture.workspaceId,
+          fixture.skillId,
+        ).overrideWith((_) async {
+          if (fails) throw StateError('Controlled resources load failure');
+
+          return resources;
+        }),
+      ],
+    );
+    await tester.scrollUntilVisible(
+      find.textContaining('Could not load'),
+      300,
+      scrollable: find
+          .descendant(
+            of: find.byType(SkillDetailScreen),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.drag(
+      find
+          .descendant(
+            of: find.byType(SkillDetailScreen),
+            matching: find.byType(ListView),
+          )
+          .first,
+      const Offset(0, -300),
+    );
+    final _ = await tester.pumpAndSettle();
+    await _capture(
+      tester,
+      'skill-resources-list-failure',
+      router.routeInformationProvider.value.uri.toString(),
+      locale: 'en',
+      size: size,
+      scale: 1,
+      dark: false,
+    );
+    expect(find.text('Retry').hitTestable(), findsOneWidget);
+    fails = false;
+    await tester.tap(find.text('Retry'));
+    await fixture.settle(tester);
+    expect(find.text('Writing guide'), findsOneWidget);
+    await fixture.close(tester);
+  });
+  testWidgets('agent editor retries simultaneous dependency failures', (
+    tester,
+  ) async {
+    final fixture = await UxValidationFixture.create();
+    var fails = true;
+    final _ = await fixture.pump(
+      tester,
+      _scenario('AgentDetailRoute', fixture).location,
+      overrides: [
+        workspaceSkillsProvider(fixture.workspaceId).overrideWith((_) async {
+          if (fails) throw StateError('Controlled skills load failure');
+
+          return [];
+        }),
+        workspaceToolsProvider(fixture.workspaceId)
+            .overrideWith(() => _ControlledTools(() => fails)),
+      ],
+    );
+    expect(
+      find.text('Could not load skills or tools. Try again.'),
+      findsOneWidget,
+    );
+    fails = false;
+    await tester.tap(find.text('Retry'));
+    await fixture.settle(tester);
+    expect(find.text('Agent details'), findsOneWidget);
+    await fixture.close(tester);
+  });
+  testWidgets('agent recovery remains readable in Spanish at large text', (
+    tester,
+  ) async {
+    final fixture = await UxValidationFixture.create();
+    var fails = true;
+    const size = Size(360, 678);
+    final router = await fixture.pump(
+      tester,
+      _scenario('AgentDetailRoute', fixture).location,
+      size: size,
+      locale: 'es',
+      scale: 1.4,
+      dark: true,
+      overrides: [
+        workspaceSkillsProvider(fixture.workspaceId).overrideWith((_) async {
+          if (fails) throw StateError('Controlled skills load failure');
+
+          return [];
+        }),
+      ],
+    );
+    final message = find.textContaining(
+      'No se pudieron cargar las habilidades.',
+    );
+    expect(message, findsOneWidget);
+    final bounds = tester.getRect(message);
+    expect(bounds.left, greaterThanOrEqualTo(12));
+    expect(bounds.right, lessThanOrEqualTo(size.width - 12));
+    expect(find.text('Reintentar'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await _capture(
+      tester,
+      'agent-editor-skills-failure-es-large-dark',
+      router.routeInformationProvider.value.uri.toString(),
+      locale: 'es',
+      size: size,
+      scale: 1.4,
+      dark: true,
+    );
+    fails = false;
+    await tester.tap(find.text('Reintentar'));
+    await fixture.settle(tester);
+    expect(find.text('Detalles del agente'), findsOneWidget);
+    await fixture.close(tester);
+  });
+  for (final failure in ['tools', 'connections']) {
+    testWidgets('connected-editor-$failure-failure can retry', (tester) async {
+      final fixture = await UxValidationFixture.create();
+      final connector = connectorDefinitions.singleWhere(
+        (value) => value.identifier == 'brave',
+      );
+      final tool = connector.tools.firstWhere(
+        (value) => value.slug == 'web_search',
+      );
+      final toolId = connectorToolId(connector, tool);
+      final now = DateTime.utc(2026);
+      final configuredTools = [
+        WorkspaceToolEntity(
+          id: 'fixture-tool',
+          workspaceId: fixture.workspaceId,
+          toolId: toolId,
+          isEnabled: true,
+          permissionMode: .alwaysAsk,
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ];
+      var fails = true;
+      var available = true;
+      var cancelled = false;
+      const size = Size(466, 678);
+      final router = await fixture.pump(
+        tester,
+        WorkspaceRoute(workspaceId: fixture.workspaceId).location,
+        size: size,
+        overrides: [
+          workspaceToolsProvider(fixture.workspaceId).overrideWith(
+            () => _ControlledTools(
+              () => failure == 'tools' && fails,
+              values: configuredTools,
+            ),
+          ),
+          workspaceConnectedConnectionsProvider(
+            fixture.workspaceId,
+            'brave',
+          ).overrideWith((_) async {
+            if (failure == 'connections' && fails) {
+              throw StateError('Controlled connections load failure');
+            }
+
+            return available
+                ? [
+                    const ConnectorConnectionCandidate(
+                      id: 'fixture-connection',
+                      name: 'Research connection',
+                    ),
+                  ]
+                : [];
+          }),
+        ],
+      );
+      final view = app.WorkspaceView.connectedDraft(name: 'Research')
+          .withConnected(
+            .new(
+              toolId: toolId,
+              revision: '1',
+              inputs: const {},
+              connectionId: 'fixture-connection',
+            ),
+          );
+      final context = tester.element(find.byType(AppScreen).first);
+      unawaited(
+        showDialog<void>(
+          context: context,
+          builder: (_) => Dialog(
+            child: SizedBox(
+              height: 500,
+              child: WorkspaceConnectedEditor(
+                workspaceId: fixture.workspaceId,
+                view: view,
+                onDone: () => cancelled = true,
+              ),
+            ),
+          ),
+        ),
+      );
+      await fixture.settle(tester);
+      await _capture(
+        tester,
+        'connected-editor-$failure-failure',
+        router.routeInformationProvider.value.uri.toString(),
+        locale: 'en',
+        size: size,
+        scale: 1,
+        dark: false,
+      );
+      expect(
+        find.text(
+          failure == 'tools'
+              ? 'Could not load tools. Try again.'
+              : 'Could not load Connections. Try again.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Retry'), findsOneWidget);
+      expect(find.text('Cancel'), findsOneWidget);
+      if (failure == 'tools') {
+        await tester.tap(find.text('Cancel'));
+        expect(cancelled, isTrue);
+      }
+      final save = find.byWidgetPredicate(
+        (widget) =>
+            widget is AuraButton &&
+            widget.identifier == 'workspace_connected_save',
+      );
+      if (failure == 'connections') {
+        expect(tester.widget<AuraButton>(save).disabled, isTrue);
+      }
+      fails = false;
+      await tester.tap(find.text('Retry'));
+      await fixture.settle(tester);
+      expect(find.text('Connection'), findsOneWidget);
+      expect(tester.widget<AuraButton>(save).disabled, isFalse);
+      available = false;
+      ProviderScope.containerOf(
+        tester.element(find.byType(WorkspaceConnectedEditor)),
+      ).invalidate(
+        workspaceConnectedConnectionsProvider(fixture.workspaceId, 'brave'),
+      );
+      await fixture.settle(tester);
+      expect(tester.widget<AuraButton>(save).disabled, isTrue);
+      await fixture.close(tester);
+    });
+  }
+  for (final scenario in const [
+    (name: 'skill-detail-failure', route: 'SkillDetailRoute', parent: true),
+    (
+      name: 'skill-resource-parent-failure',
+      route: 'SkillResourceEditRoute',
+      parent: true,
+    ),
+    (
+      name: 'skill-resource-failure',
+      route: 'SkillResourceEditRoute',
+      parent: false,
+    ),
+  ]) {
+    testWidgets('${scenario.name} can retry', (tester) async {
+      final fixture = await UxValidationFixture.create();
+      final skill = await SkillsRepository(fixture.database)
+          .getSkillById(fixture.skillId);
+      final resource = await SkillResourcesRepository(fixture.database)
+          .getResourceById(fixture.resourceId);
+      if (skill == null || resource == null) {
+        throw StateError('Missing fixture');
+      }
+      var fails = true;
+      const size = Size(466, 678);
+      final router = await fixture.pump(
+        tester,
+        _scenario(scenario.route, fixture).location,
+        size: size,
+        overrides: [
+          if (scenario.parent)
+            skillDetailProvider(
+              fixture.workspaceId,
+              fixture.skillId,
+            ).overrideWith((_) async {
+              if (fails) throw StateError('Controlled skill load failure');
+
+              return SkillDetail.fromUserSkill(skill);
+            })
+          else
+            skillResourceProvider(
+              fixture.workspaceId,
+              fixture.resourceId,
+            ).overrideWith((_) async {
+              if (fails) throw StateError('Controlled resource load failure');
+
+              return resource;
+            }),
+        ],
+      );
+      await _capture(
+        tester,
+        scenario.name,
+        router.routeInformationProvider.value.uri.toString(),
+        locale: 'en',
+        size: size,
+        scale: 1,
+        dark: false,
+      );
+      expect(find.text('Retry'), findsOneWidget);
+      fails = false;
+      await tester.tap(find.text('Retry'));
+      await fixture.settle(tester);
+      expect(
+        find.text(
+          scenario.route == 'SkillDetailRoute'
+              ? 'Research notes'
+              : 'Writing guide',
+        ),
+        findsWidgets,
+      );
+      await tester.enterText(
+        find.byType(AuraInput).first,
+        'Unsaved skill draft',
+      );
+      fails = true;
+      final container = ProviderScope.containerOf(
+        tester.element(
+          find.byType(
+            scenario.route == 'SkillDetailRoute'
+                ? SkillDetailScreen
+                : SkillResourceEditScreen,
+          ),
+        ),
+      );
+      if (scenario.parent) {
+        container.invalidate(
+          skillDetailProvider(fixture.workspaceId, fixture.skillId),
+        );
+      } else {
+        container.invalidate(
+          skillResourceProvider(fixture.workspaceId, fixture.resourceId),
+        );
+      }
+      await fixture.settle(tester);
+      expect(find.text('Retry'), findsOneWidget);
+      fails = false;
+      await tester.tap(find.text('Retry'));
+      await fixture.settle(tester);
+      expect(find.text('Unsaved skill draft'), findsOneWidget);
+      await fixture.close(tester);
+    });
+  }
+
   testWidgets('conversation archive export review capture', (tester) async {
     const size = Size(466, 678);
     const baselineCapture = bool.fromEnvironment(
@@ -1717,6 +2176,18 @@ class _EmptyTools extends WorkspaceToolsNotifier {
   Future<List<WorkspaceToolEntity>> build(String workspaceId) async => [];
 }
 
+class _ControlledTools(
+  final bool Function() fails, {
+  final List<WorkspaceToolEntity> values = const [],
+}) extends WorkspaceToolsNotifier {
+  @override
+  Future<List<WorkspaceToolEntity>> build(String workspaceId) async {
+    if (fails()) throw StateError('Controlled tools load failure');
+
+    return values;
+  }
+}
+
 class _EmptyGroups extends GroupedToolsNotifier {
   @override
   Future<List<ToolsGroupWithTools>> build(String workspaceId) async => [];
@@ -1757,6 +2228,20 @@ double _contrast(Color foreground, Color background) {
 }
 
 String _fixtureDescription(String name) => switch (name) {
+  'agent-editor-skills-failure' || 'skills-list-failure' =>
+    'Persisted local workspace with a controlled skills load failure',
+  'agent-editor-tools-failure' =>
+    'Persisted local workspace with a controlled tools load failure',
+  'connected-editor-tools-failure' || 'connected-editor-connections-failure' =>
+    'Connected data editor in a test dialog with a controlled load failure',
+  'skill-detail-failure' || 'skill-resource-parent-failure' =>
+    'Persisted local workspace with a controlled skill detail load failure',
+  'skill-resource-failure' =>
+    'Persisted local workspace with a controlled skill resource load failure',
+  'skill-resources-list-failure' =>
+    'Persisted local workspace with a controlled skill resources list failure',
+  'agent-editor-skills-failure-es-large-dark' =>
+    'Persisted local workspace with a controlled skills load failure',
   'conversation-archive-export-review' =>
     'Local conversation with one synthetic text attachment whose path points '
         'to no file; review dialog opened before attachment byte reads or save',
