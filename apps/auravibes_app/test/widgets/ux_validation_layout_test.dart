@@ -15,6 +15,8 @@ import 'package:auravibes_app/domain/entities/tool_permission_mode.dart';
 import 'package:auravibes_app/domain/entities/workspace_model_selection_entity.dart';
 import 'package:auravibes_app/features/agents/screens/agent_detail_screen.dart';
 import 'package:auravibes_app/features/agents/screens/agents_screen.dart';
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
@@ -1193,6 +1195,89 @@ void main() {
     await fixture.close(tester);
   });
 
+  testWidgets(
+    'production direct route ConversationRoute queued prompts reorder',
+    (tester) async {
+      final fixture = await UxValidationFixture.create();
+      const size = Size(466, 678);
+      final location = ConversationRoute(
+        workspaceId: fixture.workspaceId,
+        chatId: fixture.chatId,
+      ).location;
+      final router = await fixture.pump(
+        tester,
+        location,
+        size: size,
+        overrides: [
+          conversationSendQueueProvider.overrideWith(
+            () => _CaptureQueuedDrafts(fixture.chatId),
+          ),
+        ],
+      );
+
+      expect(find.byType(ChatConversationScreen), findsOneWidget);
+      expect(find.text('Outline the plan'), findsOneWidget);
+      expect(find.text('Draft the summary'), findsOneWidget);
+      expect(find.text('Review the result'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      final route = router.routeInformationProvider.value.uri.toString();
+      const firstId = 'capture-0';
+      final firstActions = find.byKey(
+        const ValueKey('queued-prompt-$firstId-actions'),
+      );
+      const expectReorder = bool.fromEnvironment(
+        'UX_EXPECT_REORDER',
+        defaultValue: true,
+      );
+      expect(firstActions, expectReorder ? findsOneWidget : findsNothing);
+      expect(
+        tester.getTopLeft(find.text('Outline the plan')).dy,
+        lessThan(tester.getTopLeft(find.text('Draft the summary')).dy),
+      );
+      expect(
+        tester.getTopLeft(find.text('Draft the summary')).dy,
+        lessThan(tester.getTopLeft(find.text('Review the result')).dy),
+      );
+      await _capture(
+        tester,
+        'queued-prompts-before',
+        route,
+        locale: 'en',
+        size: size,
+        scale: 1,
+        dark: false,
+      );
+      if (expectReorder) {
+        final _ = await tester.tap(firstActions);
+        final _ = await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey('queued-prompt-$firstId-move-down')),
+        );
+        await fixture.settle(tester);
+        expect(
+          tester.getTopLeft(find.text('Draft the summary')).dy,
+          lessThan(tester.getTopLeft(find.text('Outline the plan')).dy),
+        );
+        expect(
+          tester.getTopLeft(find.text('Outline the plan')).dy,
+          lessThan(tester.getTopLeft(find.text('Review the result')).dy),
+        );
+        await _capture(
+          tester,
+          'queued-prompts-after',
+          route,
+          locale: 'en',
+          size: size,
+          scale: 1,
+          dark: false,
+        );
+      }
+
+      await fixture.close(tester);
+    },
+  );
+
   for (final viewport in const [
     (name: 'duo_closed', size: Size(466, 678)),
     (name: 'duo_open_content', size: Size(671, 669)),
@@ -2151,6 +2236,9 @@ double _contrast(Color foreground, Color background) {
 }
 
 String _fixtureDescription(String name) => switch (name) {
+  'queued-prompts-before' || 'queued-prompts-after' =>
+    'Persisted local conversation with three fixed text-only queued drafts; '
+        'no model requests, attachments, network access, or remote mutations',
   'agent-editor-skills-failure' || 'skills-list-failure' =>
     'Persisted local workspace with a controlled skills load failure',
   'agent-editor-tools-failure' =>
@@ -2205,6 +2293,27 @@ String _fixtureDescription(String name) => switch (name) {
         'without credential, template resource/tool, parent and '
         'child chats; no models or cloud accounts',
 };
+
+class _CaptureQueuedDrafts(final String conversationId)
+    extends ConversationSendQueue {
+  @override
+  Map<String, List<ConversationQueuedDraft>> build() => {
+    conversationId: [
+      ConversationQueuedDraft(
+        id: 'capture-0',
+        draft: const ChatDraft(text: 'Outline the plan'),
+      ),
+      ConversationQueuedDraft(
+        id: 'capture-1',
+        draft: const ChatDraft(text: 'Draft the summary'),
+      ),
+      ConversationQueuedDraft(
+        id: 'capture-2',
+        draft: const ChatDraft(text: 'Review the result'),
+      ),
+    ],
+  };
+}
 
 List<ServiceConnectionListItem> _serviceConnectionsAuditFixture(
   String workspaceId,
