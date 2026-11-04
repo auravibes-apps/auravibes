@@ -1917,8 +1917,8 @@ class _RecordingConversationArchiveUsecase extends ConversationArchiveUsecase {
       for (final conversation in preview.conversations)
         ConversationArchive(
           title: conversation.title,
-          createdAt: DateTime.utc(2025),
-          updatedAt: DateTime.utc(2025),
+          createdAt: .utc(2025),
+          updatedAt: .utc(2025),
           messages: const [],
         ),
     ]);

@@ -174,7 +174,7 @@ void main() {
       archives.map((archive) => archive.title),
       ['First chat', 'Second chat'],
     );
-    expect(archives.map((archive) => archive.messages), [[], []]);
+    expect(archives.every((archive) => archive.messages.isEmpty), isTrue);
   });
 
   test('rejects an export when attachments changed after review', () async {
