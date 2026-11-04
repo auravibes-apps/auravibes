@@ -72,8 +72,7 @@ class _ConversationLabelsToolbarState
   }
 
   void _updateStaleSelections(Set<String> validSelection) {
-    if (!mounted ||
-        widget.selectedLabelIds.length == validSelection.length) {
+    if (!mounted || widget.selectedLabelIds.length == validSelection.length) {
       return;
     }
     widget.onSelectedLabelIdsChanged(validSelection);
@@ -180,9 +179,7 @@ class const _ConversationLabelClearButton({
   @override
   Widget build(BuildContext context) => AuraButton(
     onPressed: onPressed,
-    child: Text(
-      LocaleKeys.chats_screens_conversation_labels_clear_filter.tr(),
-    ),
+    child: Text(LocaleKeys.chats_screens_conversation_labels_clear_filter.tr()),
     variant: .ghost,
     size: .small,
     identifier: 'conversation-label-clear-filter',
@@ -329,9 +326,7 @@ class const _ConversationLabelApplyButton({
   @override
   Widget build(BuildContext context) => TextButton(
     onPressed: () => Navigator.of(context).pop(selectedLabelIds),
-    child: const TextLocale(
-      LocaleKeys.chats_screens_conversation_labels_apply,
-    ),
+    child: const TextLocale(LocaleKeys.chats_screens_conversation_labels_apply),
   );
 }
 
@@ -535,10 +530,7 @@ class _ConversationLabelManagementDialogState
   }
 
   Future<Object?> _deleteLabel(ConversationLabelEntity label) =>
-      widget.actions.delete(
-        workspaceId: widget.workspaceId,
-        labelId: label.id,
-      );
+      widget.actions.delete(workspaceId: widget.workspaceId, labelId: label.id);
 
   Future<bool> _run(Future<Object?> Function() operation) async {
     setState(() => _isWorking = true);
@@ -586,15 +578,12 @@ class const _ConversationLabelManagementDialogView({
   );
 }
 
-class const _ConversationLabelDoneButton({
-  required final bool isWorking,
-}) extends StatelessWidget {
+class const _ConversationLabelDoneButton({required final bool isWorking})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TextButton(
     onPressed: isWorking ? null : () => Navigator.of(context).pop(),
-    child: const TextLocale(
-      LocaleKeys.chats_screens_conversation_labels_done,
-    ),
+    child: const TextLocale(LocaleKeys.chats_screens_conversation_labels_done),
   );
 }
 
