@@ -321,7 +321,9 @@ class _ConversationLabelManagementDialogState
     );
 
     return AlertDialog(
-      title: Text(LocaleKeys.chats_screens_conversation_labels_manage_title.tr()),
+      title: Text(
+        LocaleKeys.chats_screens_conversation_labels_manage_title.tr(),
+      ),
       content: SizedBox(
         width: _conversationLabelManageDialogWidth,
         child: Column(
@@ -437,27 +439,30 @@ class const _ConversationLabelManagementList({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (labels) {
-    AsyncData(:final value) => value.isEmpty
-        ? Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: _conversationLabelDialogSectionSpacing,
-            ),
-            child: Text(LocaleKeys.chats_screens_conversation_labels_empty.tr()),
-          )
-        : ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxHeight: _conversationLabelAssignmentListMaxHeight,
-            ),
-            child: ListView.builder(
-              itemBuilder: (context, index) => _ConversationLabelRow(
-                label: value[index],
-                enabled: enabled,
-                onRename: () => onRename(value[index]),
-                onDelete: () => onDelete(value[index]),
+    AsyncData(:final value) =>
+      value.isEmpty
+          ? Padding(
+              padding: const EdgeInsets.symmetric(
+                vertical: _conversationLabelDialogSectionSpacing,
               ),
-              itemCount: value.length,
+              child: Text(
+                LocaleKeys.chats_screens_conversation_labels_empty.tr(),
+              ),
+            )
+          : ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxHeight: _conversationLabelAssignmentListMaxHeight,
+              ),
+              child: ListView.builder(
+                itemBuilder: (context, index) => _ConversationLabelRow(
+                  label: value[index],
+                  enabled: enabled,
+                  onRename: () => onRename(value[index]),
+                  onDelete: () => onDelete(value[index]),
+                ),
+                itemCount: value.length,
+              ),
             ),
-          ),
     AsyncError() => Text(
       LocaleKeys.chats_screens_conversation_labels_load_error.tr(),
     ),
