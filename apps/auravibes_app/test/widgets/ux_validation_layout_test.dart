@@ -78,6 +78,8 @@ import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.
 import 'package:auravibes_app/features/tools/screens/tools_screen.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_route_failure.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_view.dart'
+    as app;
 import 'package:auravibes_app/features/workspaces/providers/workspace_connected_view_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/create_workspace_screen.dart';
@@ -94,9 +96,9 @@ import 'package:auravibes_app/widgets/app_with_responsive_drawer.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_app/widgets/route_recovery_view.dart';
 import 'package:auravibes_app/widgets/setup_page_frame.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart' show Variable;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
@@ -2389,6 +2391,26 @@ const _accounts = [
   ),
 ];
 
+Future<void> _capture(
+  WidgetTester tester,
+  String name,
+  String route, {
+  required String locale,
+  required Size size,
+  required double scale,
+  required bool dark,
+  Map<String, Object>? controlMeasurements,
+}) => captureUxWidget(
+  tester,
+  name,
+  route,
+  locale: locale,
+  size: size,
+  scale: scale,
+  dark: dark,
+  controlMeasurements: controlMeasurements,
+);
+
 List<Object> _overrides(UxValidationFixture fixture, String name) {
   if (name == 'MixedConnections') {
     return [
@@ -2564,6 +2586,18 @@ const _mixedAccounts = [
 class _EmptyTools extends WorkspaceToolsNotifier {
   @override
   Future<List<WorkspaceToolEntity>> build(String workspaceId) async => [];
+}
+
+class _ControlledTools(
+  final bool Function() fails, {
+  final List<WorkspaceToolEntity> values = const [],
+}) extends WorkspaceToolsNotifier {
+  @override
+  Future<List<WorkspaceToolEntity>> build(String workspaceId) async {
+    if (fails()) throw StateError('Controlled tools load failure');
+
+    return values;
+  }
 }
 
 class _EmptyGroups extends GroupedToolsNotifier {

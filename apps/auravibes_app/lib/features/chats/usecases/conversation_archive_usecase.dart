@@ -243,7 +243,9 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
   Future<ConversationArchiveExportPreview> previewConversation({
     required String conversationId,
   }) async =>
-      _previewSnapshots([await _loadConversationSnapshot(conversationId)]);
+      _previewSnapshots([
+        await _loadConversationSnapshot(conversationId),
+      ]);
 
   Future<ConversationArchiveExportPreview> previewConversations({
     required String workspaceId,
