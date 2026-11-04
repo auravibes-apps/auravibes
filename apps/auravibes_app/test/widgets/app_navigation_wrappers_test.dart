@@ -2,9 +2,12 @@
 
 import 'dart:async';
 
+import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/conversation_labels_repository.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_labels_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
@@ -15,6 +18,8 @@ import 'package:auravibes_app/widgets/aura_sidebar_wrapper.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:drift/drift.dart' hide isNotNull, isNull;
+import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -530,6 +535,13 @@ void main() {
       addTearDown(() async {
         await repo.close();
       });
+      final labelsDatabase = AppDatabase(
+        connection: DatabaseConnection(NativeDatabase.memory()),
+      );
+      addTearDown(labelsDatabase.close);
+      final labelsRepository = _PassthroughConversationLabelsRepository(
+        labelsDatabase,
+      );
       final router = GoRouter(
         routes: [
           GoRoute(
@@ -569,6 +581,9 @@ void main() {
             return TestProviderScope(
               overrides: [
                 conversationRepositoryProvider.overrideWithValue(repo),
+                conversationLabelsRepositoryProvider.overrideWithValue(
+                  labelsRepository,
+                ),
                 allWorkspacesProvider.overrideWith(
                   (ref) => Stream.value([
                     WorkspaceEntity(
@@ -990,6 +1005,15 @@ void main() {
       },
     );
   });
+}
+
+class _PassthroughConversationLabelsRepository(super._database)
+    extends ConversationLabelsRepository {
+  @override
+  Stream<List<ConversationEntity>> withLabels({
+    required String workspaceId,
+    required Stream<List<ConversationEntity>> conversations,
+  }) => conversations;
 }
 
 double _sidebarPanelWidth(WidgetTester tester) {
