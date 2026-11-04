@@ -319,7 +319,7 @@ Future<WorkspaceSetupModelSnapshot?> _selectedModelSnapshot(
   );
   final model = await selections.getById(selectedModelId);
 
-  return _modelSnapshot(ref, model, workspaceId);
+  return await _modelSnapshot(ref, model, workspaceId);
 }
 
 Future<WorkspaceSetupModelSnapshot?> _modelSnapshot(

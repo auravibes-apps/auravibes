@@ -80,8 +80,10 @@ void main() {
     const captureStage = String.fromEnvironment('UX_CAPTURE_STAGE');
     if (captureStage == 'before') {
       expect(
-        find.text(LocaleKeys.workspace_assets_invalid.tr()),
-        findsOneWidget,
+        find.text(
+          'Workspace Files must be 25 MiB or smaller. Choose a smaller file.',
+        ),
+        findsNothing,
       );
     } else if (captureStage == 'after') {
       expect(
@@ -93,7 +95,7 @@ void main() {
     } else {
       expect(find.byType(WorkspaceItemFailure), findsOneWidget);
     }
-    expect(file.bytesRead, isFalse);
+    expect(file.bytesRead, captureStage == 'before');
     expect(tester.takeException(), isNull);
 
     await _capture(
