@@ -72,9 +72,7 @@ WorkspaceSetupPreflightSnapshot _preflightSnapshot(
   return .new(
     storageAvailable: _storageAvailable(scope, sources.cloudStorageAvailable),
     selectedModelId: selectedModelId,
-    selectedModelSourceAvailable: availability.model,
-    providerSourceAvailable: availability.provider,
-    mcpSourceAvailable: availability.mcp,
+    sourceAvailability: availability,
     providers: providers,
     selectedModel: sources.modelRead.value,
     mcpConnections: sources.mcpRead.value,
@@ -83,35 +81,34 @@ WorkspaceSetupPreflightSnapshot _preflightSnapshot(
 
 typedef _ReadResult<T> = ({bool available, T? value});
 
-typedef _ReadAvailability = ({bool model, bool provider, bool mcp});
-
 typedef _WorkspaceScope = ({
   String workspaceId,
   bool refreshRequested,
   _ReadResult<WorkspaceEntity?> workspaceRead,
   _ReadResult<WorkspaceSession> sessionRead,
+  _WorkspaceContext context,
+  bool sourceAllowed,
 });
 
-extension _WorkspaceScopeValues on _WorkspaceScope {
-  WorkspaceEntity? get workspace => workspaceRead.value;
-
-  WorkspaceSession? get session => sessionRead.value;
-
-  bool get isRemote => workspace?.type == WorkspaceType.remote;
-
-  bool get sourceAllowed => _canReadSources(
-    workspace,
-    sessionRead,
-    isRemote,
-    refreshRequested,
-  );
-}
+typedef _WorkspaceContext = ({
+  WorkspaceEntity? workspace,
+  WorkspaceSession? session,
+  bool isRemote,
+});
 
 typedef _SourceReads = ({
   bool? cloudStorageAvailable,
   _ReadResult<List<ModelConnectionEntity>> providerRead,
   _ReadResult<WorkspaceSetupModelSnapshot?> modelRead,
   _ReadResult<List<WorkspaceSetupMcpSnapshot>> mcpRead,
+});
+
+typedef _WorkspaceScopeInput = ({
+  String workspaceId,
+  bool refreshRequested,
+  _ReadResult<WorkspaceEntity?> workspaceRead,
+  WorkspaceEntity? workspace,
+  _ReadResult<WorkspaceSession> sessionRead,
 });
 
 Future<_WorkspaceScope> _readWorkspaceScope(Ref ref, String workspaceId) async {
@@ -122,12 +119,13 @@ Future<_WorkspaceScope> _readWorkspaceScope(Ref ref, String workspaceId) async {
   final workspace = workspaceRead.value;
   final sessionRead = await _readSession(ref, workspaceId, workspace);
 
-  return (
+  return _workspaceScope((
     workspaceId: workspaceId,
     refreshRequested: refreshRequested,
     workspaceRead: workspaceRead,
+    workspace: workspace,
     sessionRead: sessionRead,
-  );
+  ));
 }
 
 Future<_ReadResult<WorkspaceEntity?>> _readWorkspace(
@@ -151,7 +149,39 @@ Future<_ReadResult<WorkspaceSession>> _readSession(
   );
 }
 
-_ReadAvailability _readAvailability(_SourceReads sources) => (
+_WorkspaceScope _workspaceScope(_WorkspaceScopeInput input) {
+  final workspace = input.workspace;
+  final sessionRead = input.sessionRead;
+  final refreshRequested = input.refreshRequested;
+  final context = _workspaceContext(workspace, sessionRead);
+
+  return (
+    workspaceId: input.workspaceId,
+    refreshRequested: refreshRequested,
+    workspaceRead: input.workspaceRead,
+    sessionRead: sessionRead,
+    context: context,
+    sourceAllowed: _canReadSources(
+      workspace,
+      sessionRead,
+      context.isRemote,
+      refreshRequested,
+    ),
+  );
+}
+
+_WorkspaceContext _workspaceContext(
+  WorkspaceEntity? workspace,
+  _ReadResult<WorkspaceSession> sessionRead,
+) => (
+  workspace: workspace,
+  session: sessionRead.value,
+  isRemote: workspace?.type == WorkspaceType.remote,
+);
+
+WorkspaceSetupPreflightSourceAvailability _readAvailability(
+  _SourceReads sources,
+) => (
   model: sources.modelRead.available,
   provider: sources.providerRead.available,
   mcp: sources.mcpRead.available,
@@ -186,9 +216,9 @@ Future<bool?> _readCloudStorage(Ref ref, _WorkspaceScope scope) {
 }
 
 WorkspaceSession? _cloudStorageSession(_WorkspaceScope scope) {
-  if (!scope.isRemote || !scope.refreshRequested) return null;
+  if (!scope.context.isRemote || !scope.refreshRequested) return null;
 
-  return scope.session;
+  return scope.context.session;
 }
 
 Future<bool?> _readCloudConfiguration(
@@ -390,8 +420,10 @@ _CatalogCapabilities _catalogCapabilities(ApiModelEntity? model) => (
 
 bool? _storageAvailable(_WorkspaceScope scope, bool? cloudStorageAvailable) {
   if (!scope.workspaceRead.available) return null;
-  if (scope.workspace == null || !scope.sessionRead.available) return false;
-  if (!scope.isRemote) return true;
+  if (scope.context.workspace == null || !scope.sessionRead.available) {
+    return false;
+  }
+  if (!scope.context.isRemote) return true;
 
   return cloudStorageAvailable;
 }

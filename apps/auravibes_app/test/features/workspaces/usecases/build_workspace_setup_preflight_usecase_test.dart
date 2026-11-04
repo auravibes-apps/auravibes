@@ -331,9 +331,11 @@ WorkspaceSetupPreflightSnapshot _snapshot({
 }) => WorkspaceSetupPreflightSnapshot(
   storageAvailable: storageAvailable,
   selectedModelId: selectedModelId,
-  selectedModelSourceAvailable: selectedModelSourceAvailable,
-  providerSourceAvailable: providerSourceAvailable,
-  mcpSourceAvailable: mcpSourceAvailable,
+  sourceAvailability: (
+    model: selectedModelSourceAvailable,
+    provider: providerSourceAvailable,
+    mcp: mcpSourceAvailable,
+  ),
   providers: providers,
   selectedModel: selectedModel,
   mcpConnections: mcpConnections,

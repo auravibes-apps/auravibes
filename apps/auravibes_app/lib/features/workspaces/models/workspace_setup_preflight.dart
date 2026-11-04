@@ -62,6 +62,13 @@ class const WorkspaceSetupMcpSnapshot({
   final bool connectionNeedsAttention = false,
 });
 
+/// Availability state for the setup preflight's model, provider, and MCP reads.
+typedef WorkspaceSetupPreflightSourceAvailability = ({
+  bool model,
+  bool provider,
+  bool mcp,
+});
+
 /// Safe, minimal input contract for workspace setup mapping.
 ///
 /// A `null` source means that the source could not be read. An empty list is a
@@ -69,13 +76,17 @@ class const WorkspaceSetupMcpSnapshot({
 class const WorkspaceSetupPreflightSnapshot({
   required final bool? storageAvailable,
   required final String? selectedModelId,
-  required final bool selectedModelSourceAvailable,
-  required final bool providerSourceAvailable,
-  required final bool mcpSourceAvailable,
+  required final WorkspaceSetupPreflightSourceAvailability sourceAvailability,
   required final List<WorkspaceSetupProviderSnapshot>? providers,
   required final WorkspaceSetupModelSnapshot? selectedModel,
   required final List<WorkspaceSetupMcpSnapshot>? mcpConnections,
-});
+}) {
+  bool get selectedModelSourceAvailable => sourceAvailability.model;
+
+  bool get providerSourceAvailable => sourceAvailability.provider;
+
+  bool get mcpSourceAvailable => sourceAvailability.mcp;
+}
 
 typedef WorkspaceSetupPreflightLabels = ({
   String overallLabel,
