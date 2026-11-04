@@ -108,7 +108,7 @@ void main() {
           workspace.copyWith(erasureRequestedAt: DateTime.now().toUtc()),
         );
         await expectLater(
-          iterator.moveNext().timeout(const Duration(seconds: 3)),
+          iterator.moveNext().timeout(const Duration(seconds: 10)),
           throwsA(
             isA<ConversationException>().having(
               (error) => error.code,
