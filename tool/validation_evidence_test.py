@@ -36,6 +36,7 @@ class ValidationEvidenceTest(unittest.TestCase):
 
         self.assertEqual(first["head"], second["head"])
         self.assertEqual(first["fingerprint"], second["fingerprint"])
+        self.assertFalse(first["dirty"])
 
     def test_local_store_is_private(self):
         database = self.root / "state.sqlite3"
@@ -67,6 +68,7 @@ class ValidationEvidenceTest(unittest.TestCase):
         untracked_fingerprint = validation_evidence.repository_context(self.root)[
             "fingerprint"
         ]
+        self.assertTrue(validation_evidence.repository_context(self.root)["dirty"])
         self.assertNotEqual(baseline, untracked_fingerprint)
         self.assertEqual(
             untracked_fingerprint,
