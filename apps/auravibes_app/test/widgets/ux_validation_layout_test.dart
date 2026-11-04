@@ -2512,26 +2512,6 @@ const _accounts = [
   ),
 ];
 
-Future<void> _capture(
-  WidgetTester tester,
-  String name,
-  String route, {
-  required String locale,
-  required Size size,
-  required double scale,
-  required bool dark,
-  Map<String, Object>? controlMeasurements,
-}) => captureUxWidget(
-  tester,
-  name,
-  route,
-  locale: locale,
-  size: size,
-  scale: scale,
-  dark: dark,
-  controlMeasurements: controlMeasurements,
-);
-
 List<Object> _overrides(UxValidationFixture fixture, String name) {
   if (name == 'MixedConnections') {
     return [
