@@ -96,7 +96,9 @@ python3 tool/validation_evidence.py require --toolchain-version "$toolchain" -- 
 authorize a push. On a clean committed branch, `validate:changed` has no files
 to check; choose a command that covers the committed changes. `require` rejects
 redacted commands and successful runs whose source snapshots differ between the
-start and end of execution.
+start and end of execution. It trusts the wrapped command's exit status. If a
+stopped child is hidden by a successful wrapper exit, record the same command as
+skipped before requiring it.
 
 Record an intentional skip without claiming validation, then inspect evidence
 in human or machine-readable form:
