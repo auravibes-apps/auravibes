@@ -1,8 +1,8 @@
 import 'dart:io';
 
-import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:path/path.dart' as p;
 
+import 'analyzed_path_groups.dart';
 import 'changed_test_selector.dart';
 
 Future<void> main(List<String> arguments) async {
@@ -54,7 +54,8 @@ Future<int> runLocalPreflight(List<String> arguments) async {
   final sortedChanges = changes.toList()
     ..sort((left, right) => _changeLabel(left).compareTo(_changeLabel(right)));
   final changedDartPaths = _existingChangedDartPaths(root, sortedChanges);
-  final analyzePaths = await _analyzedPaths(root, changedDartPaths);
+  final analyzeGroups = await analyzedPathGroups(root, changedDartPaths);
+  final analyzePaths = analyzeGroups.expand((group) => group).toList();
   final selection = await selectRepository(
     rootPath: root.path,
     base: options.base,
@@ -91,10 +92,8 @@ Future<int> runLocalPreflight(List<String> arguments) async {
     ...changedDartPaths,
   ];
   final analyzeArguments = [
-    'analyze',
-    '--fatal-infos',
-    '--fatal-warnings',
-    ...analyzePaths,
+    for (final group in analyzeGroups)
+      ['analyze', '--fatal-infos', '--fatal-warnings', ...group],
   ];
   stdout.writeln('Formatter (${changedDartPaths.length} changed Dart files):');
   if (changedDartPaths.isEmpty) {
@@ -108,9 +107,9 @@ Future<int> runLocalPreflight(List<String> arguments) async {
   if (analyzePaths.isEmpty) {
     stdout.writeln('  No command; no changed Dart files are analyzed.');
   } else {
-    stdout
-      ..writeln('  Paths causing selection: ${analyzePaths.join(', ')}')
-      ..writeln('  ${_formatCommand('fvm dart', analyzeArguments)}');
+    for (final arguments in analyzeArguments) {
+      stdout.writeln('  ${_formatCommand('fvm dart', arguments)}');
+    }
   }
 
   final plannedCommands = <_PlannedCommand>[];
@@ -153,10 +152,6 @@ Future<int> runLocalPreflight(List<String> arguments) async {
       stdout
         ..writeln('  Package: $package')
         ..writeln('    Selected test paths: ${testPaths.join(', ')}')
-        ..writeln(
-          '    Changed paths considered for this selection: '
-          '${sortedChanges.map(_changeLabel).join(', ')}',
-        )
         ..writeln('    ${_formatCommand(commandName, command.arguments)}');
     }
   }
@@ -166,10 +161,12 @@ Future<int> runLocalPreflight(List<String> arguments) async {
     final formatExitCode = await _run(dart, formatArguments, root);
     if (formatExitCode != 0) return formatExitCode;
   }
-  if (analyzePaths.isNotEmpty) {
-    final analyzeExitCode = await _run(dart, analyzeArguments, root);
-    if (analyzeExitCode != 0) return analyzeExitCode;
+  var analyzeExitCode = 0;
+  for (final arguments in analyzeArguments) {
+    final result = await _run(dart, arguments, root);
+    if (analyzeExitCode == 0) analyzeExitCode = result;
   }
+  if (analyzeExitCode != 0) return analyzeExitCode;
 
   return await runSelectedTests(selection, rootPath: root.path);
 }
@@ -216,25 +213,6 @@ List<String> _existingChangedDartPaths(
   }
 
   return paths.toList()..sort();
-}
-
-Future<List<String>> _analyzedPaths(Directory root, List<String> paths) async {
-  if (paths.isEmpty) return const [];
-  final collection = AnalysisContextCollection(
-    includedPaths: [p.normalize(root.path)],
-  );
-  try {
-    return paths
-        .where(
-          (path) => collection.contexts.any(
-            (context) =>
-                context.contextRoot.isAnalyzed(p.join(root.path, path)),
-          ),
-        )
-        .toList();
-  } finally {
-    await collection.dispose();
-  }
 }
 
 Future<String> _git(Directory root, List<String> arguments) async {

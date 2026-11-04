@@ -39,6 +39,7 @@ const double _chatInputHorizontalPadding = 16;
 const double _chatInputVerticalPadding = 8;
 const double _recordingButtonHorizontalPadding = 4;
 const int _chatInputModelSheetModelFlex = 2;
+const double _compactChatInputMaxWidth = 360;
 
 typedef _ToolAccessModeOption = ({
   ConversationToolAccessMode mode,
@@ -1118,6 +1119,9 @@ class const _ChatInputAgentSelector({required final _ChatInputState state})
     workspaceId: state.input.workspaceId,
     conversationId: state.input.conversationId,
     onSkillsPress: state.input.onSkillsPress,
+    showNetworkDisclosure:
+        state.capabilities.isLocalWorkspace &&
+        MediaQuery.sizeOf(context).width <= _compactChatInputMaxWidth,
   );
 }
 
@@ -1127,6 +1131,7 @@ class const _ChatInputAgentSelectorLayout({
   required final String workspaceId,
   required final String? conversationId,
   required final VoidCallback? onSkillsPress,
+  required final bool showNetworkDisclosure,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
@@ -1147,6 +1152,7 @@ class const _ChatInputAgentSelectorLayout({
             onPressed: onSkillsPress,
           ),
         ],
+        if (showNetworkDisclosure) const _LocalWorkspaceNetworkDisclosure(),
       ],
     ),
   );
@@ -2339,19 +2345,13 @@ class const _ChatInputControlRow({required final _ChatInputState state})
   @override
   Widget build(BuildContext context) {
     final isRecording = state.hooks.recording.isRecording.value;
-    final compact = MediaQuery.sizeOf(context).width <= 360;
+    final compact =
+        MediaQuery.sizeOf(context).width <= _compactChatInputMaxWidth;
 
-    return Column(
-      mainAxisSize: .min,
-      crossAxisAlignment: .start,
-      children: [
-        _ChatInputPrimaryControls(
-          state: state,
-          isRecording: isRecording,
-          compact: compact,
-        ),
-        _ChatInputCompactDisclosure(compact: compact, state: state),
-      ],
+    return _ChatInputPrimaryControls(
+      state: state,
+      isRecording: isRecording,
+      compact: compact,
     );
   }
 }
@@ -2378,23 +2378,6 @@ class const _ChatInputPrimaryControls({
       ),
     ],
   );
-}
-
-class const _ChatInputCompactDisclosure({
-  required final bool compact,
-  required final _ChatInputState state,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    if (!compact || !state.capabilities.isLocalWorkspace) {
-      return const SizedBox.shrink();
-    }
-
-    return const Align(
-      alignment: .centerLeft,
-      child: _LocalWorkspaceNetworkDisclosure(),
-    );
-  }
 }
 
 class const _ChatInputModelAndTrailingControls({

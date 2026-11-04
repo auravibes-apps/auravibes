@@ -55,6 +55,10 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+      - name: Update Widgetbook dashboard goldens
+        working-directory: widgetbook
+        run: flutter test test/dashboard_widgets_test.dart --no-pub --update-goldens
+
       - name: Upload generated goldens
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
@@ -62,6 +66,7 @@ jobs:
           path: |
             apps/auravibes_app/test/**/goldens/*.png
             packages/auravibes_ui/test/**/goldens/*.png
+            widgetbook/test/goldens/linux/*.png
           if-no-files-found: error
           retention-days: 7
 

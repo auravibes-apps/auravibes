@@ -49,6 +49,11 @@ gh pr checks <number> --json name,bucket \
 
 ## PR delivery and review
 
+For PR images outside Git, inspect `gh pr create --help` or `gh pr edit --help`
+for `--attach`. Preview the PR body and validate local files first; `--attach`
+cannot be combined with `--dry-run`. Verify the resulting PR body and hosted
+images because a partial upload can still create or update the PR.
+
 Local diff review is the default. A request to review code before creating a Draft PR authorizes review work; by itself, it does not authorize sharing the diff with an external reviewer. Do not infer consent from an installed integration or from a general request to review.
 
 Before invoking a third-party review service, tell the user which service will receive the material and exactly what it will receive: the full diff or selected files, repository and branch, commit identifiers, and any additional comments or context. Get explicit consent for that provider and scope before sending it. If the user already named the service and explicitly authorized the exact material and scope, proceed without asking again.
