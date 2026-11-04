@@ -484,7 +484,6 @@ class _FakeLocalChatAttachmentService implements LocalChatAttachmentService {
       throw UnimplementedError();
 
   @override
-  @override
   Future<MessageAttachmentToCreate> createArchiveAttachment(
     ConversationArchiveAttachment _,
   ) => throw UnimplementedError();
