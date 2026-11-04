@@ -341,9 +341,9 @@ class const _AuraDateTimeInputFieldContent({
     padding: DesignInputSizes.paddingMd,
     child: Wrap(
       alignment: .spaceBetween,
-      crossAxisAlignment: .center,
       spacing: context.auraTheme.fromSpacing(.sm),
       runSpacing: context.auraTheme.fromSpacing(.xs),
+      crossAxisAlignment: .center,
       children: [
         AuraText(child: Text(displayValue)),
         _AuraDateTimeInputMode(input: input),
