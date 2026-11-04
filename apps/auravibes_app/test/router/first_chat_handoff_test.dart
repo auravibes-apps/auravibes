@@ -66,8 +66,11 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
-    await tester.pumpWidget(
-      _FirstChatApp(container: container, router: router),
+    await _pumpFirstChatApp(
+      tester: tester,
+      container: container,
+      workspaceId: workspace.id,
+      router: router,
     );
     final _ = await tester.pumpAndSettle();
 
@@ -126,8 +129,11 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
-    await tester.pumpWidget(
-      _FirstChatApp(container: container, router: router),
+    await _pumpFirstChatApp(
+      tester: tester,
+      container: container,
+      workspaceId: workspace.id,
+      router: router,
     );
     final _ = await tester.pumpAndSettle();
     final editable = find
@@ -183,8 +189,11 @@ void main() {
           ],
         );
         addTearDown(container.dispose);
-        await tester.pumpWidget(
-          _FirstChatApp(container: container, router: router),
+        await _pumpFirstChatApp(
+          tester: tester,
+          container: container,
+          workspaceId: workspace.id,
+          router: router,
         );
         final _ = await tester.pumpAndSettle();
         if (!direct) {
@@ -273,6 +282,22 @@ ProviderContainer _firstChatContainer({
   ],
   retry: (_, _) => null,
 );
+
+Future<void> _pumpFirstChatApp({
+  required WidgetTester tester,
+  required ProviderContainer container,
+  required String workspaceId,
+  required GoRouter router,
+}) async {
+  final _ = await container.read(
+    workspaceSessionForRouteProvider(workspaceId).future,
+  );
+  final _ = await tester.runAsync(
+    () => tester.pumpWidget(
+      _FirstChatApp(container: container, router: router),
+    ),
+  );
+}
 
 class const _FirstChatApp({
   required final ProviderContainer container,
