@@ -1,5 +1,6 @@
 // Required: Existing test and UI helpers keep compact return flow.
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/conversation_label_entity.dart';
 import 'package:auravibes_app/features/chats/models/conversation_list_scope.dart';
 import 'package:auravibes_app/features/chats/models/conversation_stream_request.dart';
 import 'package:auravibes_app/features/chats/notifiers/titles_streams_notifier.dart';
