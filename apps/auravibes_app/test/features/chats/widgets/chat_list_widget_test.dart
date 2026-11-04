@@ -1175,12 +1175,15 @@ void main() {
       );
       addTearDown(() => attachmentDirectory.delete(recursive: true));
       final attachmentFile = File(
-        '${attachmentDirectory.path}${Platform.pathSeparator}research-notes.txt',
+        attachmentDirectory.uri.resolve('research-notes.txt').toFilePath(),
       );
-      await attachmentFile.writeAsString('note');
+      final _ = await attachmentFile.writeAsString('note');
       final firstMessage = await database.messageDao.insertMessage(
         .insert(
-          conversationId: conversations.first.id,
+          conversationId:
+              (conversations.firstOrNull ??
+                      fail('Expected the first conversation'))
+                  .id,
           content: 'See the attached research notes',
           messageType: .text,
           isUser: true,
