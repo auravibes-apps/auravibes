@@ -1,0 +1,1 @@
+enum ConversationListScope { active, archived }

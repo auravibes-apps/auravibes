@@ -156,6 +156,11 @@ Future<void> _editAndSwitch(WidgetTester tester) async {
         viewId: 'other',
         onBack: () => fail('Unexpected close'),
       ),
+      overrides: [
+        workspaceViewDataProvider('one', 'other').overrideWith(
+          (ref) async => _data(9, id: 'other', name: 'Another view'),
+        ),
+      ],
       workspaceId: 'one',
     ),
   );

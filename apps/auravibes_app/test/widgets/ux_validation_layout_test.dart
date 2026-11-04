@@ -19,6 +19,7 @@ import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
+import 'package:auravibes_app/features/chats/screens/archived_conversations_screen.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
 import 'package:auravibes_app/features/chats/screens/chats_list_screen.dart';
 import 'package:auravibes_app/features/chats/screens/message_bookmarks_screen.dart';
@@ -916,6 +917,83 @@ void main() {
     await _capture(
       tester,
       'workspace-erasure-confirmation-disclosure',
+      router.routeInformationProvider.value.uri.toString(),
+      locale: 'en',
+      size: size,
+      scale: 1,
+      dark: false,
+    );
+    await fixture.close(tester);
+  });
+  testWidgets('captures device-local archive before and after', (tester) async {
+    const size = Size(960, 1400);
+    final fixture = await UxValidationFixture.create();
+    final router = await fixture.pump(
+      tester,
+      ChatsRoute(workspaceId: fixture.workspaceId).location,
+      size: size,
+    );
+
+    await fixture.settle(tester);
+    expect(find.text('Project research'), findsOneWidget);
+    await tester.tap(find.byTooltip('More options'));
+    await fixture.settle(tester);
+    expect(find.text('Archive'), findsOneWidget);
+    await _capture(
+      tester,
+      'conversation-archive-before',
+      router.routeInformationProvider.value.uri.toString(),
+      locale: 'en',
+      size: size,
+      scale: 1,
+      dark: false,
+    );
+
+    await tester.tap(find.text('Archive'));
+    await fixture.settle(tester);
+    expect(find.text('Project research'), findsNothing);
+    final archivedConversationsButton = find.descendant(
+      of: find.byType(ChatsListScreen),
+      matching: find.byTooltip('Archived conversations'),
+    );
+    expect(archivedConversationsButton, findsOneWidget);
+    await tester.tap(archivedConversationsButton);
+    await fixture.settle(tester);
+    expect(
+      router.routeInformationProvider.value.uri.path,
+      ArchivedConversationsRoute(workspaceId: fixture.workspaceId).location,
+    );
+    final archivedScreen = find.byType(ArchivedConversationsScreen);
+    final archivedScreenIncludingOffstage = find.byType(
+      ArchivedConversationsScreen,
+      skipOffstage: false,
+    );
+    expect(
+      archivedScreenIncludingOffstage,
+      findsOneWidget,
+      reason:
+          'The route URI changed to '
+          '${router.routeInformationProvider.value.uri}, '
+          'but the archived destination was not mounted. Router configuration: '
+          '${router.routerDelegate.currentConfiguration}. Router state: '
+          'fullPath=${router.state.fullPath}, '
+          'matchedLocation=${router.state.matchedLocation}, '
+          'topRoute=${router.state.topRoute?.path}, '
+          'error=${router.state.error}',
+    );
+    expect(
+      archivedScreen,
+      findsOneWidget,
+      reason: 'The archived destination was mounted but is not visible.',
+    );
+    expect(find.text('Project research'), findsOneWidget);
+    // Let the archive confirmation snackbar dismiss so the evidence captures
+    // the stable archived list rather than a transient notification.
+    await tester.pump(const Duration(seconds: 5));
+    await fixture.settle(tester);
+    await _capture(
+      tester,
+      'conversation-archive-after',
       router.routeInformationProvider.value.uri.toString(),
       locale: 'en',
       size: size,
@@ -2558,6 +2636,12 @@ String _fixtureDescription(String name) => switch (name) {
   'workspace-erasure-confirmation-disclosure' =>
     'In-memory local workspace plus synthetic owner account and deleted cloud '
         'workspace state; confirmation open with no remote access or deletion',
+  'conversation-archive-before' =>
+    'Persisted local workspace and seeded parent conversation; conversation '
+        'options open before device-local archive, with no remote access',
+  'conversation-archive-after' =>
+    'Same persisted local workspace after archiving the conversation; '
+        'archived conversation list visible, with no remote access',
   'service-connections-services-entry' =>
     'Persisted local workspace with three controlled service rows: '
         'Notion needs reconnect, Linear connected, Sentry failed; '
