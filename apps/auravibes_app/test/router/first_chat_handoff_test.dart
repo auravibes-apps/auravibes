@@ -70,11 +70,11 @@ void main() {
     await _pumpFirstChatApp(
       tester: tester,
       container: container,
-      workspaceId: workspace.id,
       router: router,
     );
     final _ = await tester.pumpAndSettle();
 
+    expect(find.byType(NewChatScreen), findsOneWidget);
     final input = find.byType(ChatInputWidget);
     final editable = find
         .descendant(of: input, matching: find.byType(EditableText))
@@ -133,10 +133,10 @@ void main() {
     await _pumpFirstChatApp(
       tester: tester,
       container: container,
-      workspaceId: workspace.id,
       router: router,
     );
     final _ = await tester.pumpAndSettle();
+    expect(find.byType(NewChatScreen), findsOneWidget);
     final editable = find
         .descendant(
           of: find.byType(ChatInputWidget),
@@ -193,7 +193,6 @@ void main() {
         await _pumpFirstChatApp(
           tester: tester,
           container: container,
-          workspaceId: workspace.id,
           router: router,
         );
         final _ = await tester.pumpAndSettle();
@@ -276,7 +275,10 @@ ProviderContainer _firstChatContainer({
     appDatabaseProvider.overrideWithValue(database),
     workspaceSessionProvider(session).overrideWithValue(session),
     workspaceSessionForRouteProvider(workspaceId)
-        .overrideWith((_) async => session),
+        .overrideWithValue(AsyncData(session)),
+    workspaceAccessProvider(workspaceId).overrideWithValue(
+      const AsyncData((role: 'owner')),
+    ),
     routerProvider.overrideWithValue(router),
     ...extraOverrides,
   ],
@@ -286,13 +288,8 @@ ProviderContainer _firstChatContainer({
 Future<void> _pumpFirstChatApp({
   required WidgetTester tester,
   required ProviderContainer container,
-  required String workspaceId,
   required GoRouter router,
 }) async {
-  final _ = await container.read(
-    workspaceSessionForRouteProvider(workspaceId).future,
-  );
-  final _ = await container.read(workspaceAccessProvider(workspaceId).future);
   await tester.pumpWidget(_FirstChatApp(container: container, router: router));
 }
 
