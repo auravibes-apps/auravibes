@@ -68,7 +68,7 @@ final class ConversationLabelsStreamProvider
 }
 
 String _$conversationLabelsStreamHash() =>
-    r'87620c2f4900ca9de43d6041eb14af591486c910';
+    r'53e83eafa9711f770eb2d450198ef4e0ffa59b44';
 
 final class ConversationLabelsStreamFamily extends $Family
     with
