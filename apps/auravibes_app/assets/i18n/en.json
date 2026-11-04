@@ -1769,6 +1769,81 @@
     "view_members": "Members and access",
     "view_access": "Access details"
   },
+  "workspace_setup_preflight": {
+    "title": "Workspace setup",
+    "entry_title": "Workspace setup check",
+    "entry_description": "Review saved setup for this workspace before you start.",
+    "open": "Review setup",
+    "saved_configuration_only": "Based on saved workspace settings. This does not test provider or MCP connectivity.",
+    "refresh_local": "Refresh saved checks",
+    "refresh_saved_cloud": "Refresh saved cloud setup",
+    "copy_summary": "Copy support summary",
+    "summary_copied": "Privacy-safe setup summary copied",
+    "summary_copy_error": "Could not copy the setup summary.",
+    "unavailable": "Some workspace setup details are unavailable.",
+    "check": {
+      "storage": "Workspace storage",
+      "provider": "Provider credentials",
+      "model": "Selected model",
+      "mcp": "MCP connections"
+    },
+    "status": {
+      "pass": "Ready",
+      "warning": "Needs attention",
+      "fail": "Blocked",
+      "unknown": "Not verified"
+    },
+    "outcome": {
+      "ready": "Ready to start",
+      "needs_setup": "Setup needed",
+      "blocked": "Setup is blocked",
+      "unverified": "Setup could not be verified"
+    },
+    "storage_available": "Saved workspace storage is available.",
+    "storage_unavailable": "This workspace record is missing or invalid.",
+    "storage_unverified": "Workspace storage availability has not been verified.",
+    "provider_unverified": "Saved provider credential status is unavailable.",
+    "provider_not_configured": "No provider is configured for this workspace.",
+    "provider_credential_missing_optional": "A provider is configured, but no saved credential is present. This is optional until you select a model.",
+    "provider_credential_missing_required": "The selected model's provider has no saved credential.",
+    "provider_for_model_missing": "The selected model's provider is no longer configured in this workspace.",
+    "provider_saved": "A saved provider credential is present. Its value was not read.",
+    "model_not_selected": "Choose a model before starting a conversation.",
+    "model_unverified": "The selected model's saved details are unavailable.",
+    "model_missing": "The selected model is no longer configured in this workspace.",
+    "model_metadata_unavailable": "This model's capability details are not available.",
+    "model_metadata_available": "Saved compatibility details are available.",
+    "model_modalities": "Input: {} · Output: {}",
+    "model_modality_unknown": "Not listed",
+    "model_tools_supported": "Tool calls are listed as supported.",
+    "model_tools_unsupported": "Tool calls are not listed as supported.",
+    "model_reasoning_supported": "Reasoning support is listed.",
+    "model_reasoning_unsupported": "Reasoning support is not listed.",
+    "modality": {
+      "text": "text",
+      "image": "image",
+      "audio": "audio",
+      "video": "video"
+    },
+    "mcp_unverified": "Saved MCP connection status is unavailable.",
+    "mcp_not_configured": "No MCP connections are configured. This is optional.",
+    "mcp_disabled": "At least one configured MCP connection is disabled.",
+    "mcp_not_tested": "A configured MCP connection has no saved test result.",
+    "mcp_attention": "A saved MCP test needs attention. No new test was run.",
+    "mcp_last_test_passed": "The latest saved MCP test passed. No new test was run.",
+    "recovery": {
+      "add_provider": "Add a provider",
+      "review_provider": "Review provider setup",
+      "choose_model": "Choose a model",
+      "open_connections": "Review connections"
+    },
+    "summary": {
+      "overall": "Workspace setup",
+      "generated_at": "Generated at",
+      "app_version": "App version",
+      "unavailable": "Unavailable"
+    }
+  },
   "workspace_management": {
     "title": "Manage Workspaces",
     "copy_id": "Copy ID",

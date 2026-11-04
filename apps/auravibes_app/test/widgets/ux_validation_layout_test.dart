@@ -83,6 +83,7 @@ import 'package:auravibes_app/features/workspaces/providers/workspace_connected_
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/create_workspace_screen.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_management_screen.dart';
+import 'package:auravibes_app/features/workspaces/screens/workspace_setup_preflight_screen.dart';
 import 'package:auravibes_app/features/workspaces/widgets/workspace_connected_editor.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
@@ -1987,6 +1988,12 @@ _RouteScenario _scenario(String name, UxValidationFixture f) {
       selection: -1,
       expected: null,
     ),
+    'WorkspaceSetupPreflightRoute' => (
+      location: '$base/setup-preflight',
+      screen: WorkspaceSetupPreflightScreen,
+      selection: -1,
+      expected: null,
+    ),
     'WorkspaceManagementRoute' => (
       location: '$base/manage-workspaces',
       screen: WorkspaceManagementScreen,
@@ -2124,6 +2131,7 @@ const _routeNames = [
   'SubAgentConversationRoute',
   'SettingsRoute',
   'WorkspaceSettingsRoute',
+  'WorkspaceSetupPreflightRoute',
   'WorkspaceManagementRoute',
   'WorkspaceCreateRoute',
   'CloudAccountsRoute',
