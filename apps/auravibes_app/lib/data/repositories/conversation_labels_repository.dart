@@ -263,11 +263,11 @@ extension on ConversationLabelsRepository {
     final labels = assignment.labelIds.isEmpty
         ? const <ConversationLabelsTable>[]
         : await (this._database.select(this._database.conversationLabels)
-              ..where(
-                (row) =>
-                    row.workspaceId.equals(assignment.workspaceId) &
-                    row.id.isIn(assignment.labelIds),
-              ))
+                ..where(
+                  (row) =>
+                      row.workspaceId.equals(assignment.workspaceId) &
+                      row.id.isIn(assignment.labelIds),
+                ))
               .get();
     if (labels.length != assignment.labelIds.length) {
       throw const ConversationWorkspaceMismatchException();

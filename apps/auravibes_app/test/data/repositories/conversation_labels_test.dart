@@ -159,45 +159,33 @@ void main() {
         throwsA(isA<ConversationWorkspaceMismatchException>()),
       );
 
-      final page = await labelsRepository()
-          .watchConversationsByWorkspace(
-            (
-              workspaceId: workspaceId(),
-              search: '',
-              limit: 1,
-              offset: 1,
-              labelIds: {urgent.id, ideas.id},
-            ),
-          )
-          .first;
+      final page = await labelsRepository().watchConversationsByWorkspace((
+        workspaceId: workspaceId(),
+        search: '',
+        limit: 1,
+        offset: 1,
+        labelIds: {urgent.id, ideas.id},
+      )).first;
       expect(page.map((conversation) => conversation.title), ['Older match']);
       expect(page.single.labels.map((label) => label.name), ['Urgent']);
       expect(
-        await labelsRepository()
-            .watchConversationsByWorkspace(
-              (
-                workspaceId: otherWorkspaceId(),
-                search: '',
-                limit: null,
-                offset: 0,
-                labelIds: {urgent.id},
-              ),
-            )
-            .first,
+        await labelsRepository().watchConversationsByWorkspace((
+          workspaceId: otherWorkspaceId(),
+          search: '',
+          limit: null,
+          offset: 0,
+          labelIds: {urgent.id},
+        )).first,
         isEmpty,
       );
       expect(
-        (await labelsRepository()
-                .watchConversationsByWorkspace((
-                  workspaceId: otherWorkspaceId(),
-                  search: '',
-                  limit: null,
-                  offset: 0,
-                  labelIds: const {},
-                ))
-                .first)
-            .single
-            .title,
+        (await labelsRepository().watchConversationsByWorkspace((
+          workspaceId: otherWorkspaceId(),
+          search: '',
+          limit: null,
+          offset: 0,
+          labelIds: const {},
+        )).first).single.title,
         'Foreign conversation',
       );
       expect(unlabelled.id, isNotEmpty);
@@ -230,15 +218,13 @@ void main() {
         isNotNull,
       );
       expect(
-        await labelsRepository()
-            .watchConversationsByWorkspace((
-              workspaceId: workspaceId(),
-              search: '',
-              limit: null,
-              offset: 0,
-              labelIds: {label.id},
-            ))
-            .first,
+        await labelsRepository().watchConversationsByWorkspace((
+          workspaceId: workspaceId(),
+          search: '',
+          limit: null,
+          offset: 0,
+          labelIds: {label.id},
+        )).first,
         isEmpty,
       );
 
@@ -260,17 +246,13 @@ void main() {
         secondLabel.id,
       );
       expect(
-        await labelsRepository()
-            .watchConversationsByWorkspace(
-              (
-                workspaceId: workspaceId(),
-                search: '',
-                limit: null,
-                offset: 0,
-                labelIds: {secondLabel.id},
-              ),
-            )
-            .first,
+        await labelsRepository().watchConversationsByWorkspace((
+          workspaceId: workspaceId(),
+          search: '',
+          limit: null,
+          offset: 0,
+          labelIds: {secondLabel.id},
+        )).first,
         isEmpty,
       );
     },
