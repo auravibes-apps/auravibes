@@ -122,15 +122,13 @@ Stream<List<ConversationEntity>> _conversationsForSession(
 
   final labelsRepository = ref.watch(conversationLabelsRepositoryProvider);
   if (options.labelIds.isNotEmpty) {
-    return labelsRepository.watchConversationsByWorkspace(
-      (
-        workspaceId: request.workspaceId,
-        search: options.search,
-        limit: options.pagination.limit,
-        offset: options.pagination.offset,
-        labelIds: options.labelIds,
-      ),
-    );
+    return labelsRepository.watchConversationsByWorkspace((
+      workspaceId: request.workspaceId,
+      search: options.search,
+      limit: options.pagination.limit,
+      offset: options.pagination.offset,
+      labelIds: options.labelIds,
+    ));
   }
 
   final conversations = ref
@@ -352,10 +350,10 @@ Future<List<ConversationSummary>> _readCloudConversationPage(
   CloudWorkspaceStateGateway gateway,
   CloudWorkspaceRef cloud,
   _ConversationListOptions options,
-) => _readCloudConversationPageForRequest(
-  gateway,
-  (cloud: cloud, options: options),
-);
+) => _readCloudConversationPageForRequest(gateway, (
+  cloud: cloud,
+  options: options,
+));
 
 Future<List<ConversationSummary>> _readCloudConversationPageForRequest(
   CloudWorkspaceStateGateway gateway,
@@ -501,9 +499,10 @@ ConversationEntity _cloudConversationBase(
 List<ConversationLabelEntity> _cloudConversationLabels(
   List<ConversationLabelSummary>? labels,
   String localWorkspaceId,
-) => labels
-    ?.map((label) => _cloudConversationLabel(label, localWorkspaceId))
-    .toList() ??
+) =>
+    labels
+        ?.map((label) => _cloudConversationLabel(label, localWorkspaceId))
+        .toList() ??
     const [];
 
 ConversationLabelEntity _cloudConversationLabel(

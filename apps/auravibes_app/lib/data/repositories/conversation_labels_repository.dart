@@ -113,10 +113,7 @@ extension on ConversationLabelsRepository {
     String name,
   ) async {
     final normalizedName = name.toLowerCase();
-    final existing = await _labelByNormalizedName(
-      workspaceId,
-      normalizedName,
-    );
+    final existing = await _labelByNormalizedName(workspaceId, normalizedName);
     if (existing != null) {
       throw const ConversationLabelAlreadyExistsException();
     }
@@ -152,12 +149,8 @@ extension on ConversationLabelsRepository {
     String labelId,
     String name,
   ) async {
-    await _requireLabel(workspaceId, labelId);
-    await _ensureLabelNameAvailable(
-      workspaceId,
-      labelId,
-      name.toLowerCase(),
-    );
+    final _ = await _requireLabel(workspaceId, labelId);
+    await _ensureLabelNameAvailable(workspaceId, labelId, name.toLowerCase());
     await _updateLabelName(labelId, name);
 
     return _mapLabel(await _labelById(labelId));
@@ -204,7 +197,8 @@ extension on ConversationLabelsRepository {
   }
 
   Future<void> _updateLabelName(String labelId, String name) async {
-    final updatedRows = await (_database.update(
+    final updatedRows =
+        await (_database.update(
           _database.conversationLabels,
         )..where((row) => row.id.equals(labelId))).write(
           ConversationLabelsCompanion(
@@ -222,16 +216,18 @@ extension on ConversationLabelsRepository {
     String workspaceId,
     String labelId,
   ) async {
-    await _requireLabel(workspaceId, labelId);
+    final _ = await _requireLabel(workspaceId, labelId);
     // Deleting zero or more assignments is valid cleanup in this transaction.
     // ignore: avoid_ignoring_return_values
     final _ = await (_database.delete(
       _database.conversationLabelAssignments,
     )..where((row) => row.labelId.equals(labelId))).go();
-    // ignore: avoid_ignoring_return_values
-    final _ = await (_database.delete(
+    final deletedLabels = await (_database.delete(
       _database.conversationLabels,
     )..where((row) => row.id.equals(labelId))).go();
+    if (deletedLabels != 1) {
+      throw const ConversationWorkspaceMismatchException();
+    }
   }
 
   Future<void> _setConversationLabelsInTransaction(
@@ -267,12 +263,11 @@ extension on ConversationLabelsRepository {
   ) async {
     final labels = assignment.labelIds.isEmpty
         ? const <ConversationLabelsTable>[]
-        : await (_database.select(_database.conversationLabels)
-                ..where(
-                  (row) =>
-                      row.workspaceId.equals(assignment.workspaceId) &
-                      row.id.isIn(assignment.labelIds),
-                ))
+        : await (_database.select(_database.conversationLabels)..where(
+                (row) =>
+                    row.workspaceId.equals(assignment.workspaceId) &
+                    row.id.isIn(assignment.labelIds),
+              ))
               .get();
     if (labels.length != assignment.labelIds.length) {
       throw const ConversationWorkspaceMismatchException();
@@ -287,9 +282,7 @@ extension on ConversationLabelsRepository {
     // The deleted count is intentionally irrelevant when replacing assignments.
     // ignore: avoid_ignoring_return_values
     final _ =
-        await (_database.delete(
-              _database.conversationLabelAssignments,
-            )..where(
+        await (_database.delete(_database.conversationLabelAssignments)..where(
               (row) =>
                   row.workspaceId.equals(assignment.workspaceId) &
                   row.conversationId.equals(assignment.conversationId),

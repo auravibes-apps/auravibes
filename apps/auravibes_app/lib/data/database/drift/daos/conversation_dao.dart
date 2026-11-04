@@ -233,9 +233,9 @@ extension ConversationDaoReadOperations on ConversationDao {
   Stream<List<ConversationWithLabels>> _watchConversationsWithLabels(
     ConversationLabelQuery query,
   ) =>
-      _buildConversationPageQuery(query).watch().asyncMap(
-        (rows) => _loadConversationPage(rows, query.workspaceId),
-      );
+      _buildConversationPageQuery(query)
+          .watch()
+          .asyncMap((rows) => _loadConversationPage(rows, query.workspaceId));
 
   Selectable<QueryRow> _buildConversationPageQuery(
     ConversationLabelQuery query,
@@ -340,8 +340,7 @@ EXISTS (
     List<String> conversationIds,
     String workspaceId,
   ) async {
-    final assignmentsByConversation =
-        <String, List<ConversationLabelEntity>>{};
+    final assignmentsByConversation = <String, List<ConversationLabelEntity>>{};
     final labelRows = await _labelsForConversations(
       conversationIds,
       workspaceId,

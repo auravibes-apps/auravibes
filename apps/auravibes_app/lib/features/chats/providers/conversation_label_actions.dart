@@ -34,15 +34,13 @@ class ConversationLabelActions(final Ref _ref) {
         _renameCloudLabel(workspace, workspaceId, labelId, name),
   );
 
-  Future<void> delete({
-    required String workspaceId,
-    required String labelId,
-  }) => _withWorkspace(
-    workspaceId,
-    local: (repository) =>
-        repository.deleteLabel(workspaceId: workspaceId, labelId: labelId),
-    cloud: (workspace) => _deleteCloudLabel(workspace, labelId),
-  );
+  Future<void> delete({required String workspaceId, required String labelId}) =>
+      _withWorkspace(
+        workspaceId,
+        local: (repository) =>
+            repository.deleteLabel(workspaceId: workspaceId, labelId: labelId),
+        cloud: (workspace) => _deleteCloudLabel(workspace, labelId),
+      );
 
   Future<void> assign({
     required String workspaceId,
@@ -55,11 +53,8 @@ class ConversationLabelActions(final Ref _ref) {
       conversationId: conversationId,
       labelIds: labelIds,
     ),
-    cloud: (workspace) => _assignCloudLabels(
-      workspace,
-      conversationId,
-      labelIds,
-    ),
+    cloud: (workspace) =>
+        _assignCloudLabels(workspace, conversationId, labelIds),
   );
 
   Future<ConversationLabelEntity> _createCloudLabel(
@@ -131,7 +126,8 @@ class ConversationLabelActions(final Ref _ref) {
     required Future<T> Function(ConversationLabelsRepository) local,
     required Future<T> Function(
       ({CloudWorkspaceRef workspace, CloudWorkspaceStateGateway gateway}),
-    ) cloud,
+    )
+    cloud,
   }) async {
     final workspace = await _cloudWorkspace(workspaceId);
     if (workspace == null) {
