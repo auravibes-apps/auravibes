@@ -177,9 +177,9 @@ void main() {
           session: session,
           router: router,
           extraOverrides: [
-            chatModelConnectionsProvider(workspace.id).overrideWith(
-              (ref) => Stream.value([_connection(workspace.id)]),
-            ),
+            chatModelConnectionsProvider(
+              workspace.id,
+            ).overrideWith((ref) => Stream.value([_connection(workspace.id)])),
             listModelsGroupedByProviderProvider(workspaceId: workspace.id)
                 .overrideWith(
                   (ref) => Stream.value({
@@ -274,9 +274,8 @@ ProviderContainer _firstChatContainer({
   overrides: [
     appDatabaseProvider.overrideWithValue(database),
     workspaceSessionProvider(session).overrideWithValue(session),
-    workspaceSessionForRouteProvider(workspaceId).overrideWith(
-      (_) async => session,
-    ),
+    workspaceSessionForRouteProvider(workspaceId)
+        .overrideWith((_) async => session),
     routerProvider.overrideWithValue(router),
     ...extraOverrides,
   ],
@@ -293,9 +292,8 @@ Future<void> _pumpFirstChatApp({
     workspaceSessionForRouteProvider(workspaceId).future,
   );
   final _ = await tester.runAsync(
-    () => tester.pumpWidget(
-      _FirstChatApp(container: container, router: router),
-    ),
+    () =>
+        tester.pumpWidget(_FirstChatApp(container: container, router: router)),
   );
 }
 
