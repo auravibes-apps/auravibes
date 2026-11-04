@@ -771,9 +771,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 301));
       final projectResults = await waitForSearchResults(
         'Project',
-        (conversations) => conversations.any(
-          (item) => item.id == conversation.id,
-        ),
+        (conversations) =>
+            conversations.any((item) => item.id == conversation.id),
       );
       expect(projectResults.map((item) => item.id), contains(conversation.id));
       expect(find.text('Project research'), findsOneWidget);
@@ -795,18 +794,14 @@ void main() {
       );
       final restoredResults = await waitForSearchResults(
         'Project',
-        (conversations) => conversations.every(
-          (item) => item.id != conversation.id,
-        ),
+        (conversations) =>
+            conversations.every((item) => item.id != conversation.id),
       );
       expect(
         restoredResults.map((item) => item.id),
         isNot(contains(conversation.id)),
       );
-      expect(
-        find.text('Project research'),
-        findsNothing,
-      );
+      expect(find.text('Project research'), findsNothing);
     });
 
     testWidgets('archives cloud conversations only in the device database', (

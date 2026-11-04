@@ -228,19 +228,16 @@ jobs:
         run: |
           set -euo pipefail
           target=apps/auravibes_app/test/features/workspaces/widgets/workspace_capacity_error_capture_test.dart
-          format_target=apps/auravibes_app/test/features/chats/widgets/chat_list_widget_test.dart
           mkdir -p "$FORMAT_OUTPUT_DIRECTORY"
           dart format --line-length 80 "$target"
           cp "$target" "$FORMAT_OUTPUT_DIRECTORY/workspace_capacity_error_capture_test.dart"
-          dart format --line-length 80 "$format_target"
-          cp "$format_target" "$FORMAT_OUTPUT_DIRECTORY/chat_list_widget_test.dart"
 
       - name: Upload workspace capacity formatter output
         if: ${{ always() && github.event_name == 'pull_request' && steps.check-format.outcome == 'failure' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: workspace-capacity-format-output-${{ github.run_id }}
-          path: ${{ runner.temp }}/workspace-capacity-format-output
+          path: ${{ runner.temp }}/workspace-capacity-format-output/workspace_capacity_error_capture_test.dart
           if-no-files-found: error
           retention-days: 1
 
