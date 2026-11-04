@@ -8,7 +8,7 @@
 
 **Evidence:** production Flutter widgets and routes rendered with controlled in-memory fixtures, source inspection, and widget tests. No user observation or analytics were available.
 
-Code reviewed: [Agent Detail](../../../apps/auravibes_app/lib/features/agents/screens/agent_detail_screen.dart), [Skill Detail](../../../apps/auravibes_app/lib/features/skills/screens/skill_detail_screen.dart), [Skill resource editor](../../../apps/auravibes_app/lib/features/skills/screens/skill_resource_edit_screen.dart), and [connected-view editor](../../../apps/auravibes_app/lib/features/workspaces/widgets/workspace_connected_editor.dart). Recovery and capture scenarios are in [the UX validation tests](../../../apps/auravibes_app/test/widgets/ux_validation_layout_test.dart).
+Code reviewed: [Agent Detail](../../../apps/auravibes_app/lib/features/agents/screens/agent_detail_screen.dart), [Skill Detail](../../../apps/auravibes_app/lib/features/skills/screens/skill_detail_screen.dart), [Skill resource editor](../../../apps/auravibes_app/lib/features/skills/screens/skill_resource_edit_screen.dart), and [connected-view editor](../../../apps/auravibes_app/lib/features/workspaces/widgets/workspace_connected_editor.dart). Recovery and capture scenarios are in [the UX validation tests](../../../apps/auravibes_app/test/widgets/agent_authoring_recovery_test.dart).
 
 ## Findings and fixes
 
@@ -31,10 +31,10 @@ Each PNG has a same-named JSON sidecar describing the route, fixture, viewport, 
 | Agent instructions | ![Before: system prompt](agent-copy-before.png) | ![After: instructions](agent-copy-after.png) |
 | Agent tools failure | ![Before: tools failure mislabeled as skills](agent-tools-before.png) | ![After: tools failure with Retry](agent-tools-after.png) |
 | Skills list failure | ![Before: generic cloud error](skills-list-before.png) | ![After: skills error with Retry](skills-list-after.png) |
-| Skill detail failure | ![Before: skill failure](skill-detail-before.png) | ![After: skill failure with Retry](skill-detail-after.png) |
-| Resource parent failure | ![Before: editor shown while skill load failed](resource-parent-before.png) | ![After: parent failure with Retry](resource-parent-after.png) |
-| Resource failure | ![Before: resource error](resource-before.png) | ![After: resource error with Retry](resource-after.png) |
-| Resource list failure | ![Before: resources error](resource-list-before.png) | ![After: resources error with Retry](resource-list-after.png) |
-| Connected-view tools failure | ![Before: tools error without actions](connected-tools-before.png) | ![After: tools error with Retry and Cancel](connected-tools-after.png) |
-| Connected-view Connection failure | ![Before: Save enabled without a verified Connection](connected-connections-before.png) | ![After: Retry available and Save disabled](connected-connections-after.png) |
-| Spanish large text | ![Before: message reaches the edge](spanish-large-before.png) | ![After: message has a side inset](spanish-large-after.png) |
+| Skill detail failure | Intermediate state: ![Skill failure](skill-detail-before.png) | ![After: skill failure with Retry](skill-detail-after.png) |
+| Resource parent failure | Intermediate state: ![Editor shown while skill load failed](resource-parent-before.png) | ![After: parent failure with Retry](resource-parent-after.png) |
+| Resource failure | Intermediate state: ![Resource error](resource-before.png) | ![After: resource error with Retry](resource-after.png) |
+| Resource list failure | Intermediate state, different scroll offset: ![Resources error](resource-list-before.png) | ![After: resources error with Retry](resource-list-after.png) |
+| Connected-view tools failure | Mixed-source baseline: ![Tools error without actions](connected-tools-before.png) | ![After: tools error with Retry and Cancel](connected-tools-after.png) |
+| Connected-view Connection failure | Mixed-source baseline: ![Save enabled without a verified Connection](connected-connections-before.png) | ![After: Retry available and Save disabled](connected-connections-after.png) |
+| Spanish large text | Earlier iteration: ![Message reaches the edge](spanish-large-before.png) | ![After: message has a side inset](spanish-large-after.png) |

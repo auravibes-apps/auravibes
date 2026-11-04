@@ -78,8 +78,6 @@ import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.
 import 'package:auravibes_app/features/tools/screens/tools_screen.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_route_failure.dart';
-import 'package:auravibes_app/features/workspaces/models/workspace_view.dart'
-    as app;
 import 'package:auravibes_app/features/workspaces/providers/workspace_connected_view_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/create_workspace_screen.dart';
@@ -96,15 +94,13 @@ import 'package:auravibes_app/widgets/app_with_responsive_drawer.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_app/widgets/route_recovery_view.dart';
 import 'package:auravibes_app/widgets/setup_page_frame.dart';
-import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:crypto/crypto.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:drift/drift.dart' show Variable;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_file_drop/flutter_file_drop.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/svg.dart';
@@ -113,36 +109,15 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../helpers/ux_capture.dart';
 import '../helpers/ux_validation_fixture.dart';
 
 part '../helpers/intro_journey_capture.dart';
 
-final _captureFontMetadata = <Map<String, String>>[];
-
 void main() {
   _registerIntroJourneyCaptures();
   tearDownAll(UxValidationFixture.closeDatabase);
-  setUpAll(() async {
-    for (final font in const {
-      'Inter': 'assets/fonts/Inter.ttf',
-      'JetBrains Mono':
-          'packages/gpt_markdown/lib/fonts/JetBrainsMono-Regular.ttf',
-      'packages/gpt_markdown/JetBrainsMono':
-          'packages/gpt_markdown/lib/fonts/JetBrainsMono-Regular.ttf',
-      'MaterialIcons': 'fonts/MaterialIcons-Regular.otf',
-    }.entries) {
-      await _registerCaptureFont(
-        font.key,
-        font.value,
-        await rootBundle.load(font.value),
-      );
-    }
-    await _registerCaptureFont(
-      'Roboto',
-      'Flutter SDK artifacts/material_fonts/Roboto-Regular.ttf',
-      await _sdkRoboto(),
-    );
-  });
+  setUpAll(loadUxCaptureFonts);
   for (final scenario in const [
     (
       name: 'agent-editor-skills-failure',
@@ -704,7 +679,7 @@ void main() {
       expect(find.byType(ChatInputWidget), findsOneWidget);
       expect(find.byType(DropTarget), findsOneWidget);
       expect(tester.takeException(), isNull);
-      await _capture(
+      await captureUxWidget(
         tester,
         'chat-composer-file-drop-idle',
         route,
@@ -735,7 +710,7 @@ void main() {
         find.byKey(const ValueKey('chat_input_drop_highlight')),
         findsOneWidget,
       );
-      await _capture(
+      await captureUxWidget(
         tester,
         'chat-composer-file-drop-hover',
         route,
@@ -816,7 +791,7 @@ void main() {
     const baseline = bool.fromEnvironment('TASK_BRIEF_CAPTURE_BASELINE');
     if (!baseline) expect(button, findsOneWidget);
     expect(tester.takeException(), isNull);
-    await _capture(
+    await captureUxWidget(
       tester,
       'conversation-task-brief-controls',
       router.routeInformationProvider.value.uri.toString(),
@@ -843,7 +818,7 @@ void main() {
     await tester.enterText(editor, brief);
     await fixture.settle(tester);
     expect(tester.takeException(), isNull);
-    await _capture(
+    await captureUxWidget(
       tester,
       'conversation-task-brief-editor',
       router.routeInformationProvider.value.uri.toString(),
@@ -862,7 +837,7 @@ void main() {
         .getSingle();
     expect(saved.read<String>('task_brief'), brief);
     expect(tester.takeException(), isNull);
-    await _capture(
+    await captureUxWidget(
       tester,
       'conversation-task-brief-saved',
       router.routeInformationProvider.value.uri.toString(),
@@ -899,7 +874,7 @@ void main() {
     expect(find.byType(AuraConfirmDialog), findsOneWidget);
     expect(find.text('Manage Workspaces'), findsOneWidget);
     expect(find.text('Shared research space'), findsOneWidget);
-    await _capture(
+    await captureUxWidget(
       tester,
       'workspace-erasure-confirmation-disclosure',
       router.routeInformationProvider.value.uri.toString(),
@@ -945,7 +920,7 @@ void main() {
       find.descendant(of: invitation, matching: find.text('Member')),
       findsOneWidget,
     );
-    await _capture(
+    await captureUxWidget(
       tester,
       'cloud-workspace-populated-membership',
       router.routeInformationProvider.value.uri.toString(),
@@ -982,7 +957,7 @@ void main() {
     await tester.tap(find.text('Invite member'));
     await fixture.settle(tester);
     expect(find.byType(AlertDialog), findsOneWidget);
-    await _capture(
+    await captureUxWidget(
       tester,
       'cloud-workspace-invite-dialog',
       router.routeInformationProvider.value.uri.toString(),
@@ -1008,7 +983,7 @@ void main() {
     await tester.tap(find.byTooltip('More options'));
     await fixture.settle(tester);
     expect(find.text('Archive'), findsOneWidget);
-    await _capture(
+    await captureUxWidget(
       tester,
       'conversation-archive-before',
       router.routeInformationProvider.value.uri.toString(),
@@ -1016,6 +991,10 @@ void main() {
       size: size,
       scale: 1,
       dark: false,
+      fixture:
+          'Persisted local workspace and seeded parent conversation; '
+          'conversation options open before device-local archive, '
+          'with no remote access',
     );
 
     await tester.tap(find.text('Archive'));
@@ -1060,7 +1039,7 @@ void main() {
     // the stable archived list rather than a transient notification.
     await tester.pump(const Duration(seconds: 5));
     await fixture.settle(tester);
-    await _capture(
+    await captureUxWidget(
       tester,
       'conversation-archive-after',
       router.routeInformationProvider.value.uri.toString(),
@@ -1068,6 +1047,9 @@ void main() {
       size: size,
       scale: 1,
       dark: false,
+      fixture:
+          'Same persisted local workspace after archiving the conversation; '
+          'archived conversation list visible, with no remote access',
     );
     await fixture.close(tester);
   });
@@ -1192,7 +1174,7 @@ void main() {
                       ),
                       'theme': dark ? 'dark' : 'light',
                       'accentHue': 186.0,
-                      'fonts': _captureFontMetadata,
+                      'fonts': uxCaptureFontMetadata,
                       'fontLimitations':
                           'Family-free Copy code uses test Ahem; '
                           'native control typography is unverified.',
@@ -1302,7 +1284,7 @@ void main() {
           find.text(field.hint.tr(context: editorContext)),
           findsOneWidget,
         );
-        await _capture(
+        await captureUxWidget(
           tester,
           '${field.title}-$locale',
           router.routeInformationProvider.value.uri.toString(),
@@ -1391,7 +1373,7 @@ void main() {
     expect(find.text('Notion'), findsOneWidget);
     expect(find.text('Linear'), findsOneWidget);
     expect(tester.takeException(), isNull);
-    await _capture(
+    await captureUxWidget(
       tester,
       'service-connections-services-entry',
       router.routeInformationProvider.value.uri.toString(),
@@ -1412,7 +1394,7 @@ void main() {
       findsOneWidget,
     );
     expect(tester.takeException(), isNull);
-    await _capture(
+    await captureUxWidget(
       tester,
       'service-connections-search-empty',
       router.routeInformationProvider.value.uri.toString(),
@@ -1463,7 +1445,7 @@ void main() {
     await fixture.settle(tester);
     expect(find.textContaining('Tested '), findsOneWidget);
     expect(tester.takeException(), isNull);
-    await _capture(
+    await captureUxWidget(
       tester,
       'service-connections-network-error',
       router.routeInformationProvider.value.uri.toString(),
@@ -1520,7 +1502,7 @@ void main() {
         expect(find.text(label), findsOneWidget);
       }
       if (action == 'Conversation branches') {
-        await _capture(
+        await captureUxWidget(
           tester,
           'ConversationRoute-compact-menu',
           router.routeInformationProvider.value.uri.toString(),
@@ -1612,7 +1594,7 @@ void main() {
           size: const Size(320, 800),
         );
 
-        await _capture(
+        await captureUxWidget(
           tester,
           '$route-chat-compact-disclosure',
           router.routeInformationProvider.value.uri.toString(),
@@ -1687,7 +1669,7 @@ void main() {
         tester.getTopLeft(find.text('Draft the summary')).dy,
         lessThan(tester.getTopLeft(find.text('Review the result')).dy),
       );
-      await _capture(
+      await captureUxWidget(
         tester,
         'queued-prompts-before',
         route,
@@ -1711,7 +1693,7 @@ void main() {
           tester.getTopLeft(find.text('Outline the plan')).dy,
           lessThan(tester.getTopLeft(find.text('Review the result')).dy),
         );
-        await _capture(
+        await captureUxWidget(
           tester,
           'queued-prompts-after',
           route,
@@ -1837,7 +1819,7 @@ void main() {
             final family = slug.text.style?.fontFamily;
             expect(family, isNotNull);
             expect(
-              _captureFontMetadata.map((font) => font['family']),
+              uxCaptureFontMetadata.map((font) => font['family']),
               contains(family),
               reason:
                   'Actual resource identifier font must be loaded for capture',
@@ -1867,7 +1849,7 @@ void main() {
             reason: '$name route must apply the app side safe area',
           );
           if (viewport.name != 'desktop') {
-            await _capture(
+            await captureUxWidget(
               tester,
               '$name-${viewport.name}-${dark ? 'dark' : 'light'}',
               router.routeInformationProvider.value.uri.toString(),
@@ -2049,7 +2031,7 @@ void main() {
               final _ = await tester.pumpAndSettle();
             }
           }
-          await _capture(
+          await captureUxWidget(
             tester,
             '$name-${variant.width}-${variant.locale}-${variant.scale}',
             router.routeInformationProvider.value.uri.toString(),
@@ -2346,38 +2328,6 @@ const _routeNames = [
   'SkillResourceEditRoute',
 ];
 
-Future<void> _registerCaptureFont(
-  String family,
-  String source,
-  ByteData data,
-) async {
-  await (FontLoader(family)..addFont(.value(data))).load();
-  _captureFontMetadata.add({
-    'family': family,
-    'source': source,
-    'sha256': sha256
-        .convert(
-          data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
-        )
-        .toString(),
-  });
-}
-
-Future<ByteData> _sdkRoboto() async {
-  for (
-    var directory = File(Platform.resolvedExecutable).parent;
-    directory.path != directory.parent.path;
-    directory = directory.parent
-  ) {
-    final font = File('${directory.path}/material_fonts/Roboto-Regular.ttf');
-    if (font.existsSync()) {
-      return (await font.readAsBytes()).buffer.asByteData();
-    }
-  }
-
-  throw StateError('Flutter SDK Roboto font is unavailable for capture');
-}
-
 void _expectTextInsideSideSafeArea(
   WidgetTester tester,
   Size viewport,
@@ -2429,56 +2379,6 @@ void _expectTextInsideSideSafeArea(
           'right unsafe area: $visibleBounds',
     );
   }
-}
-
-Future<void> _capture(
-  WidgetTester tester,
-  String name,
-  String route, {
-  required String locale,
-  required Size size,
-  required double scale,
-  required bool dark,
-  Map<String, Object>? controlMeasurements,
-}) async {
-  const output = String.fromEnvironment('UX_CAPTURE_DIR');
-  if (output.isEmpty) return;
-  const fingerprint = String.fromEnvironment('UX_SOURCE_FINGERPRINT');
-  final boundary = tester.renderObject<RenderRepaintBoundary>(
-    find.byKey(const ValueKey('ux-capture')),
-  );
-  await tester.runAsync(() async {
-    final image = await boundary.toImage();
-    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-    image.dispose();
-    final directory = Directory(output);
-    final _ = await directory.create(recursive: true);
-    final artifact = '${(++_captureNumber).toString().padLeft(3, '0')}-$name';
-    final _ = await File('$output/$artifact.png').writeAsBytes(
-      (bytes ?? (throw StateError('PNG encoding failed'))).buffer.asUint8List(),
-    );
-    final _ = await File('$output/$artifact.json').writeAsString(
-      const JsonEncoder.withIndent('  ').convert({
-        'name': name,
-        'controlMeasurements': ?controlMeasurements,
-        'route': route,
-        'fixture': _fixtureDescription(name),
-        'sourceFingerprint': fingerprint,
-        'renderer': 'Flutter widget-test Skia, ${Platform.operatingSystem}',
-        'viewport': [size.width, size.height],
-        'locale': locale,
-        'textScale': scale,
-        'theme': dark ? 'dark' : 'light',
-        'accentHue': 186.0,
-        'flavor': 'prod view under controlled widget fixture',
-        'disableAnimations': true,
-        'fonts': _captureFontMetadata,
-        'fontLimitations':
-            'Flutter widget-test text only; native system typography and '
-            'assistive technology are not represented.',
-      }),
-    );
-  });
 }
 
 const _accounts = [
@@ -2666,18 +2566,6 @@ class _EmptyTools extends WorkspaceToolsNotifier {
   Future<List<WorkspaceToolEntity>> build(String workspaceId) async => [];
 }
 
-class _ControlledTools(
-  final bool Function() fails, {
-  final List<WorkspaceToolEntity> values = const [],
-}) extends WorkspaceToolsNotifier {
-  @override
-  Future<List<WorkspaceToolEntity>> build(String workspaceId) async {
-    if (fails()) throw StateError('Controlled tools load failure');
-
-    return values;
-  }
-}
-
 class _EmptyGroups extends GroupedToolsNotifier {
   @override
   Future<List<ToolsGroupWithTools>> build(String workspaceId) async => [];
@@ -2716,83 +2604,6 @@ double _contrast(Color foreground, Color background) {
 
   return ((a > b ? a : b) + 0.05) / ((a > b ? b : a) + 0.05);
 }
-
-String _fixtureDescription(String name) => switch (name) {
-  'cloud-workspace-invite-dialog' =>
-    'Controlled cloud workspace admin detail with invitation dialog open; '
-        'no remote mutation',
-  'cloud-workspace-populated-membership' =>
-    'Controlled cloud workspace admin detail with one member and one '
-        'pending invitation; no remote mutation',
-  final capture when capture.startsWith('CloudWorkspaceDetailRoute-') =>
-    'Controlled cloud workspace admin detail with one member and one '
-        'pending invitation; no remote mutation',
-  'queued-prompts-before' || 'queued-prompts-after' =>
-    'Persisted local conversation with three fixed text-only queued drafts; '
-        'no model requests, attachments, network access, or remote mutations',
-  'agent-editor-skills-failure' || 'skills-list-failure' =>
-    'Persisted local workspace with a controlled skills load failure',
-  'agent-editor-tools-failure' =>
-    'Persisted local workspace with a controlled tools load failure',
-  'connected-editor-tools-failure' || 'connected-editor-connections-failure' =>
-    'Connected data editor in a test dialog with a controlled load failure',
-  'skill-detail-failure' || 'skill-resource-parent-failure' =>
-    'Persisted local workspace with a controlled skill detail load failure',
-  'skill-resource-failure' =>
-    'Persisted local workspace with a controlled skill resource load failure',
-  'skill-resources-list-failure' =>
-    'Persisted local workspace with a controlled skill resources list failure',
-  'agent-editor-skills-failure-es-large-dark' =>
-    'Persisted local workspace with a controlled skills load failure',
-  'conversation-archive-export-review' =>
-    'Local conversation with one synthetic text attachment whose path points '
-        'to no file; review dialog opened before attachment byte reads or save',
-  'workspace-erasure-confirmation-disclosure' =>
-    'In-memory local workspace plus synthetic owner account and deleted cloud '
-        'workspace state; confirmation open with no remote access or deletion',
-  'conversation-archive-before' =>
-    'Persisted local workspace and seeded parent conversation; conversation '
-        'options open before device-local archive, with no remote access',
-  'conversation-archive-after' =>
-    'Same persisted local workspace after archiving the conversation; '
-        'archived conversation list visible, with no remote access',
-  'service-connections-services-entry' =>
-    'Persisted local workspace with three controlled service rows: '
-        'Notion needs reconnect, Linear connected, Sentry failed; '
-        'no remote access',
-  'service-connections-search-empty' =>
-    'Same Services route and rows after a query matching no service; '
-        'no remote access',
-  'service-connections-network-error' =>
-    'Same Services route and rows after a controlled network test failure; '
-        'no remote request',
-  'IntroRoute' => 'Empty in-memory database; no workspace or account',
-  'MixedConnections' =>
-    'Four controlled connection rows: model provider, '
-        'expired MCP, two saved credentials; no remote access '
-        'claim',
-  'MixedAccounts' =>
-    'Two origins with stored accounts; controlled expired and unknown health',
-  'CloudTools' =>
-    'Matching cloud mirror and session; controlled available gate '
-        'and empty tools; actual capability restriction',
-  'LocalEmptyTools' =>
-    'Persisted local workspace with controlled empty tool providers; '
-        'actual local capability, add control and empty hint',
-  'FailedWorkspace' =>
-    'Controlled missing local workspace failure and actual '
-        'route recovery screen',
-  'CloudWorkspaceDetailRoute' =>
-    'Controlled cloud workspace admin detail with '
-        'authoritative capability values; no remote mutation',
-  'ServiceConnectionEditRoute' =>
-    'Controlled saved generic service editor state',
-  _ =>
-    'Persisted local in-memory workspace, two agents '
-        'sharing a custom skill, disabled agent/skill, schema '
-        'without credential, template resource/tool, parent and '
-        'child chats; no models or cloud accounts',
-};
 
 class _CaptureQueuedDrafts(final String conversationId)
     extends ConversationSendQueue {
@@ -2876,5 +2687,3 @@ List<ServiceConnectionListItem> _serviceConnectionsAuditFixture(
 
 class _AuditTestMcpConnectionUsecase extends Mock
     implements TestMcpConnectionUsecase;
-
-int _captureNumber = 0;
