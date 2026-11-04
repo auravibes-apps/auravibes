@@ -21,9 +21,11 @@ import 'package:auravibes_app/features/chats/notifiers/new_chat_state.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
 import 'package:auravibes_app/features/chats/screens/chats_list_screen.dart';
+import 'package:auravibes_app/features/chats/screens/message_bookmarks_screen.dart';
 import 'package:auravibes_app/features/chats/screens/new_chat_screen.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_input_widget.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_readiness_summary.dart';
+import 'package:auravibes_app/features/chats/widgets/model_usage_details_sheet.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/cloud_account_session.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
 import 'package:auravibes_app/features/cloud_accounts/models/cloud_account_health.dart';
@@ -1195,6 +1197,174 @@ void main() {
     await fixture.close(tester);
   });
 
+  testWidgets('compact conversation header keeps its title readable', (
+    tester,
+  ) async {
+    final fixture = await UxValidationFixture.create();
+    final _ = await fixture.pump(
+      tester,
+      '/workspaces/${fixture.workspaceId}/chats/${fixture.chatId}',
+      size: const Size(466, 678),
+    );
+
+    final title = tester.renderObject<RenderParagraph>(
+      find.descendant(
+        of: find.byType(AuraAppBar),
+        matching: find.text('Project research'),
+      ),
+    );
+    expect(title.didExceedMaxLines, isFalse);
+    expect(_conversationOptions(), findsOneWidget);
+    await fixture.close(tester);
+  });
+
+  for (final action in const [
+    'Conversation branches',
+    'View',
+    'Model usage',
+    'Saved messages',
+  ]) {
+    testWidgets('compact conversation menu opens $action', (tester) async {
+      final fixture = await UxValidationFixture.create();
+      final router = await fixture.pump(
+        tester,
+        '/workspaces/${fixture.workspaceId}/chats/${fixture.chatId}',
+        size: const Size(360, 678),
+      );
+      await tester.tap(_conversationOptions());
+      await tester.pump();
+      for (final label in const [
+        'Conversation branches',
+        'View',
+        'Model usage',
+        'Saved messages',
+      ]) {
+        expect(find.text(label), findsOneWidget);
+      }
+      if (action == 'Conversation branches') {
+        await _capture(
+          tester,
+          'ConversationRoute-compact-menu',
+          router.routeInformationProvider.value.uri.toString(),
+          locale: 'en',
+          size: const Size(360, 678),
+          scale: 1,
+          dark: false,
+        );
+      }
+      await tester.tap(find.text(action));
+      await fixture.settle(tester);
+
+      switch (action) {
+        case 'Conversation branches':
+          expect(
+            find.byKey(const ValueKey('conversation-current-branch')),
+            findsOneWidget,
+          );
+        case 'View':
+          expect(find.byType(AlertDialog), findsOneWidget);
+        case 'Model usage':
+          expect(find.byType(ModelUsageDetailsSheet), findsOneWidget);
+        case 'Saved messages':
+          expect(find.byType(MessageBookmarksScreen), findsOneWidget);
+      }
+      expect(tester.takeException(), isNull);
+      await fixture.close(tester);
+    });
+  }
+
+  testWidgets('compact conversation menu supports larger Spanish text', (
+    tester,
+  ) async {
+    final fixture = await UxValidationFixture.create();
+    final _ = await fixture.pump(
+      tester,
+      '/workspaces/${fixture.workspaceId}/chats/${fixture.chatId}',
+      size: const Size(360, 800),
+      locale: 'es',
+      scale: 1.5,
+    );
+    final optionsLabel =
+        'M${String.fromCharCode(0xe1)}s opciones: Project research';
+    final branchesLabel = 'Ramas de la conversaci${String.fromCharCode(0xf3)}n';
+    await tester.tap(_conversationOptions(optionsLabel));
+    await tester.pump();
+    expect(find.text(branchesLabel), findsOneWidget);
+    expect(find.text('Uso del modelo'), findsOneWidget);
+    expect(find.text('Mensajes guardados'), findsOneWidget);
+    expect(await tester.sendKeyEvent(.escape), isTrue);
+    await tester.pump();
+    expect(find.text(branchesLabel), findsNothing);
+    expect(tester.takeException(), isNull);
+    await fixture.close(tester);
+  });
+
+  testWidgets('delegated conversation notice stays inside the content edge', (
+    tester,
+  ) async {
+    final fixture = await UxValidationFixture.create();
+    final _ = await fixture.pump(
+      tester,
+      '/workspaces/${fixture.workspaceId}/chats/${fixture.chatId}'
+      '/sub-agents/${fixture.childId}',
+      size: const Size(360, 678),
+    );
+    final notice = find.text(
+      'This delegated conversation is read-only. '
+      'Continue the task in the parent chat.',
+    );
+    expect(tester.getTopLeft(notice).dx, greaterThanOrEqualTo(16));
+    expect(tester.getBottomRight(notice).dx, lessThanOrEqualTo(344));
+    await fixture.close(tester);
+  });
+
+  for (final route in const ['new', 'existing']) {
+    testWidgets('compact $route chat keeps network disclosure in the header', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      try {
+        final fixture = await UxValidationFixture.create();
+        final location = route == 'new'
+            ? '/workspaces/${fixture.workspaceId}/chat/new'
+            : '/workspaces/${fixture.workspaceId}/chats/${fixture.chatId}';
+        final router = await fixture.pump(
+          tester,
+          location,
+          size: const Size(320, 800),
+        );
+
+        await _capture(
+          tester,
+          '$route-chat-compact-disclosure',
+          router.routeInformationProvider.value.uri.toString(),
+          locale: 'en',
+          size: const Size(320, 800),
+          scale: 1,
+          dark: false,
+        );
+        final disclosure = find.byKey(
+          const ValueKey('local_workspace_network_disclosure'),
+        );
+        final agent = find.bySemanticsIdentifier('chat_agent_selector');
+        expect(disclosure, findsOneWidget);
+        expect(agent, findsOneWidget);
+        expect(
+          tester.getCenter(disclosure).dy,
+          closeTo(tester.getCenter(agent).dy, 1),
+        );
+        await tester.tap(disclosure);
+        final _ = await tester.pumpAndSettle();
+        expect(
+          find.text('Local storage does not mean offline.'),
+          findsOneWidget,
+        );
+        await fixture.close(tester);
+      } finally {
+        semantics.dispose();
+      }
+    });
+  }
   testWidgets(
     'production direct route ConversationRoute queued prompts reorder',
     (tester) async {
@@ -1290,6 +1460,14 @@ void main() {
             'production direct route $name ${viewport.name} '
             '${dark ? 'dark' : 'light'}';
         testWidgets(testName, (tester) async {
+          addTearDown(() {
+            tester.view.resetPadding();
+            tester.view.resetViewPadding();
+          });
+          expect(tester.view.padding.left, 0);
+          expect(tester.view.padding.right, 0);
+          expect(tester.view.viewPadding.left, 0);
+          expect(tester.view.viewPadding.right, 0);
           final fixture = await UxValidationFixture.create(
             empty: name == 'IntroRoute',
           );
@@ -1608,6 +1786,13 @@ void main() {
     }
   }
 }
+
+Finder _conversationOptions([
+  String label = 'More options: Project research',
+]) => find.descendant(
+  of: find.byType(AuraAppBar),
+  matching: find.byTooltip(label),
+);
 
 typedef _RouteScenario = ({
   String location,

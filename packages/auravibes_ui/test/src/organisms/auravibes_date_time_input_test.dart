@@ -62,7 +62,7 @@ void main() {
       );
       expect(find.text('2024-01'), findsOneWidget);
       await tester.tap(find.text('20'));
-      await tester.tap(find.text('Done'));
+      await tester.tap(find.text('OK'));
       await tester.pump(const Duration(milliseconds: 200));
 
       expect(changedValue, DateTime(2024, 1, 20));
@@ -87,7 +87,7 @@ void main() {
       await tester.tap(find.byType(AuraDateTimeInput));
       await tester.pump(const Duration(milliseconds: 200));
       expect(find.text('Select time'), findsOneWidget);
-      await tester.tap(find.text('Done'));
+      await tester.tap(find.text('OK'));
       await tester.pump(const Duration(milliseconds: 200));
 
       expect(changedValue, initialValue);
@@ -219,7 +219,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 200));
 
       final title = tester.renderObject<RenderParagraph>(
-        find.text('Select date and time'),
+        find.text('Select date, Select time'),
       );
       expect(title.textScaler.scale(10), 20);
     });

@@ -8,6 +8,15 @@ class const ModelUsageHeaderButton({
   required final String conversationId,
   super.key,
 }) extends StatelessWidget {
+  static void showDetails(BuildContext context, String conversationId) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (_) => ModelUsageDetailsSheet(conversationId: conversationId),
+      isScrollControlled: true,
+      useSafeArea: true,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final label = LocaleKeys.chats_screens_chat_conversation_model_usage_open
@@ -15,19 +24,10 @@ class const ModelUsageHeaderButton({
 
     return AuraIconButton(
       icon: Icons.analytics_outlined,
-      onPressed: () => _showDetails(context),
+      onPressed: () => showDetails(context, conversationId),
       key: key ?? const ValueKey<String>('model-usage-button'),
       semanticLabel: label,
       tooltip: label,
-    );
-  }
-
-  void _showDetails(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      builder: (_) => ModelUsageDetailsSheet(conversationId: conversationId),
-      isScrollControlled: true,
-      useSafeArea: true,
     );
   }
 }
