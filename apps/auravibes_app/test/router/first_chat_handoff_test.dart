@@ -291,10 +291,7 @@ Future<void> _pumpFirstChatApp({
   final _ = await container.read(
     workspaceSessionForRouteProvider(workspaceId).future,
   );
-  final _ = await tester.runAsync(
-    () =>
-        tester.pumpWidget(_FirstChatApp(container: container, router: router)),
-  );
+  await tester.pumpWidget(_FirstChatApp(container: container, router: router));
 }
 
 class const _FirstChatApp({
