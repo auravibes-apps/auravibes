@@ -24,33 +24,48 @@ final class ConversationArchiveExportPreview({
     if (conversations.length != other.conversations.length) return false;
 
     for (var index = 0; index < conversations.length; index++) {
-      final expected = conversations[index];
-      final actual = other.conversations[index];
-      if (expected.conversationId != actual.conversationId ||
-          expected.title != actual.title ||
-          expected.attachments.length != actual.attachments.length) {
+      if (!_matchesConversation(
+        conversations[index],
+        other.conversations[index],
+      )) {
         return false;
-      }
-
-      for (
-        var attachmentIndex = 0;
-        attachmentIndex < expected.attachments.length;
-        attachmentIndex++
-      ) {
-        final expectedAttachment = expected.attachments[attachmentIndex];
-        final actualAttachment = actual.attachments[attachmentIndex];
-        if (expectedAttachment.attachmentId != actualAttachment.attachmentId ||
-            expectedAttachment.fileName != actualAttachment.fileName ||
-            expectedAttachment.mimeType != actualAttachment.mimeType ||
-            expectedAttachment.sizeBytes != actualAttachment.sizeBytes) {
-          return false;
-        }
       }
     }
 
     return true;
   }
 }
+
+bool _matchesConversation(
+  ConversationArchivePreviewConversation expected,
+  ConversationArchivePreviewConversation actual,
+) {
+  if (expected.conversationId != actual.conversationId ||
+      expected.title != actual.title ||
+      expected.attachments.length != actual.attachments.length) {
+    return false;
+  }
+
+  for (var index = 0; index < expected.attachments.length; index++) {
+    if (!_matchesAttachment(
+      expected.attachments[index],
+      actual.attachments[index],
+    )) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool _matchesAttachment(
+  ConversationArchivePreviewAttachment expected,
+  ConversationArchivePreviewAttachment actual,
+) =>
+    expected.attachmentId == actual.attachmentId &&
+    expected.fileName == actual.fileName &&
+    expected.mimeType == actual.mimeType &&
+    expected.sizeBytes == actual.sizeBytes;
 
 @immutable
 // Copying caller lists prevents later mutation of the review snapshot.
