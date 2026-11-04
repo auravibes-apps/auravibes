@@ -312,7 +312,7 @@ void main() {
       expect(find.byType(AuraConfirmDialog), findsOneWidget);
 
       // Use widget type finder to avoid matching title.
-      final confirmButton = findAuraButtonByLabel('Confirm');
+      final confirmButton = findAuraButtonByLabel('OK');
       await tester.tap(confirmButton);
       final _ = await tester.pumpAndSettle();
 

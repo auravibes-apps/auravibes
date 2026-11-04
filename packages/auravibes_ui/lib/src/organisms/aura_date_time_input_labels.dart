@@ -2,23 +2,26 @@ part of 'aura_date_time_input.dart';
 
 /// Caller-provided visible and semantic strings used by [AuraDateTimeInput].
 class AuraDateTimeInputLabels {
-  /// Creates localized date/time picker labels.
+  /// Creates optional overrides for date/time picker labels.
+  ///
+  /// Empty values use the host's Material localizations, falling back to
+  /// Flutter's default English localizations when none are provided.
   const new({
-    this.selectDateAndTime = 'Select date and time',
-    this.selectDate = 'Select date',
-    this.selectTime = 'Select time',
-    this.dateAndTime = 'Date and time',
-    this.date = 'Date',
-    this.time = 'Time',
-    this.cancel = 'Cancel',
-    this.done = 'Done',
-    this.previousMonth = 'Previous month',
-    this.nextMonth = 'Next month',
-    this.decreaseHour = 'Decrease hour',
-    this.increaseHour = 'Increase hour',
-    this.decreaseMinute = 'Decrease minute',
-    this.increaseMinute = 'Increase minute',
-    this.weekdayLabels = const ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
+    this.selectDateAndTime = '',
+    this.selectDate = '',
+    this.selectTime = '',
+    this.dateAndTime = '',
+    this.date = '',
+    this.time = '',
+    this.cancel = '',
+    this.done = '',
+    this.previousMonth = '',
+    this.nextMonth = '',
+    this.decreaseHour = '',
+    this.increaseHour = '',
+    this.decreaseMinute = '',
+    this.increaseMinute = '',
+    this.weekdayLabels = const [],
     this.dayLabelBuilder,
   });
 
@@ -72,4 +75,75 @@ class AuraDateTimeInputLabels {
 
   /// Whether callers provided a custom day-label builder.
   bool hasCustomDayLabels() => dayLabelBuilder != null;
+
+  AuraDateTimeInputLabels _resolved(BuildContext context) =>
+      _ResolvedDateTimeInputLabels(
+        this,
+        Localizations.of<MaterialLocalizations>(
+              context,
+              MaterialLocalizations,
+            ) ??
+            const DefaultMaterialLocalizations(),
+      );
 }
+
+class _ResolvedDateTimeInputLabels extends AuraDateTimeInputLabels {
+  new(AuraDateTimeInputLabels labels, MaterialLocalizations localizations)
+    : super(
+        selectDateAndTime: _label(
+          labels.selectDateAndTime,
+          '${localizations.datePickerHelpText}, '
+          '${localizations.timePickerDialHelpText}',
+        ),
+        selectDate: _label(labels.selectDate, localizations.datePickerHelpText),
+        selectTime: _label(
+          labels.selectTime,
+          localizations.timePickerDialHelpText,
+        ),
+        dateAndTime: _label(
+          labels.dateAndTime,
+          '${localizations.unspecifiedDate}, '
+          '${localizations.timePickerHourLabel} / '
+          '${localizations.timePickerMinuteLabel}',
+        ),
+        date: _label(labels.date, localizations.unspecifiedDate),
+        time: _label(
+          labels.time,
+          '${localizations.timePickerHourLabel} / '
+          '${localizations.timePickerMinuteLabel}',
+        ),
+        cancel: _label(labels.cancel, localizations.cancelButtonLabel),
+        done: _label(labels.done, localizations.okButtonLabel),
+        previousMonth: _label(
+          labels.previousMonth,
+          localizations.previousMonthTooltip,
+        ),
+        nextMonth: _label(labels.nextMonth, localizations.nextMonthTooltip),
+        decreaseHour: _label(
+          labels.decreaseHour,
+          '- ${localizations.timePickerHourLabel}',
+        ),
+        increaseHour: _label(
+          labels.increaseHour,
+          '+ ${localizations.timePickerHourLabel}',
+        ),
+        decreaseMinute: _label(
+          labels.decreaseMinute,
+          '- ${localizations.timePickerMinuteLabel}',
+        ),
+        increaseMinute: _label(
+          labels.increaseMinute,
+          '+ ${localizations.timePickerMinuteLabel}',
+        ),
+        weekdayLabels: labels.weekdayLabels.isEmpty
+            ? [
+                ...localizations.narrowWeekdays.skip(1),
+                ...localizations.narrowWeekdays.take(1),
+              ]
+            : labels.weekdayLabels,
+        dayLabelBuilder: labels.dayLabelBuilder,
+      );
+}
+
+String _label(String value, String fallback) =>
+    value.isEmpty ? fallback : value;
