@@ -724,10 +724,7 @@ void main() {
       await tester.pump();
 
       await waitForConversationVisibility(isVisible: true);
-      expect(
-        find.text('Project research'),
-        findsOneWidget,
-      );
+      expect(find.text('Project research'), findsOneWidget);
       expect(
         find.byKey(ValueKey('conversation-selection-${conversation.id}')),
         findsNothing,
