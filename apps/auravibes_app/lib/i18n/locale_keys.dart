@@ -560,6 +560,8 @@ abstract class LocaleKeys {
   static const agents_skills_summary = 'agents.skills_summary';
   static const agents_skills_warning_summary = 'agents.skills_warning_summary';
   static const agents_skills_load_error = 'agents.skills_load_error';
+  static const agents_dependencies_load_error =
+      'agents.dependencies_load_error';
   static const agents_disabled_skills_warning =
       'agents.disabled_skills_warning';
   static const agents_disabled_skill_label = 'agents.disabled_skill_label';
@@ -1307,6 +1309,8 @@ abstract class LocaleKeys {
   static const skills_screen_continue = 'skills_screen.continue';
   static const skills_screen_not_found = 'skills_screen.not_found';
   static const skills_screen_load_error = 'skills_screen.load_error';
+  static const skills_screen_detail_load_error =
+      'skills_screen.detail_load_error';
   static const skills_screen_error_title_required =
       'skills_screen.error_title_required';
   static const skills_screen_error_title_invalid =
@@ -3250,6 +3254,8 @@ abstract class LocaleKeys {
   static const workspace_connected_inputs = 'workspace_connected.inputs';
   static const workspace_connected_connection =
       'workspace_connected.connection';
+  static const workspace_connected_connections_load_error =
+      'workspace_connected.connections_load_error';
   static const workspace_connected_freshness = 'workspace_connected.freshness';
   static const workspace_connected_disclosure =
       'workspace_connected.disclosure';

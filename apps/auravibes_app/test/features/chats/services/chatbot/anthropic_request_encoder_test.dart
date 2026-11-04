@@ -20,7 +20,11 @@ void main() {
     afterMessageId: 'u1',
     update: .new(
       contextMessages: const [
-        AgentContextMessage(role: .system, content: 'Stable prompt'),
+        AgentContextMessage(
+          role: .system,
+          content: 'Stable prompt',
+          provenance: .applicationPrompt,
+        ),
       ],
       toolsAdded: [tool],
     ),
@@ -34,7 +38,10 @@ void main() {
     Message(
       role: .system,
       content: [TextPart(text: 'Current prompt')],
-      metadata: {'transcriptContext': true},
+      metadata: {
+        'transcriptContext': true,
+        ...AgentContextProvenance.applicationPrompt.withMetadata(const {}),
+      },
     ),
     user('u1'),
   ];
@@ -47,14 +54,18 @@ void main() {
     supportsToolDeltas: supported,
     entries: entries,
   );
-  test('prefix unchanged across positioned tool change', () {
+  test('keeps app instruction and tool-delta behavior', () {
     final before = encoder([initial])
         .encode('claude-opus-5', .new(messages: prefix));
     final update = AgentTranscriptContextEntry(
       afterMessageId: 'u2',
       update: .new(
         contextMessages: const [
-          AgentContextMessage(role: .system, content: 'Later prompt'),
+          AgentContextMessage(
+            role: .system,
+            content: 'Later prompt',
+            provenance: .applicationPrompt,
+          ),
         ],
         toolsAdded: [other],
         toolsRemoved: ['lookup'],
@@ -122,6 +133,9 @@ void main() {
             Message(
               role: .system,
               content: [TextPart(text: 'secret')],
+              metadata: AgentContextProvenance.applicationPrompt.withMetadata(
+                const {},
+              ),
             ),
           ],
         ),
@@ -160,6 +174,9 @@ void main() {
           Message(
             role: .system,
             content: [TextPart(text: 'Later prompt')],
+            metadata: AgentContextProvenance.applicationPrompt.withMetadata(
+              const {},
+            ),
           ),
         ],
       ),
@@ -176,7 +193,11 @@ void main() {
       afterMessageId: 'u2',
       update: .new(
         contextMessages: const [
-          AgentContextMessage(role: .system, content: 'New prompt'),
+          AgentContextMessage(
+            role: .system,
+            content: 'New prompt',
+            provenance: .applicationPrompt,
+          ),
         ],
       ),
     );
@@ -191,6 +212,95 @@ void main() {
     );
     expect(result.betas, isEmpty);
     expect(result.request.toJson(), isNot(contains('cache_control')));
+  });
+
+  test('keeps imported skill out of system during positioned update', () {
+    final update = AgentTranscriptContextEntry(
+      afterMessageId: 'u1',
+      update: .new(
+        contextMessages: const [
+          AgentContextMessage(
+            role: .system,
+            content: 'APP_CONTEXT_SENTINEL',
+            provenance: .applicationPrompt,
+          ),
+          AgentContextMessage(
+            role: .system,
+            content: 'IMPORTED_CONTEXT_SENTINEL',
+            provenance: .importedSkill,
+          ),
+        ],
+      ),
+    );
+    final result = encoder([initial, update])
+        .encode('claude-opus-5', .new(messages: prefix));
+    final wireMessages = result.request.messages.map((message) {
+      return (role: message.role.name, json: message.toJson());
+    }).toList();
+    final imported = wireMessages.singleWhere(
+      (message) =>
+          jsonEncode(message.json).contains('IMPORTED_CONTEXT_SENTINEL'),
+    );
+    final appContext = wireMessages.singleWhere(
+      (message) => jsonEncode(message.json).contains('APP_CONTEXT_SENTINEL'),
+    );
+
+    expect(imported.role, 'user');
+    expect(appContext.role, 'system');
+    expect(wireMessages.map((message) => message.role), [
+      'user',
+      'user',
+      'system',
+    ]);
+    expect(result.request.system?.toJson(), 'Stable prompt');
+  });
+
+  test('unknown system context remains user on wire', () {
+    final unknown = AgentTranscriptContextEntry(
+      afterMessageId: 'u1',
+      update: .new(
+        contextMessages: const [
+          AgentContextMessage(
+            role: .system,
+            content: 'UNKNOWN_CONTEXT_SENTINEL',
+          ),
+        ],
+      ),
+    );
+    final result = encoder([initial, unknown])
+        .encode('claude-opus-5', .new(messages: [...prefix, user('u1')]));
+    final message = result.request.messages.singleWhere(
+      (message) =>
+          jsonEncode(message.toJson()).contains('UNKNOWN_CONTEXT_SENTINEL'),
+    );
+
+    expect(message.role.name, 'user');
+    expect(result.request.system?.toJson(), 'Stable prompt');
+    expect(
+      jsonEncode(result.request.system?.toJson()),
+      isNot(contains('UNKNOWN_CONTEXT_SENTINEL')),
+    );
+  });
+
+  test('unknown direct system message is encoded as user data', () {
+    final result = encoder([]).encode(
+      'claude-opus-5',
+      .new(
+        messages: [
+          Message(
+            role: .system,
+            content: [TextPart(text: 'UNKNOWN_DIRECT_SENTINEL')],
+          ),
+        ],
+      ),
+    );
+
+    expect(result.request.system, isNull);
+    expect(result.request.messages.single.role.name, 'user');
+    expect(
+      result.request.messages.single.blocks.single.toJson()['text'],
+      'UNKNOWN_DIRECT_SENTINEL',
+    );
   });
 
   test('approval-only update does not create empty system message', () {

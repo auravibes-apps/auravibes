@@ -1481,7 +1481,7 @@ void main() {
         ).thenAnswer((_) async => const []);
         final unsupported = _userMessage.copyWith(
           id: 'context-1',
-          content: '{"version":2,"prompt":"PRIVATE PROMPT"}',
+          content: '{"version":3,"prompt":"PRIVATE PROMPT"}',
           messageType: .system,
           isUser: false,
           metadata: const MessageMetadataEntity(
