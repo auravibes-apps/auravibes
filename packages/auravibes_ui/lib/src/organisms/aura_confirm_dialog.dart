@@ -40,10 +40,10 @@ class AuraConfirmDialog extends StatelessWidget {
   /// The dialog message/content widget.
   final Widget message;
 
-  /// Label for the confirm button. Defaults to localized "Confirm".
+  /// Label for the confirm button.
   final Widget confirmLabel;
 
-  /// Label for the cancel button. Defaults to localized "Cancel".
+  /// Label for the cancel button.
   final Widget cancelLabel;
 
   /// Called when the confirm button is pressed.
@@ -149,6 +149,8 @@ abstract final class AuraDialogs {
   const new _();
 
   /// Shows a confirmation dialog and returns the user's selection.
+  ///
+  /// Omitted action labels use the host's Material localizations.
   // Public named arguments preserve the existing confirmation API.
   // ignore: number-of-parameters
   static Future<bool?> confirm({
@@ -172,6 +174,8 @@ abstract final class AuraDialogs {
   );
 
   /// Shows an alert dialog and dismisses on button tap.
+  ///
+  /// An omitted dismiss label uses the host's Material localizations.
   // Public named arguments preserve the existing alert API.
   // ignore: number-of-parameters
   static Future<void> alert({
@@ -226,8 +230,12 @@ class _AuraConfirmationDialogData {
         child: AuraConfirmDialog(
           title: request.title,
           message: request.message,
-          confirmLabel: request.actions.confirmLabel ?? const Text('Confirm'),
-          cancelLabel: request.actions.cancelLabel ?? const Text('Cancel'),
+          confirmLabel:
+              request.actions.confirmLabel ??
+              Text(MaterialLocalizations.of(request.context).okButtonLabel),
+          cancelLabel:
+              request.actions.cancelLabel ??
+              Text(MaterialLocalizations.of(request.context).cancelButtonLabel),
           isDestructive: request.isDestructive,
           tint: request.tint,
         ),
@@ -261,7 +269,9 @@ Future<void> _showAlertDialog(_AuraAlertRequest request) =>
       child: AuraAlertDialog(
         title: request.title,
         message: request.message,
-        dismissLabel: request.dismissLabel ?? const Text('OK'),
+        dismissLabel:
+            request.dismissLabel ??
+            Text(MaterialLocalizations.of(request.context).okButtonLabel),
         tint: request.tint,
       ),
       barrierDismissible: request.barrierDismissible,

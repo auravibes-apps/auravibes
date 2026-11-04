@@ -289,14 +289,7 @@ Map<String, String> buildReverseImportGraph(
   return result;
 }
 
-/// Selects a conservative result from changed paths.
-SelectionResult selectChangedTests({
-  required List<ChangedFile> changes,
-  required Map<String, String> headSources,
-  required Map<String, String> baseSources,
-  required Map<String, String> packageRoots,
-  Set<String> serverpodPackageRoots = const {},
-}) {
+SelectionResult? _terminalSelection(List<ChangedFile> changes) {
   final paths = <String>{};
   try {
     for (final change in changes) {
@@ -331,6 +324,25 @@ SelectionResult selectChangedTests({
       reason: 'No executable test input.',
     );
   }
+
+  return null;
+}
+
+/// Selects a conservative result from changed paths.
+SelectionResult selectChangedTests({
+  required List<ChangedFile> changes,
+  required Map<String, String> headSources,
+  required Map<String, String> baseSources,
+  required Map<String, String> packageRoots,
+  Set<String> serverpodPackageRoots = const {},
+}) {
+  final terminal = _terminalSelection(changes);
+  if (terminal != null) return terminal;
+  final paths = <String>{
+    for (final change in changes)
+      for (final path in [change.oldPath, change.newPath])
+        if (path != null) _normalizePath(path),
+  };
 
   final roots = <String, String>{};
   try {
@@ -793,6 +805,33 @@ Future<SelectionResult> selectRepository({
   try {
     _validateRevision(base);
     _validateRevision(head);
+    final diff = await _git(rootPath, [
+      'diff',
+      '--name-status',
+      '--find-renames',
+      '-z',
+      if (includeWorkingTree) base else '$base...$head',
+      if (includeWorkingTree) '--',
+    ]);
+    final changes = <ChangedFile>[...parseNameStatus(diff)];
+    if (includeWorkingTree) {
+      final untracked = await _git(rootPath, [
+        'ls-files',
+        '--others',
+        '--exclude-standard',
+        '-z',
+      ]);
+      changes.addAll(
+        untracked
+            .split('\u0000')
+            .where((path) => path.isNotEmpty)
+            .map(ChangedFile.added),
+      );
+    }
+
+    final terminal = _terminalSelection(changes);
+    if (terminal != null) return terminal;
+
     final packages = await _loadPackages(rootPath);
     final headSources = await _workspaceSources(packages);
     // Ponytail: Graph inputs are limited to package lib/test roots; skip
@@ -816,29 +855,6 @@ Future<SelectionResult> selectRepository({
         'show',
         '$base:$normalized',
       ]);
-    }
-    final diff = await _git(rootPath, [
-      'diff',
-      '--name-status',
-      '--find-renames',
-      '-z',
-      if (includeWorkingTree) base else '$base...$head',
-      if (includeWorkingTree) '--',
-    ]);
-    final changes = <ChangedFile>[...parseNameStatus(diff)];
-    if (includeWorkingTree) {
-      final untracked = await _git(rootPath, [
-        'ls-files',
-        '--others',
-        '--exclude-standard',
-        '-z',
-      ]);
-      changes.addAll(
-        untracked
-            .split('\u0000')
-            .where((path) => path.isNotEmpty)
-            .map(ChangedFile.added),
-      );
     }
 
     return selectChangedTests(
