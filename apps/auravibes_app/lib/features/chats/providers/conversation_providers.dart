@@ -115,7 +115,7 @@ Stream<List<ConversationEntity>> _conversationsForSession(
   _ConversationSessionRequest request,
 ) {
   if (request.session.cloud case final cloud?) {
-    return _cloudConversations(ref, cloud, request.options);
+    return _cloudConversations(request.ref, cloud, request.options);
   }
 
   return _localConversationsForSession(request);
