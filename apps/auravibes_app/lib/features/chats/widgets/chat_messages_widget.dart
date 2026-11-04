@@ -1740,7 +1740,14 @@ Future<void> _forkMessage(
                   .call(conversation, throughMessageId: message.id))
               .id;
     }
-    ref.invalidate(conversationsStreamProvider(workspaceId: workspaceId));
+    ref.invalidate(
+      conversationsStreamProvider((
+        workspaceId: workspaceId,
+        search: '',
+        scope: .active,
+        pagination: (limit: null, offset: 0),
+      )),
+    );
     if (context.mounted) {
       ConversationRoute(workspaceId: workspaceId, chatId: forkId).go(context);
     }

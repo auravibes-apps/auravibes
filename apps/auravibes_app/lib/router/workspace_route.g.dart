@@ -25,6 +25,18 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
               factory: $NewChatRoute._fromState,
             ),
             GoRouteData.$route(
+              path: 'chats',
+              hasOverriddenOnExit: false,
+              factory: $ChatsRoute._fromState,
+              routes: [
+                GoRouteData.$route(
+                  path: 'archived',
+                  hasOverriddenOnExit: false,
+                  factory: $ArchivedConversationsRoute._fromState,
+                ),
+              ],
+            ),
+            GoRouteData.$route(
               path: 'chats/:chatId',
               hasOverriddenOnExit: false,
               factory: $ConversationRoute._fromState,
@@ -35,11 +47,6 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
                   factory: $SubAgentConversationRoute._fromState,
                 ),
               ],
-            ),
-            GoRouteData.$route(
-              path: 'chats',
-              hasOverriddenOnExit: false,
-              factory: $ChatsRoute._fromState,
             ),
             GoRouteData.$route(
               path: 'bookmarks',
@@ -276,6 +283,58 @@ mixin $NewChatRoute on GoRouteData {
   void replace(BuildContext context) => context.replace(location);
 }
 
+mixin $ChatsRoute on GoRouteData {
+  static ChatsRoute _fromState(GoRouterState state) =>
+      ChatsRoute(workspaceId: state.pathParameters['workspaceId']!);
+
+  ChatsRoute get _self => this as ChatsRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/chats',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $ArchivedConversationsRoute on GoRouteData {
+  static ArchivedConversationsRoute _fromState(GoRouterState state) =>
+      ArchivedConversationsRoute(
+        workspaceId: state.pathParameters['workspaceId']!,
+      );
+
+  ArchivedConversationsRoute get _self => this as ArchivedConversationsRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/chats/archived',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
 mixin $ConversationRoute on GoRouteData {
   static ConversationRoute _fromState(GoRouterState state) => ConversationRoute(
     workspaceId: state.pathParameters['workspaceId']!,
@@ -318,31 +377,6 @@ mixin $SubAgentConversationRoute on GoRouteData {
   @override
   String get location => GoRouteData.$location(
     '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/chats/${Uri.encodeComponent(_self.chatId)}/sub-agents/${Uri.encodeComponent(_self.subAgentConversationId)}',
-  );
-
-  @override
-  void go(BuildContext context) => context.go(location);
-
-  @override
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  @override
-  void replace(BuildContext context) => context.replace(location);
-}
-
-mixin $ChatsRoute on GoRouteData {
-  static ChatsRoute _fromState(GoRouterState state) =>
-      ChatsRoute(workspaceId: state.pathParameters['workspaceId']!);
-
-  ChatsRoute get _self => this as ChatsRoute;
-
-  @override
-  String get location => GoRouteData.$location(
-    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/chats',
   );
 
   @override
