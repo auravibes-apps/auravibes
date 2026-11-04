@@ -69,6 +69,7 @@ name: other
       output,
       isNot(contains('Changed paths considered for this selection')),
     );
+    expect(output, isNot(contains('tool/localization_audit.dart')));
   });
 
   test(

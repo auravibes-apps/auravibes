@@ -26,7 +26,10 @@ jobs:
           persist-credentials: false
 
       - name: Preserve the revision-independent capture test
-        run: cp apps/auravibes_app/test/widgets/ux_validation_layout_test.dart "$RUNNER_TEMP/ux_validation_layout_test.dart"
+        run: |
+          cp apps/auravibes_app/test/widgets/ux_validation_layout_test.dart "$RUNNER_TEMP/ux_validation_layout_test.dart"
+          cp apps/auravibes_app/test/helpers/ux_capture.dart "$RUNNER_TEMP/ux_capture.dart"
+          cp apps/auravibes_app/test/helpers/intro_journey_capture.dart "$RUNNER_TEMP/intro_journey_capture.dart"
 
       - name: Checkout exact main baseline
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -44,6 +47,8 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/desktop-file-drop-before"
           cp "$RUNNER_TEMP/ux_validation_layout_test.dart" test/widgets/ux_validation_layout_test.dart
+          cp "$RUNNER_TEMP/ux_capture.dart" test/helpers/ux_capture.dart
+          cp "$RUNNER_TEMP/intro_journey_capture.dart" test/helpers/intro_journey_capture.dart
           python3 ../../tool/validation_lease.py --label desktop-file-drop-before-capture -- flutter test test/widgets/ux_validation_layout_test.dart --no-pub --plain-name='captures chat composer desktop file drop states' --dart-define="UX_CAPTURE_DIR=$RUNNER_TEMP/desktop-file-drop-before" --dart-define="UX_SOURCE_FINGERPRINT=$BASELINE_SHA"
 
       - name: Upload before screenshots and provenance

@@ -53,13 +53,12 @@ Future<int> runLocalPreflight(List<String> arguments) async {
   }
   final sortedChanges = changes.toList()
     ..sort((left, right) => _changeLabel(left).compareTo(_changeLabel(right)));
-  final changedDartPaths = _existingChangedDartPaths(root, sortedChanges);
   final auditLocalization = sortedChanges.any(
-    (change) => [
-      change.oldPath,
-      change.newPath,
-    ].whereType<String>().any(_affectsLocalization),
+    (change) =>
+        _isLocalizationAuditInput(change.oldPath) ||
+        _isLocalizationAuditInput(change.newPath),
   );
+  final changedDartPaths = _existingChangedDartPaths(root, sortedChanges);
   final analyzeGroups = await analyzedPathGroups(root, changedDartPaths);
   final analyzePaths = analyzeGroups.expand((group) => group).toList();
   final selection = await selectRepository(
@@ -117,14 +116,13 @@ Future<int> runLocalPreflight(List<String> arguments) async {
       stdout.writeln('  ${_formatCommand('fvm dart', arguments)}');
     }
   }
-
   stdout.writeln('Localization audit:');
   if (auditLocalization) {
     stdout.writeln(
       '  (cd apps/auravibes_app && fvm dart run tool/localization_audit.dart)',
     );
   } else {
-    stdout.writeln('  No command; no app Dart or translation catalog changes.');
+    stdout.writeln('  No command; no app source, tool, or catalog changes.');
   }
 
   final plannedCommands = <_PlannedCommand>[];
@@ -193,10 +191,14 @@ Future<int> runLocalPreflight(List<String> arguments) async {
   return await runSelectedTests(selection, rootPath: root.path);
 }
 
-bool _affectsLocalization(String path) =>
-    (path.startsWith('apps/auravibes_app/') && path.endsWith('.dart')) ||
-    (path.startsWith('apps/auravibes_app/assets/i18n/') &&
-        path.endsWith('.json'));
+bool _isLocalizationAuditInput(String? path) {
+  if (path == null) return false;
+  const app = 'apps/auravibes_app/';
+
+  return (path.startsWith('${app}lib/') && path.endsWith('.dart')) ||
+      (path.startsWith('${app}assets/i18n/') && path.endsWith('.json')) ||
+      (path.startsWith('${app}tool/localization_') && path.endsWith('.dart'));
+}
 
 Future<List<ChangedFile>> _workingTreeChanges(
   Directory root,

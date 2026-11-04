@@ -5,8 +5,6 @@ import 'dart:ui' as ui;
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
-import 'package:auravibes_app/data/repositories/skill_resources_repository.dart';
-import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
@@ -53,7 +51,6 @@ import 'package:auravibes_app/features/models/providers/chat_model_connections_p
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/cloud_service_connection.dart';
-import 'package:auravibes_app/features/service_connections/models/connector_connection_candidate.dart';
 import 'package:auravibes_app/features/service_connections/models/mcp_connection_test_status.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
@@ -64,10 +61,6 @@ import 'package:auravibes_app/features/service_connections/screens/service_conne
 import 'package:auravibes_app/features/service_connections/usecases/test_mcp_connection_usecase.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
 import 'package:auravibes_app/features/settings/screens/workspace_settings_screen.dart';
-import 'package:auravibes_app/features/skills/models/skill_detail.dart';
-import 'package:auravibes_app/features/skills/providers/skill_detail_provider.dart';
-import 'package:auravibes_app/features/skills/providers/skill_resources_provider.dart';
-import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/skills/screens/skill_detail_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_resource_edit_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skills_screen.dart';
@@ -77,14 +70,10 @@ import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.
 import 'package:auravibes_app/features/tools/screens/tools_screen.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_route_failure.dart';
-import 'package:auravibes_app/features/workspaces/models/workspace_view.dart'
-    as app;
-import 'package:auravibes_app/features/workspaces/providers/workspace_connected_view_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/create_workspace_screen.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_management_screen.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_setup_preflight_screen.dart';
-import 'package:auravibes_app/features/workspaces/widgets/workspace_connected_editor.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/services/cloud_auth_protocol.dart';
@@ -95,15 +84,12 @@ import 'package:auravibes_app/widgets/app_with_responsive_drawer.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_app/widgets/route_recovery_view.dart';
 import 'package:auravibes_app/widgets/setup_page_frame.dart';
-import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart' show Variable;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_file_drop/flutter_file_drop.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_svg/svg.dart';
@@ -112,483 +98,15 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
 
+import '../helpers/ux_capture.dart';
 import '../helpers/ux_validation_fixture.dart';
 
 part '../helpers/intro_journey_capture.dart';
 
-final _captureFontMetadata = <Map<String, String>>[];
-
 void main() {
   _registerIntroJourneyCaptures();
   tearDownAll(UxValidationFixture.closeDatabase);
-  setUpAll(() async {
-    for (final font in const {
-      'Inter': 'assets/fonts/Inter.ttf',
-      'JetBrains Mono':
-          'packages/gpt_markdown/lib/fonts/JetBrainsMono-Regular.ttf',
-      'packages/gpt_markdown/JetBrainsMono':
-          'packages/gpt_markdown/lib/fonts/JetBrainsMono-Regular.ttf',
-      'MaterialIcons': 'fonts/MaterialIcons-Regular.otf',
-    }.entries) {
-      await _registerCaptureFont(
-        font.key,
-        font.value,
-        await rootBundle.load(font.value),
-      );
-    }
-    await _registerCaptureFont(
-      'Roboto',
-      'Flutter SDK artifacts/material_fonts/Roboto-Regular.ttf',
-      await _sdkRoboto(),
-    );
-  });
-  for (final scenario in const [
-    (
-      name: 'agent-editor-skills-failure',
-      route: 'AgentDetailRoute',
-      tools: false,
-    ),
-    (
-      name: 'agent-editor-tools-failure',
-      route: 'AgentDetailRoute',
-      tools: true,
-    ),
-    (name: 'skills-list-failure', route: 'SkillsRoute', tools: false),
-  ]) {
-    testWidgets('${scenario.name} can retry', (tester) async {
-      final fixture = await UxValidationFixture.create();
-      final route = _scenario(scenario.route, fixture);
-      var fails = true;
-      const size = Size(466, 678);
-      final router = await fixture.pump(
-        tester,
-        route.location,
-        size: size,
-        overrides: [
-          if (scenario.tools)
-            workspaceToolsProvider(fixture.workspaceId)
-                .overrideWith(() => _ControlledTools(() => fails))
-          else
-            workspaceSkillsProvider(fixture.workspaceId)
-                .overrideWith((_) async {
-                  if (fails) throw StateError('Controlled skills load failure');
-
-                  return [];
-                }),
-        ],
-      );
-      await _capture(
-        tester,
-        scenario.name,
-        router.routeInformationProvider.value.uri.toString(),
-        locale: 'en',
-        size: size,
-        scale: 1,
-        dark: false,
-      );
-      expect(
-        find.text(
-          scenario.tools
-              ? 'Could not load tools. Try again.'
-              : 'Could not load skills. Try again.',
-        ),
-        findsOneWidget,
-      );
-      expect(find.text('Retry'), findsOneWidget);
-      fails = false;
-      await tester.tap(find.text('Retry'));
-      await fixture.settle(tester);
-      expect(
-        find.text(
-          scenario.route == 'SkillsRoute'
-              ? 'No skills available'
-              : 'Agent details',
-        ),
-        findsOneWidget,
-      );
-      if (scenario.route == 'AgentDetailRoute') {
-        await tester.enterText(find.byType(AuraInput).first, 'Unsaved draft');
-        fails = true;
-        final container = ProviderScope.containerOf(
-          tester.element(find.byType(AgentDetailScreen)),
-        );
-        if (scenario.tools) {
-          container.invalidate(workspaceToolsProvider(fixture.workspaceId));
-        } else {
-          container.invalidate(workspaceSkillsProvider(fixture.workspaceId));
-        }
-        await fixture.settle(tester);
-        expect(find.text('Retry'), findsOneWidget);
-        fails = false;
-        await tester.tap(find.text('Retry'));
-        await fixture.settle(tester);
-        expect(find.text('Unsaved draft'), findsOneWidget);
-      }
-      await fixture.close(tester);
-    });
-  }
-  testWidgets('skill-resources-list-failure can retry', (tester) async {
-    final fixture = await UxValidationFixture.create();
-    final resources = await SkillResourcesRepository(fixture.database)
-        .getSkillResources(fixture.skillId);
-    var fails = true;
-    const size = Size(466, 678);
-    final router = await fixture.pump(
-      tester,
-      _scenario('SkillDetailRoute', fixture).location,
-      size: size,
-      overrides: [
-        skillResourcesProvider(
-          fixture.workspaceId,
-          fixture.skillId,
-        ).overrideWith((_) async {
-          if (fails) throw StateError('Controlled resources load failure');
-
-          return resources;
-        }),
-      ],
-    );
-    await tester.scrollUntilVisible(
-      find.textContaining('Could not load'),
-      300,
-      scrollable: find
-          .descendant(
-            of: find.byType(SkillDetailScreen),
-            matching: find.byType(Scrollable),
-          )
-          .first,
-    );
-    await tester.drag(
-      find
-          .descendant(
-            of: find.byType(SkillDetailScreen),
-            matching: find.byType(ListView),
-          )
-          .first,
-      const Offset(0, -300),
-    );
-    final _ = await tester.pumpAndSettle();
-    await _capture(
-      tester,
-      'skill-resources-list-failure',
-      router.routeInformationProvider.value.uri.toString(),
-      locale: 'en',
-      size: size,
-      scale: 1,
-      dark: false,
-    );
-    expect(find.text('Retry').hitTestable(), findsOneWidget);
-    fails = false;
-    await tester.tap(find.text('Retry'));
-    await fixture.settle(tester);
-    expect(find.text('Writing guide'), findsOneWidget);
-    await fixture.close(tester);
-  });
-  testWidgets('agent editor retries simultaneous dependency failures', (
-    tester,
-  ) async {
-    final fixture = await UxValidationFixture.create();
-    var fails = true;
-    final _ = await fixture.pump(
-      tester,
-      _scenario('AgentDetailRoute', fixture).location,
-      overrides: [
-        workspaceSkillsProvider(fixture.workspaceId).overrideWith((_) async {
-          if (fails) throw StateError('Controlled skills load failure');
-
-          return [];
-        }),
-        workspaceToolsProvider(fixture.workspaceId)
-            .overrideWith(() => _ControlledTools(() => fails)),
-      ],
-    );
-    expect(
-      find.text('Could not load skills or tools. Try again.'),
-      findsOneWidget,
-    );
-    fails = false;
-    await tester.tap(find.text('Retry'));
-    await fixture.settle(tester);
-    expect(find.text('Agent details'), findsOneWidget);
-    await fixture.close(tester);
-  });
-  testWidgets('agent recovery remains readable in Spanish at large text', (
-    tester,
-  ) async {
-    final fixture = await UxValidationFixture.create();
-    var fails = true;
-    const size = Size(360, 678);
-    final router = await fixture.pump(
-      tester,
-      _scenario('AgentDetailRoute', fixture).location,
-      size: size,
-      locale: 'es',
-      scale: 1.4,
-      dark: true,
-      overrides: [
-        workspaceSkillsProvider(fixture.workspaceId).overrideWith((_) async {
-          if (fails) throw StateError('Controlled skills load failure');
-
-          return [];
-        }),
-      ],
-    );
-    final message = find.textContaining(
-      'No se pudieron cargar las habilidades.',
-    );
-    expect(message, findsOneWidget);
-    final bounds = tester.getRect(message);
-    expect(bounds.left, greaterThanOrEqualTo(12));
-    expect(bounds.right, lessThanOrEqualTo(size.width - 12));
-    expect(find.text('Reintentar'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-    await _capture(
-      tester,
-      'agent-editor-skills-failure-es-large-dark',
-      router.routeInformationProvider.value.uri.toString(),
-      locale: 'es',
-      size: size,
-      scale: 1.4,
-      dark: true,
-    );
-    fails = false;
-    await tester.tap(find.text('Reintentar'));
-    await fixture.settle(tester);
-    expect(find.text('Detalles del agente'), findsOneWidget);
-    await fixture.close(tester);
-  });
-  for (final failure in ['tools', 'connections']) {
-    testWidgets('connected-editor-$failure-failure can retry', (tester) async {
-      final fixture = await UxValidationFixture.create();
-      final connector = connectorDefinitions.singleWhere(
-        (value) => value.identifier == 'brave',
-      );
-      final tool = connector.tools.firstWhere(
-        (value) => value.slug == 'web_search',
-      );
-      final toolId = connectorToolId(connector, tool);
-      final now = DateTime.utc(2026);
-      final configuredTools = [
-        WorkspaceToolEntity(
-          id: 'fixture-tool',
-          workspaceId: fixture.workspaceId,
-          toolId: toolId,
-          isEnabled: true,
-          permissionMode: .alwaysAsk,
-          createdAt: now,
-          updatedAt: now,
-        ),
-      ];
-      var fails = true;
-      var available = true;
-      var cancelled = false;
-      const size = Size(466, 678);
-      final router = await fixture.pump(
-        tester,
-        WorkspaceRoute(workspaceId: fixture.workspaceId).location,
-        size: size,
-        overrides: [
-          workspaceToolsProvider(fixture.workspaceId).overrideWith(
-            () => _ControlledTools(
-              () => failure == 'tools' && fails,
-              values: configuredTools,
-            ),
-          ),
-          workspaceConnectedConnectionsProvider(
-            fixture.workspaceId,
-            'brave',
-          ).overrideWith((_) async {
-            if (failure == 'connections' && fails) {
-              throw StateError('Controlled connections load failure');
-            }
-
-            return available
-                ? [
-                    const ConnectorConnectionCandidate(
-                      id: 'fixture-connection',
-                      name: 'Research connection',
-                    ),
-                  ]
-                : [];
-          }),
-        ],
-      );
-      final view = app.WorkspaceView.connectedDraft(name: 'Research')
-          .withConnected(
-            .new(
-              toolId: toolId,
-              revision: '1',
-              inputs: const {},
-              connectionId: 'fixture-connection',
-            ),
-          );
-      final context = tester.element(find.byType(AppScreen).first);
-      unawaited(
-        showDialog<void>(
-          context: context,
-          builder: (_) => Dialog(
-            child: SizedBox(
-              height: 500,
-              child: WorkspaceConnectedEditor(
-                workspaceId: fixture.workspaceId,
-                view: view,
-                onDone: () => cancelled = true,
-              ),
-            ),
-          ),
-        ),
-      );
-      await fixture.settle(tester);
-      await _capture(
-        tester,
-        'connected-editor-$failure-failure',
-        router.routeInformationProvider.value.uri.toString(),
-        locale: 'en',
-        size: size,
-        scale: 1,
-        dark: false,
-      );
-      expect(
-        find.text(
-          failure == 'tools'
-              ? 'Could not load tools. Try again.'
-              : 'Could not load Connections. Try again.',
-        ),
-        findsOneWidget,
-      );
-      expect(find.text('Retry'), findsOneWidget);
-      expect(find.text('Cancel'), findsOneWidget);
-      if (failure == 'tools') {
-        await tester.tap(find.text('Cancel'));
-        expect(cancelled, isTrue);
-      }
-      final save = find.byWidgetPredicate(
-        (widget) =>
-            widget is AuraButton &&
-            widget.identifier == 'workspace_connected_save',
-      );
-      if (failure == 'connections') {
-        expect(tester.widget<AuraButton>(save).disabled, isTrue);
-      }
-      fails = false;
-      await tester.tap(find.text('Retry'));
-      await fixture.settle(tester);
-      expect(find.text('Connection'), findsOneWidget);
-      expect(tester.widget<AuraButton>(save).disabled, isFalse);
-      available = false;
-      ProviderScope.containerOf(
-        tester.element(find.byType(WorkspaceConnectedEditor)),
-      ).invalidate(
-        workspaceConnectedConnectionsProvider(fixture.workspaceId, 'brave'),
-      );
-      await fixture.settle(tester);
-      expect(tester.widget<AuraButton>(save).disabled, isTrue);
-      await fixture.close(tester);
-    });
-  }
-  for (final scenario in const [
-    (name: 'skill-detail-failure', route: 'SkillDetailRoute', parent: true),
-    (
-      name: 'skill-resource-parent-failure',
-      route: 'SkillResourceEditRoute',
-      parent: true,
-    ),
-    (
-      name: 'skill-resource-failure',
-      route: 'SkillResourceEditRoute',
-      parent: false,
-    ),
-  ]) {
-    testWidgets('${scenario.name} can retry', (tester) async {
-      final fixture = await UxValidationFixture.create();
-      final skill = await SkillsRepository(fixture.database)
-          .getSkillById(fixture.skillId);
-      final resource = await SkillResourcesRepository(fixture.database)
-          .getResourceById(fixture.resourceId);
-      if (skill == null || resource == null) {
-        throw StateError('Missing fixture');
-      }
-      var fails = true;
-      const size = Size(466, 678);
-      final router = await fixture.pump(
-        tester,
-        _scenario(scenario.route, fixture).location,
-        size: size,
-        overrides: [
-          if (scenario.parent)
-            skillDetailProvider(
-              fixture.workspaceId,
-              fixture.skillId,
-            ).overrideWith((_) async {
-              if (fails) throw StateError('Controlled skill load failure');
-
-              return SkillDetail.fromUserSkill(skill);
-            })
-          else
-            skillResourceProvider(
-              fixture.workspaceId,
-              fixture.resourceId,
-            ).overrideWith((_) async {
-              if (fails) throw StateError('Controlled resource load failure');
-
-              return resource;
-            }),
-        ],
-      );
-      await _capture(
-        tester,
-        scenario.name,
-        router.routeInformationProvider.value.uri.toString(),
-        locale: 'en',
-        size: size,
-        scale: 1,
-        dark: false,
-      );
-      expect(find.text('Retry'), findsOneWidget);
-      fails = false;
-      await tester.tap(find.text('Retry'));
-      await fixture.settle(tester);
-      expect(
-        find.text(
-          scenario.route == 'SkillDetailRoute'
-              ? 'Research notes'
-              : 'Writing guide',
-        ),
-        findsWidgets,
-      );
-      await tester.enterText(
-        find.byType(AuraInput).first,
-        'Unsaved skill draft',
-      );
-      fails = true;
-      final container = ProviderScope.containerOf(
-        tester.element(
-          find.byType(
-            scenario.route == 'SkillDetailRoute'
-                ? SkillDetailScreen
-                : SkillResourceEditScreen,
-          ),
-        ),
-      );
-      if (scenario.parent) {
-        container.invalidate(
-          skillDetailProvider(fixture.workspaceId, fixture.skillId),
-        );
-      } else {
-        container.invalidate(
-          skillResourceProvider(fixture.workspaceId, fixture.resourceId),
-        );
-      }
-      await fixture.settle(tester);
-      expect(find.text('Retry'), findsOneWidget);
-      fails = false;
-      await tester.tap(find.text('Retry'));
-      await fixture.settle(tester);
-      expect(find.text('Unsaved skill draft'), findsOneWidget);
-      await fixture.close(tester);
-    });
-  }
-
+  setUpAll(loadUxCaptureFonts);
   testWidgets('captures chat composer desktop file drop states', (
     tester,
   ) async {
@@ -619,7 +137,7 @@ void main() {
       expect(find.byType(ChatInputWidget), findsOneWidget);
       expect(find.byType(DropTarget), findsOneWidget);
       expect(tester.takeException(), isNull);
-      await _capture(
+      await captureUxWidget(
         tester,
         'chat-composer-file-drop-idle',
         route,
@@ -650,7 +168,7 @@ void main() {
         find.byKey(const ValueKey('chat_input_drop_highlight')),
         findsOneWidget,
       );
-      await _capture(
+      await captureUxWidget(
         tester,
         'chat-composer-file-drop-hover',
         route,
@@ -731,7 +249,7 @@ void main() {
     const baseline = bool.fromEnvironment('TASK_BRIEF_CAPTURE_BASELINE');
     if (!baseline) expect(button, findsOneWidget);
     expect(tester.takeException(), isNull);
-    await _capture(
+    await captureUxWidget(
       tester,
       'conversation-task-brief-controls',
       router.routeInformationProvider.value.uri.toString(),
@@ -758,7 +276,7 @@ void main() {
     await tester.enterText(editor, brief);
     await fixture.settle(tester);
     expect(tester.takeException(), isNull);
-    await _capture(
+    await captureUxWidget(
       tester,
       'conversation-task-brief-editor',
       router.routeInformationProvider.value.uri.toString(),
@@ -777,7 +295,7 @@ void main() {
         .getSingle();
     expect(saved.read<String>('task_brief'), brief);
     expect(tester.takeException(), isNull);
-    await _capture(
+    await captureUxWidget(
       tester,
       'conversation-task-brief-saved',
       router.routeInformationProvider.value.uri.toString(),
@@ -814,7 +332,7 @@ void main() {
     expect(find.byType(AuraConfirmDialog), findsOneWidget);
     expect(find.text('Manage Workspaces'), findsOneWidget);
     expect(find.text('Shared research space'), findsOneWidget);
-    await _capture(
+    await captureUxWidget(
       tester,
       'workspace-erasure-confirmation-disclosure',
       router.routeInformationProvider.value.uri.toString(),
@@ -860,7 +378,7 @@ void main() {
       find.descendant(of: invitation, matching: find.text('Member')),
       findsOneWidget,
     );
-    await _capture(
+    await captureUxWidget(
       tester,
       'cloud-workspace-populated-membership',
       router.routeInformationProvider.value.uri.toString(),
@@ -897,7 +415,7 @@ void main() {
     await tester.tap(find.text('Invite member'));
     await fixture.settle(tester);
     expect(find.byType(AlertDialog), findsOneWidget);
-    await _capture(
+    await captureUxWidget(
       tester,
       'cloud-workspace-invite-dialog',
       router.routeInformationProvider.value.uri.toString(),
@@ -923,7 +441,7 @@ void main() {
     await tester.tap(find.byTooltip('More options'));
     await fixture.settle(tester);
     expect(find.text('Archive'), findsOneWidget);
-    await _capture(
+    await captureUxWidget(
       tester,
       'conversation-archive-before',
       router.routeInformationProvider.value.uri.toString(),
@@ -931,6 +449,10 @@ void main() {
       size: size,
       scale: 1,
       dark: false,
+      fixture:
+          'Persisted local workspace and seeded parent conversation; '
+          'conversation options open before device-local archive, '
+          'with no remote access',
     );
 
     await tester.tap(find.text('Archive'));
@@ -975,7 +497,7 @@ void main() {
     // the stable archived list rather than a transient notification.
     await tester.pump(const Duration(seconds: 5));
     await fixture.settle(tester);
-    await _capture(
+    await captureUxWidget(
       tester,
       'conversation-archive-after',
       router.routeInformationProvider.value.uri.toString(),
@@ -983,6 +505,9 @@ void main() {
       size: size,
       scale: 1,
       dark: false,
+      fixture:
+          'Same persisted local workspace after archiving the conversation; '
+          'archived conversation list visible, with no remote access',
     );
     await fixture.close(tester);
   });
@@ -1107,7 +632,7 @@ void main() {
                       ),
                       'theme': dark ? 'dark' : 'light',
                       'accentHue': 186.0,
-                      'fonts': _captureFontMetadata,
+                      'fonts': uxCaptureFontMetadata,
                       'fontLimitations':
                           'Family-free Copy code uses test Ahem; '
                           'native control typography is unverified.',
@@ -1217,7 +742,7 @@ void main() {
           find.text(field.hint.tr(context: editorContext)),
           findsOneWidget,
         );
-        await _capture(
+        await captureUxWidget(
           tester,
           '${field.title}-$locale',
           router.routeInformationProvider.value.uri.toString(),
@@ -1306,7 +831,7 @@ void main() {
     expect(find.text('Notion'), findsOneWidget);
     expect(find.text('Linear'), findsOneWidget);
     expect(tester.takeException(), isNull);
-    await _capture(
+    await captureUxWidget(
       tester,
       'service-connections-services-entry',
       router.routeInformationProvider.value.uri.toString(),
@@ -1327,7 +852,7 @@ void main() {
       findsOneWidget,
     );
     expect(tester.takeException(), isNull);
-    await _capture(
+    await captureUxWidget(
       tester,
       'service-connections-search-empty',
       router.routeInformationProvider.value.uri.toString(),
@@ -1378,7 +903,7 @@ void main() {
     await fixture.settle(tester);
     expect(find.textContaining('Tested '), findsOneWidget);
     expect(tester.takeException(), isNull);
-    await _capture(
+    await captureUxWidget(
       tester,
       'service-connections-network-error',
       router.routeInformationProvider.value.uri.toString(),
@@ -1435,7 +960,7 @@ void main() {
         expect(find.text(label), findsOneWidget);
       }
       if (action == 'Conversation branches') {
-        await _capture(
+        await captureUxWidget(
           tester,
           'ConversationRoute-compact-menu',
           router.routeInformationProvider.value.uri.toString(),
@@ -1527,7 +1052,7 @@ void main() {
           size: const Size(320, 800),
         );
 
-        await _capture(
+        await captureUxWidget(
           tester,
           '$route-chat-compact-disclosure',
           router.routeInformationProvider.value.uri.toString(),
@@ -1602,7 +1127,7 @@ void main() {
         tester.getTopLeft(find.text('Draft the summary')).dy,
         lessThan(tester.getTopLeft(find.text('Review the result')).dy),
       );
-      await _capture(
+      await captureUxWidget(
         tester,
         'queued-prompts-before',
         route,
@@ -1626,7 +1151,7 @@ void main() {
           tester.getTopLeft(find.text('Outline the plan')).dy,
           lessThan(tester.getTopLeft(find.text('Review the result')).dy),
         );
-        await _capture(
+        await captureUxWidget(
           tester,
           'queued-prompts-after',
           route,
@@ -1752,7 +1277,7 @@ void main() {
             final family = slug.text.style?.fontFamily;
             expect(family, isNotNull);
             expect(
-              _captureFontMetadata.map((font) => font['family']),
+              uxCaptureFontMetadata.map((font) => font['family']),
               contains(family),
               reason:
                   'Actual resource identifier font must be loaded for capture',
@@ -1804,7 +1329,7 @@ void main() {
               addTearDown(() => testOutput.deleteSync(recursive: true));
             }
             File? sidecar;
-            await _capture(
+            await captureUxWidget(
               tester,
               '$name-${viewport.name}-${dark ? 'dark' : 'light'}',
               router.routeInformationProvider.value.uri.toString(),
@@ -1812,7 +1337,7 @@ void main() {
               size: viewport.size,
               scale: 1,
               dark: dark,
-              fixtureName: name,
+              fixture: expectedFixture,
               controlMeasurements: name == 'AgentsRoute' || name == 'DarkAgents'
                   ? _disabledBadgeMeasurement(tester)
                   : null,
@@ -2001,7 +1526,7 @@ void main() {
               final _ = await tester.pumpAndSettle();
             }
           }
-          await _capture(
+          await captureUxWidget(
             tester,
             '$name-${variant.width}-${variant.locale}-${variant.scale}',
             router.routeInformationProvider.value.uri.toString(),
@@ -2009,7 +1534,7 @@ void main() {
             size: .new(variant.width, 1200),
             scale: variant.scale,
             dark: variant.dark,
-            fixtureName: name,
+            fixture: name,
           );
           await fixture.close(tester);
         },
@@ -2299,38 +1824,6 @@ const _routeNames = [
   'SkillResourceEditRoute',
 ];
 
-Future<void> _registerCaptureFont(
-  String family,
-  String source,
-  ByteData data,
-) async {
-  await (FontLoader(family)..addFont(.value(data))).load();
-  _captureFontMetadata.add({
-    'family': family,
-    'source': source,
-    'sha256': sha256
-        .convert(
-          data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
-        )
-        .toString(),
-  });
-}
-
-Future<ByteData> _sdkRoboto() async {
-  for (
-    var directory = File(Platform.resolvedExecutable).parent;
-    directory.path != directory.parent.path;
-    directory = directory.parent
-  ) {
-    final font = File('${directory.path}/material_fonts/Roboto-Regular.ttf');
-    if (font.existsSync()) {
-      return (await font.readAsBytes()).buffer.asByteData();
-    }
-  }
-
-  throw StateError('Flutter SDK Roboto font is unavailable for capture');
-}
-
 void _expectTextInsideSideSafeArea(
   WidgetTester tester,
   Size viewport,
@@ -2382,63 +1875,6 @@ void _expectTextInsideSideSafeArea(
           'right unsafe area: $visibleBounds',
     );
   }
-}
-
-Future<void> _capture(
-  WidgetTester tester,
-  String name,
-  String route, {
-  required String locale,
-  required Size size,
-  required double scale,
-  required bool dark,
-  String? fixtureName,
-  Map<String, Object>? controlMeasurements,
-  String? outputDirectory,
-  void Function(File)? onSidecar,
-}) async {
-  final output =
-      outputDirectory ?? const String.fromEnvironment('UX_CAPTURE_DIR');
-  if (output.isEmpty) return;
-  const fingerprint = String.fromEnvironment('UX_SOURCE_FINGERPRINT');
-  final metadata = <String, Object?>{
-    'name': name,
-    'controlMeasurements': ?controlMeasurements,
-    'route': route,
-    'fixture': _fixtureDescription(fixtureName ?? name),
-    'sourceFingerprint': fingerprint,
-    'renderer': 'Flutter widget-test Skia, ${Platform.operatingSystem}',
-    'viewport': [size.width, size.height],
-    'locale': locale,
-    'textScale': scale,
-    'theme': dark ? 'dark' : 'light',
-    'accentHue': 186.0,
-    'flavor': 'prod view under controlled widget fixture',
-    'disableAnimations': true,
-    'fonts': _captureFontMetadata,
-    'fontLimitations':
-        'Flutter widget-test text only; native system typography and '
-        'assistive technology are not represented.',
-  };
-  final boundary = tester.renderObject<RenderRepaintBoundary>(
-    find.byKey(const ValueKey('ux-capture')),
-  );
-  await tester.runAsync(() async {
-    final image = await boundary.toImage();
-    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-    image.dispose();
-    final directory = Directory(output);
-    final _ = await directory.create(recursive: true);
-    final artifact = '${(++_captureNumber).toString().padLeft(3, '0')}-$name';
-    final _ = await File('$output/$artifact.png').writeAsBytes(
-      (bytes ?? (throw StateError('PNG encoding failed'))).buffer.asUint8List(),
-    );
-    final sidecar = File('$output/$artifact.json');
-    final _ = await sidecar.writeAsString(
-      const JsonEncoder.withIndent('  ').convert(metadata),
-    );
-    onSidecar?.call(sidecar);
-  });
 }
 
 const _accounts = [
@@ -2626,18 +2062,6 @@ class _EmptyTools extends WorkspaceToolsNotifier {
   Future<List<WorkspaceToolEntity>> build(String workspaceId) async => [];
 }
 
-class _ControlledTools(
-  final bool Function() fails, {
-  final List<WorkspaceToolEntity> values = const [],
-}) extends WorkspaceToolsNotifier {
-  @override
-  Future<List<WorkspaceToolEntity>> build(String workspaceId) async {
-    if (fails()) throw StateError('Controlled tools load failure');
-
-    return values;
-  }
-}
-
 class _EmptyGroups extends GroupedToolsNotifier {
   @override
   Future<List<ToolsGroupWithTools>> build(String workspaceId) async => [];
@@ -2676,80 +2100,6 @@ double _contrast(Color foreground, Color background) {
 
   return ((a > b ? a : b) + 0.05) / ((a > b ? b : a) + 0.05);
 }
-
-String _fixtureDescription(String name) => switch (name) {
-  'cloud-workspace-invite-dialog' =>
-    'Controlled cloud workspace admin detail with invitation dialog open; '
-        'no remote mutation',
-  'cloud-workspace-populated-membership' =>
-    'Controlled cloud workspace admin detail with one member and one '
-        'pending invitation; no remote mutation',
-  final capture when capture.startsWith('CloudWorkspaceDetailRoute-') =>
-    'Controlled cloud workspace admin detail with one member and one '
-        'pending invitation; no remote mutation',
-  'queued-prompts-before' || 'queued-prompts-after' =>
-    'Persisted local conversation with three fixed text-only queued drafts; '
-        'no model requests, attachments, network access, or remote mutations',
-  'agent-editor-skills-failure' || 'skills-list-failure' =>
-    'Persisted local workspace with a controlled skills load failure',
-  'agent-editor-tools-failure' =>
-    'Persisted local workspace with a controlled tools load failure',
-  'connected-editor-tools-failure' || 'connected-editor-connections-failure' =>
-    'Connected data editor in a test dialog with a controlled load failure',
-  'skill-detail-failure' || 'skill-resource-parent-failure' =>
-    'Persisted local workspace with a controlled skill detail load failure',
-  'skill-resource-failure' =>
-    'Persisted local workspace with a controlled skill resource load failure',
-  'skill-resources-list-failure' =>
-    'Persisted local workspace with a controlled skill resources list failure',
-  'agent-editor-skills-failure-es-large-dark' =>
-    'Persisted local workspace with a controlled skills load failure',
-  'workspace-erasure-confirmation-disclosure' =>
-    'In-memory local workspace plus synthetic owner account and deleted cloud '
-        'workspace state; confirmation open with no remote access or deletion',
-  'conversation-archive-before' =>
-    'Persisted local workspace and seeded parent conversation; conversation '
-        'options open before device-local archive, with no remote access',
-  'conversation-archive-after' =>
-    'Same persisted local workspace after archiving the conversation; '
-        'archived conversation list visible, with no remote access',
-  'service-connections-services-entry' =>
-    'Persisted local workspace with three controlled service rows: '
-        'Notion needs reconnect, Linear connected, Sentry failed; '
-        'no remote access',
-  'service-connections-search-empty' =>
-    'Same Services route and rows after a query matching no service; '
-        'no remote access',
-  'service-connections-network-error' =>
-    'Same Services route and rows after a controlled network test failure; '
-        'no remote request',
-  'IntroRoute' => 'Empty in-memory database; no workspace or account',
-  'MixedConnections' =>
-    'Four controlled connection rows: model provider, '
-        'expired MCP, two saved credentials; no remote access '
-        'claim',
-  'MixedAccounts' =>
-    'Two origins with stored accounts; controlled expired and unknown health',
-  'CloudTools' =>
-    'Matching cloud mirror and session; controlled available gate '
-        'and empty tools; actual capability restriction',
-  'LocalEmptyTools' =>
-    'Persisted local workspace with controlled empty tool providers; '
-        'actual local capability, add control and empty hint',
-  'FailedWorkspace' =>
-    'Controlled missing local workspace failure and actual '
-        'route recovery screen',
-  'CloudWorkspaceDetailRoute' =>
-    'Controlled cloud workspace admin detail with '
-        'authoritative capability values; no remote mutation',
-  'ServiceConnectionEditRoute' =>
-    'Controlled saved generic service editor state',
-  _ =>
-    'Persisted local in-memory workspace, two agents '
-        'sharing a custom skill, disabled agent/skill, schema '
-        'without credential, template resource/tool, parent and '
-        'child chats; no models or cloud accounts',
-};
 
 class _CaptureQueuedDrafts(final String conversationId)
     extends ConversationSendQueue {
@@ -2833,5 +2183,3 @@ List<ServiceConnectionListItem> _serviceConnectionsAuditFixture(
 
 class _AuditTestMcpConnectionUsecase extends Mock
     implements TestMcpConnectionUsecase;
-
-int _captureNumber = 0;
