@@ -5,12 +5,18 @@ Use Markdown review cards and actual artifacts, not JSON eval files. These are a
 ## How to review a skill change
 
 1. Choose one direct request, one indirect symptom, and one adjacent negative request; include the relevant failure cards below.
-2. For a routing trial, use a fresh supported host session with normal skill discovery and the same model/toolchain. Ask for a read-only plan or critique; record which skills and references it actually reads. Do not explicitly name the desired skill in the trial prompt.
+2. For a routing trial, use a fresh supported host session with normal skill discovery and the same model/toolchain. Ask for a read-only plan or critique; record which skills and references it actually reads. Do not explicitly name the desired skill in the trial prompt. Record warnings about shortened descriptions. If the host omits a tested skill or its description, or cannot read repository files, mark the trial blocked; restore those capabilities or use another host before comparing both revisions.
 3. For a design rehearsal, supply a small wireframe, code excerpt, or approved capture and ask for a proposed change. Inspect the resulting route contract, control placement, spacing, and compact/expanded behavior. Do not treat a fluent explanation as an implemented or visually verified result.
 4. Record baseline and candidate head, model/host, prompt, read trace or output path, pass/fail/not-run, failure reason, and extra work. Static harness checks cover links and metadata only. Compare representative outputs before claiming improvement.
 5. Fail a candidate that hides necessary controls, bypasses routing, loses drafts, breaks accessibility, expands scope, or misroutes adjacent work. Correct the narrow rule and rerun affected cards. Real user testing remains separate.
 
 Do not add a new runner, snapshots, JSON schema, or evaluation platform for these cards. Use existing host tools when model trials are requested or needed; do not modify app code for a skill rehearsal.
+
+## Trial host preflight
+
+| Condition | Expected decision | Reject |
+| --- | --- | --- |
+| The host reports that its skills context budget removed the tested skills' descriptions. | Mark the trial blocked; restore skill discovery and rerun both revisions with matching host settings. | Scoring missing descriptions as a routing failure. |
 
 ## Migrated routing cases
 
