@@ -105,15 +105,17 @@ class FilteredCloudConversationPageReader(
 
 Future<ConversationPage> _readCloudConversationPageAtCursor(
   _CloudConversationPageRequest request,
-) => request.gateway.client.conversation.listPage(
-  .new(
-    workspaceId: request.cloud.cloudWorkspaceId,
-    limit: 100,
-    cursor: request.cursor,
-    search: request.search.isEmpty ? null : request.search,
-    labelIds: request.labelIds.toList(),
-  ),
-);
+) {
+  return request.gateway.client.conversation.listPage(
+    .new(
+      workspaceId: request.cloud.cloudWorkspaceId,
+      limit: 100,
+      cursor: request.cursor,
+      search: request.search.isEmpty ? null : request.search,
+      labelIds: request.labelIds.toList(),
+    ),
+  );
+}
 
 _CloudConversationPageRequest _allPagesRequest(
   CloudWorkspaceStateGateway gateway,
