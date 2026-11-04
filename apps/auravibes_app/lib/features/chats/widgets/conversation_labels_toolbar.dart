@@ -104,15 +104,15 @@ class _ConversationLabelsToolbarState
 
   Widget _clearFilterButton() => AuraButton(
     onPressed: () => widget.onSelectedLabelIdsChanged(const {}),
-    child: Text(
-      LocaleKeys.chats_screens_conversation_labels_clear_filter.tr(),
-    ),
+    child: Text(LocaleKeys.chats_screens_conversation_labels_clear_filter.tr()),
     variant: .ghost,
     size: .small,
     identifier: 'conversation-label-clear-filter',
   );
 
-  void _removeStaleSelections(AsyncValue<List<ConversationLabelEntity>> labels) {
+  void _removeStaleSelections(
+    AsyncValue<List<ConversationLabelEntity>> labels,
+  ) {
     if (labels case AsyncData(:final value)) {
       final availableIds = value.map((label) => label.id).toSet();
       final validSelection = widget.selectedLabelIds.intersection(availableIds);
@@ -305,10 +305,7 @@ class _ConversationLabelManagementDialogState
   Widget _newLabelField() => _NewConversationLabelField(
     enabled: !_isWorking,
     onCreate: (name) => _run(
-      () => widget.actions.create(
-        workspaceId: widget.workspaceId,
-        name: name,
-      ),
+      () => widget.actions.create(workspaceId: widget.workspaceId, name: name),
     ),
   );
 
