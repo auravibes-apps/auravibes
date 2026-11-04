@@ -33,10 +33,7 @@ void main() {
         conversationId: 'conversation-1',
       );
 
-      expect(
-        await repository.getArchivedConversationIds(workspace.id),
-        isEmpty,
-      );
+      expect(await repository.getArchivedConversationIds(workspace.id), isEmpty);
     },
   );
 }
