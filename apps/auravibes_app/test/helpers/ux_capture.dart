@@ -75,11 +75,20 @@ Future<void> captureUxWidget(
   required bool dark,
   Map<String, Object>? controlMeasurements,
   String? fixture,
+  String? outputDirectory,
 }) async {
-  const output = String.fromEnvironment('UX_CAPTURE_DIR');
+  const defaultOutput = String.fromEnvironment('UX_CAPTURE_DIR');
+  final output = outputDirectory ?? defaultOutput;
   if (output.isEmpty) return;
   const fingerprint = String.fromEnvironment('UX_SOURCE_FINGERPRINT');
   const sourceProvenance = String.fromEnvironment('UX_CAPTURE_PROVENANCE');
+  final view = tester.view;
+  final viewMetrics = {
+    'devicePixelRatio': view.devicePixelRatio,
+    'paddingPhysicalPixels': _viewPadding(view.padding),
+    'viewPaddingPhysicalPixels': _viewPadding(view.viewPadding),
+    'viewInsetsPhysicalPixels': _viewPadding(view.viewInsets),
+  };
   final boundary = tester.renderObject<RenderRepaintBoundary>(
     find.byKey(const ValueKey('ux-capture')),
   );
@@ -105,6 +114,7 @@ Future<void> captureUxWidget(
             : jsonDecode(sourceProvenance),
         'renderer': 'Flutter widget-test Skia, ${Platform.operatingSystem}',
         'viewport': [size.width, size.height],
+        'viewMetrics': viewMetrics,
         'locale': locale,
         'textScale': scale,
         'theme': dark ? 'dark' : 'light',
@@ -195,4 +205,11 @@ String _fixtureDescription(String name) => switch (name) {
         'sharing a custom skill, disabled agent/skill, schema '
         'without credential, template resource/tool, parent and '
         'child chats; no models or cloud accounts',
+};
+
+Map<String, double> _viewPadding(ui.ViewPadding padding) => {
+  'left': padding.left,
+  'top': padding.top,
+  'right': padding.right,
+  'bottom': padding.bottom,
 };
