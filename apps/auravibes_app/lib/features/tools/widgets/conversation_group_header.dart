@@ -195,7 +195,6 @@ class const _ToggleAllTools({
       onChanged: onToggleAllTools,
       size: .sm,
       semanticLabel: LocaleKeys.common_enable_all_tools_named.tr(
-        context: context,
         args: [_conversationGroupName(groupWithTools)],
       ),
     );
