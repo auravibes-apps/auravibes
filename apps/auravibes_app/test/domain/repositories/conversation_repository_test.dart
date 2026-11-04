@@ -3,6 +3,7 @@
 // ignore_for_file: cascade_invocations
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
+import 'package:auravibes_app/domain/entities/conversation_list_query_options.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _StubConversationRepository implements ConversationRepository {
@@ -15,9 +16,12 @@ class _StubConversationRepository implements ConversationRepository {
   @override
   Stream<List<ConversationEntity>> watchConversationsByWorkspace(
     String workspaceId, {
-    String? search,
-    int? limit,
-    int offset = 0,
+    ConversationListQueryOptions options = const (
+      search: '',
+      archivedOnly: false,
+      limit: null,
+      offset: 0,
+    ),
   }) {
     return Stream.value(conversationsByWorkspace);
   }
@@ -130,7 +134,10 @@ void main() {
       ];
 
       final result = await repo
-          .watchConversationsByWorkspace('ws-1', limit: 5)
+          .watchConversationsByWorkspace(
+            'ws-1',
+            options: (search: '', archivedOnly: false, limit: 5, offset: 0),
+          )
           .first;
 
       expect(result, hasLength(1));
