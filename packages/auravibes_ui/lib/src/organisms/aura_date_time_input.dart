@@ -77,7 +77,7 @@ class AuraDateTimeInput extends StatelessWidget {
   /// Called with the selected date and time after the picker is confirmed.
   final ValueChanged<DateTime?>? onChanged;
 
-  /// Visible and semantic labels used by the picker.
+  /// Optional label overrides; omitted values use host Material localizations.
   final AuraDateTimeInputLabels labels;
 
   /// Formats the displayed date when provided.
@@ -96,7 +96,22 @@ class AuraDateTimeInput extends StatelessWidget {
   final DateTime? maximum;
 
   @override
-  Widget build(BuildContext context) => _AuraDateTimeInputHost(input: this);
+  Widget build(BuildContext context) => _AuraDateTimeInputHost(
+    input: .new(
+      value: value,
+      enableDate: enableDate,
+      enableTime: enableTime,
+      enabled: enabled,
+      semanticLabel: semanticLabel,
+      onChanged: onChanged,
+      labels: labels._resolved(context),
+      dateFormatter: dateFormatter,
+      timeFormatter: timeFormatter,
+      now: now,
+      minimum: minimum,
+      maximum: maximum,
+    ),
+  );
 }
 
 extension on AuraDateTimeInput {
@@ -324,10 +339,13 @@ class const _AuraDateTimeInputFieldContent({
   @override
   Widget build(BuildContext context) => Padding(
     padding: DesignInputSizes.paddingMd,
-    child: Row(
+    child: Wrap(
+      alignment: .spaceBetween,
+      spacing: context.auraTheme.fromSpacing(.sm),
+      runSpacing: context.auraTheme.fromSpacing(.xs),
+      crossAxisAlignment: .center,
       children: [
-        Expanded(child: AuraText(child: Text(displayValue))),
-        const AuraSizedBox(width: .sm),
+        AuraText(child: Text(displayValue)),
         _AuraDateTimeInputMode(input: input),
       ],
     ),
