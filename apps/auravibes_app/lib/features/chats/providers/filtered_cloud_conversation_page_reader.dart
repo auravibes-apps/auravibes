@@ -5,6 +5,14 @@ import 'package:auravibes_app/features/workspaces/services/cloud_workspace_state
 import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 
+typedef _CloudConversationPageRequest = ({
+  CloudWorkspaceStateGateway gateway,
+  CloudWorkspaceRef cloud,
+  String? cursor,
+  String search,
+  Set<String> labelIds,
+});
+
 class FilteredCloudConversationPageReader(
   final CloudWorkspaceStateGateway _gateway,
   final CloudWorkspaceRef _cloud,
@@ -34,9 +42,7 @@ class FilteredCloudConversationPageReader(
 
     while (true) {
       final page = await _readCloudConversationPageAtCursor(
-        gateway,
-        cloud,
-        cursor,
+        _allPagesRequest(gateway, cloud, cursor),
       );
       conversations.addAll(page.conversations);
 
@@ -56,11 +62,7 @@ class FilteredCloudConversationPageReader(
 
   Future<bool> _readNextPage() async {
     final page = await _readCloudConversationPageAtCursor(
-      _gateway,
-      _cloud,
-      _cursor,
-      search: _search,
-      labelIds: labelIds,
+      _filteredPageRequest(),
     );
     final reachedLimit = _appendMatchingConversations(page.conversations);
     final nextCursor = _nextCloudConversationCursor(
@@ -93,19 +95,35 @@ class FilteredCloudConversationPageReader(
   }
 
   static Future<ConversationPage> _readCloudConversationPageAtCursor(
+    _CloudConversationPageRequest request,
+  ) => request.gateway.client.conversation.listPage(
+    .new(
+      workspaceId: request.cloud.cloudWorkspaceId,
+      limit: 100,
+      cursor: request.cursor,
+      search: request.search.isEmpty ? null : request.search,
+      labelIds: request.labelIds.toList(),
+    ),
+  );
+
+  static _CloudConversationPageRequest _allPagesRequest(
     CloudWorkspaceStateGateway gateway,
     CloudWorkspaceRef cloud,
-    String? cursor, {
-    String search = '',
-    Set<String> labelIds = const {},
-  }) => gateway.client.conversation.listPage(
-    .new(
-      workspaceId: cloud.cloudWorkspaceId,
-      limit: 100,
-      cursor: cursor,
-      search: search.isEmpty ? null : search,
-      labelIds: labelIds.toList(),
-    ),
+    String? cursor,
+  ) => (
+    gateway: gateway,
+    cloud: cloud,
+    cursor: cursor,
+    search: '',
+    labelIds: const {},
+  );
+
+  _CloudConversationPageRequest _filteredPageRequest() => (
+    gateway: _gateway,
+    cloud: _cloud,
+    cursor: _cursor,
+    search: _search,
+    labelIds: labelIds,
   );
 
   static String? _nextCloudConversationCursor(

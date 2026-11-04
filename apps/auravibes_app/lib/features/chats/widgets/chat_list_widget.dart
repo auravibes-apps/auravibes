@@ -175,14 +175,18 @@ typedef _ChatTileSelectionCallbacks = ({
 });
 
 typedef _ChatTileCallbacks = ({
+  _ChatTileActionCallbacks actions,
+  VoidCallback onMenuToggle,
+  _ChatTileSelectionCallbacks selection,
+});
+
+typedef _ChatTileActionCallbacks = ({
   VoidCallback onFork,
   VoidCallback onDelete,
   VoidCallback onArchiveStateChange,
   VoidCallback onTogglePin,
   VoidCallback onRename,
   VoidCallback onAssignLabels,
-  VoidCallback onMenuToggle,
-  _ChatTileSelectionCallbacks selection,
 });
 
 typedef _ChatTileSelectionState = ({
@@ -390,21 +394,35 @@ _ChatListQueryState _useChatListQueryState(_ChatListQueryRequest request) {
     normalizedSearch,
     _conversationSearchDebounce,
   );
-  final databaseSearch = debouncedSearch ?? '';
-  final chatListAsync = request.ref.watch(
-    _chatListPageProvider((
-      workspaceId: request.workspaceId,
-      search: databaseSearch,
-      scope: request.scope,
-      labelIds: request.input.selectedLabelIds.value,
-    )),
-  );
+  final chatListAsync = _watchChatListPage(request, debouncedSearch ?? '');
 
   return (
     normalizedSearch: normalizedSearch,
     debouncedSearch: debouncedSearch,
     chatListAsync: chatListAsync,
   );
+}
+
+AsyncValue<List<ConversationEntity>> _watchChatListPage(
+  _ChatListQueryRequest request,
+  String search,
+) => request.ref.watch(
+  _chatListPageProvider(_chatListPageRequest(request, search)),
+);
+
+_ChatListPageRequest _chatListPageRequest(
+  _ChatListQueryRequest request,
+  String search,
+) => (
+  workspaceId: request.workspaceId,
+  search: search,
+  scope: request.scope,
+  labelIds: _chatListLabelIds(request),
+);
+
+Set<String> _chatListLabelIds(_ChatListQueryRequest request) {
+  final selectedLabelIds = request.input.selectedLabelIds.value;
+  return selectedLabelIds.isEmpty ? const {} : selectedLabelIds;
 }
 
 ConversationsStreamProvider _chatListPageProvider(
@@ -771,14 +789,18 @@ extension on _ChatTileState {
   );
 
   _ChatTileCallbacks _tileCallbacks(BuildContext context) => (
+    actions: _tileActionCallbacks(context),
+    onMenuToggle: _menuController.toggle,
+    selection: _tileSelectionCallbacks(context),
+  );
+
+  _ChatTileActionCallbacks _tileActionCallbacks(BuildContext context) => (
     onFork: () => _handleFork(context),
     onDelete: () => _handleDelete(context),
     onArchiveStateChange: () => _setArchivedState(context),
     onTogglePin: () => _togglePin(widget.chat),
     onRename: () => _handleRename(context),
     onAssignLabels: () => _handleAssignLabels(context),
-    onMenuToggle: _menuController.toggle,
-    selection: _tileSelectionCallbacks(context),
   );
 
   _ChatTileSelectionCallbacks _tileSelectionCallbacks(BuildContext context) => (
@@ -1504,7 +1526,7 @@ class const _ChatListManagementActions({
       children: [
         _ChatListBulkDeleteButton(
           isWorking: isWorking,
-          onDelete: callbacks.onDelete,
+          onDelete: callbacks.actions.onDelete,
         ),
         _ChatListBulkClearButton(
           isWorking: isWorking,
@@ -2009,14 +2031,14 @@ extension on _ChatTileMenu {
   );
 
   List<AuraPopupMenuItem> _menuItems() => [
-    _chatTilePinItem(chat, callbacks.onTogglePin),
+    _chatTilePinItem(chat, callbacks.actions.onTogglePin),
     ..._chatTileConversationItems(callbacks),
-    _chatTileArchiveStateItem(scope, callbacks.onArchiveStateChange),
+    _chatTileArchiveStateItem(scope, callbacks.actions.onArchiveStateChange),
     if (onArchiveExport case final onArchiveExport?)
       _chatTileBackupItem(onArchiveExport),
     ..._chatTileMenuItems(
-      onRename: callbacks.onRename,
-      onDelete: callbacks.onDelete,
+      onRename: callbacks.actions.onRename,
+      onDelete: callbacks.actions.onDelete,
     ),
   ];
 }
@@ -2026,14 +2048,14 @@ List<AuraPopupMenuItem> _chatTileConversationItems(
 ) => [
   AuraPopupMenuItem(
     title: const TextLocale(LocaleKeys.chats_screens_chat_conversation_fork),
-    onTap: callbacks.onFork,
+    onTap: callbacks.actions.onFork,
     leading: const AuraIcon(Icons.call_split_outlined),
   ),
   AuraPopupMenuItem(
     title: const TextLocale(
       LocaleKeys.chats_screens_conversation_labels_assignment_title,
     ),
-    onTap: callbacks.onAssignLabels,
+    onTap: callbacks.actions.onAssignLabels,
     leading: const AuraIcon(Icons.label_outline),
   ),
 ];

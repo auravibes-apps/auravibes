@@ -98,20 +98,33 @@ Stream<List<ConversationEntity>> conversationsStream(
   );
   if (streamContext == null) return;
 
-  yield* _conversationsForSession((
-    ref: ref,
-    session: streamContext.session,
-    workspaceId: request.workspaceId,
-    options: (
-      search: request.search,
-      labelIds: request.labelIds,
-      pagination: request.pagination,
-      fetchAllPages: false,
-      scope: request.scope,
-      archivedIds: streamContext.archivedIds,
-    ),
-  ));
+  yield* _conversationsForSession(
+    _conversationSessionRequest(ref, request, streamContext),
+  );
 }
+
+_ConversationSessionRequest _conversationSessionRequest(
+  Ref ref,
+  ConversationStreamRequest request,
+  ({WorkspaceSession session, Set<String> archivedIds}) context,
+) => (
+  ref: ref,
+  session: context.session,
+  workspaceId: request.workspaceId,
+  options: _conversationListOptions(request, context.archivedIds),
+);
+
+_ConversationListOptions _conversationListOptions(
+  ConversationStreamRequest request,
+  Set<String> archivedIds,
+) => (
+  search: request.search,
+  labelIds: request.labelIds,
+  pagination: request.pagination,
+  fetchAllPages: false,
+  scope: request.scope,
+  archivedIds: archivedIds,
+);
 
 Future<({WorkspaceSession session, Set<String> archivedIds})?>
 _conversationStreamContext(Ref ref, String workspaceId) async {
@@ -178,27 +191,34 @@ Stream<List<ConversationEntity>> _localConversationsWithLabels(
 Stream<List<ConversationEntity>> _localConversationsWithAllLabels(
   _ConversationSessionRequest request,
 ) {
-  final options = request.options;
   final labelsRepository = request.ref.watch(
     conversationLabelsRepositoryProvider,
   );
-  final conversations = request.ref
-      .watch(conversationRepositoryProvider)
-      .watchConversationsByWorkspace(
-        request.workspaceId,
-        options: (
-          search: options.search,
-          archivedOnly: options.scope == ConversationListScope.archived,
-          limit: options.pagination.limit,
-          offset: options.pagination.offset,
-        ),
-      );
+  final conversations = _watchLocalConversations(request);
 
   return labelsRepository.withLabels(
     workspaceId: request.workspaceId,
     conversations: conversations,
   );
 }
+
+Stream<List<ConversationEntity>> _watchLocalConversations(
+  _ConversationSessionRequest request,
+) => request.ref
+      .watch(conversationRepositoryProvider)
+      .watchConversationsByWorkspace(
+        request.workspaceId,
+        options: _localConversationQueryOptions(request.options),
+      );
+
+ConversationListQueryOptions _localConversationQueryOptions(
+  _ConversationListOptions options,
+) => (
+  search: options.search,
+  archivedOnly: options.scope == ConversationListScope.archived,
+  limit: options.pagination.limit,
+  offset: options.pagination.offset,
+);
 
 @Riverpod(retry: _childConversationRetry)
 Stream<List<ConversationEntity>> childConversationsStream(
@@ -378,17 +398,11 @@ _readCloudConversations(
   CloudWorkspaceRef cloud,
   _ConversationListOptions options,
 ) async {
-  final conversations = options.fetchAllPages
-      ? await FilteredCloudConversationPageReader.readAllPages(gateway, cloud)
-      : await FilteredCloudConversationPageReader(
-          gateway,
-          cloud,
-          options.scope,
-          options.pagination,
-          options.search,
-          options.archivedIds,
-          labelIds: options.labelIds,
-        ).read();
+  final conversations = await _readCloudConversationSummaries(
+    gateway,
+    cloud,
+    options,
+  );
   final currentSequence = await _cloudConversationSequence(gateway);
 
   return _cloudConversationSnapshot(
@@ -397,6 +411,38 @@ _readCloudConversations(
     currentSequence,
   );
 }
+
+Future<List<ConversationSummary>> _readCloudConversationSummaries(
+  CloudWorkspaceStateGateway gateway,
+  CloudWorkspaceRef cloud,
+  _ConversationListOptions options,
+) => options.fetchAllPages
+    ? FilteredCloudConversationPageReader.readAllPages(gateway, cloud)
+    : _readFilteredCloudConversationSummaries(gateway, cloud, options);
+
+Future<List<ConversationSummary>> _readFilteredCloudConversationSummaries(
+  CloudWorkspaceStateGateway gateway,
+  CloudWorkspaceRef cloud,
+  _ConversationListOptions options,
+) => _filteredCloudConversationPageReader(
+  gateway,
+  cloud,
+  options,
+).read();
+
+FilteredCloudConversationPageReader _filteredCloudConversationPageReader(
+  CloudWorkspaceStateGateway gateway,
+  CloudWorkspaceRef cloud,
+  _ConversationListOptions options,
+) => FilteredCloudConversationPageReader(
+  gateway,
+  cloud,
+  options.scope,
+  options.pagination,
+  options.search,
+  options.archivedIds,
+  labelIds: options.labelIds,
+);
 
 ({List<ConversationEntity> value, int currentSequence})
 _cloudConversationSnapshot(
