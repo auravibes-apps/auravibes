@@ -1,12 +1,16 @@
 # Agent operations
 
-Read only the section relevant to PR delivery and review, PR check monitoring, GitHub CLI merge preflight, CI failure diagnosis, Codemagic release triage, database queries, or native Flutter driver control.
+Read only the section relevant to PR base freshness, PR delivery and review, PR check monitoring, GitHub CLI merge preflight, CI failure diagnosis, Codemagic release triage, database queries, or native Flutter driver control.
+
+## PR base freshness
+
+Before pushing a PR branch, fetch its base and compare it with the branch. Resolve conflicts and rerun affected checks when needed.
 
 ## CI failure triage
 
 ### PR check monitoring
 
-- Before polling, compare `gh pr view <number> --json headRefOid` with local `git rev-parse HEAD` to avoid watching stale runs.
+- Before polling, compare `gh pr view <number> --json headRefOid` with local `git rev-parse HEAD` to avoid watching stale runs. Record the tested base and recheck the base and merge state after checks complete; report a moved base separately from passing checks.
 - For a compact check snapshot, show only pending, failed, or cancelled checks:
 
 ```sh
@@ -15,6 +19,7 @@ gh pr checks <number> --json name,bucket \
 ```
 
 - Repeat every 60 seconds while rows remain. Exit code 8 means checks are pending; empty output means no checks need attention. Use `--watch` only when full live output is useful.
+- For one long workflow on the confirmed head, `gh run watch <run_id> --compact --exit-status --interval 60` can reduce repeated snapshots. Run it in a resumable session and inspect failures promptly. It watches only that run: separately check the PR head, other checks, and base/merge state.
 - After a watch interruption, query current status before restarting; follow [validation policy](task-policies.md#validation).
 - Fetch job-level details when a check changes, fails, or needs stall diagnosis, not on every unchanged poll. With `run_id` set to the relevant run, project unfinished jobs instead of printing full job objects:
   ```sh
