@@ -339,10 +339,13 @@ class const _AuraDateTimeInputFieldContent({
   @override
   Widget build(BuildContext context) => Padding(
     padding: DesignInputSizes.paddingMd,
-    child: Row(
+    child: Wrap(
+      alignment: .spaceBetween,
+      crossAxisAlignment: .center,
+      spacing: context.auraTheme.fromSpacing(.sm),
+      runSpacing: context.auraTheme.fromSpacing(.xs),
       children: [
-        Expanded(child: AuraText(child: Text(displayValue))),
-        const AuraSizedBox(width: .sm),
+        AuraText(child: Text(displayValue)),
         _AuraDateTimeInputMode(input: input),
       ],
     ),
