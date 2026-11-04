@@ -485,7 +485,7 @@ class _ConversationLabelManagementDialogState
     if (name == null || name == label.name) {
       return;
     }
-    await _run(() => _renameLabel(label, name));
+    final _ = await _run(() => _renameLabel(label, name));
   }
 
   Future<String?> _requestRename(ConversationLabelEntity label) =>
@@ -506,7 +506,7 @@ class _ConversationLabelManagementDialogState
     if (!await _confirmDelete()) {
       return;
     }
-    await _run(() => _deleteLabel(label));
+    final _ = await _run(() => _deleteLabel(label));
   }
 
   Future<bool> _confirmDelete() async {
@@ -526,6 +526,7 @@ class _ConversationLabelManagementDialogState
       ),
       isDestructive: true,
     );
+
     return confirmed == true;
   }
 
