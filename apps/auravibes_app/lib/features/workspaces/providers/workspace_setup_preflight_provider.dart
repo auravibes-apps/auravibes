@@ -63,21 +63,23 @@ WorkspaceSetupPreflightSnapshot _preflightSnapshot(
   _SourceReads sources,
   String? selectedModelId,
 ) {
-  final availability = _readAvailability(sources);
+  final modelRead = sources.modelRead;
+  final providerRead = sources.providerRead;
+  final mcpRead = sources.mcpRead;
   final providers = _providerSnapshots(
-    sources.providerRead.value,
+    providerRead.value,
     scope.workspaceId,
   );
 
   return .new(
     storageAvailable: _storageAvailable(scope, sources.cloudStorageAvailable),
     selectedModelId: selectedModelId,
-    selectedModelSourceAvailable: availability.model,
-    providerSourceAvailable: availability.provider,
-    mcpSourceAvailable: availability.mcp,
+    selectedModelSourceAvailable: modelRead.available,
+    providerSourceAvailable: providerRead.available,
+    mcpSourceAvailable: mcpRead.available,
     providers: providers,
-    selectedModel: sources.modelRead.value,
-    mcpConnections: sources.mcpRead.value,
+    selectedModel: modelRead.value,
+    mcpConnections: mcpRead.value,
   );
 }
 
@@ -100,14 +102,6 @@ typedef _SourceReads = ({
   _ReadResult<WorkspaceSetupModelSnapshot?> modelRead,
   _ReadResult<List<WorkspaceSetupMcpSnapshot>> mcpRead,
 });
-
-typedef _ReadAvailability = ({bool model, bool provider, bool mcp});
-
-_ReadAvailability _readAvailability(_SourceReads sources) => (
-  model: sources.modelRead.available,
-  provider: sources.providerRead.available,
-  mcp: sources.mcpRead.available,
-);
 
 typedef _WorkspaceScopeInput = ({
   String workspaceId,
@@ -156,21 +150,24 @@ Future<_ReadResult<WorkspaceSession>> _readSession(
 }
 
 _WorkspaceScope _workspaceScope(_WorkspaceScopeInput input) {
-  final isRemote = input.workspace?.type == WorkspaceType.remote;
+  final workspace = input.workspace;
+  final sessionRead = input.sessionRead;
+  final refreshRequested = input.refreshRequested;
+  final isRemote = workspace?.type == WorkspaceType.remote;
 
   return (
     workspaceId: input.workspaceId,
-    refreshRequested: input.refreshRequested,
+    refreshRequested: refreshRequested,
     workspaceRead: input.workspaceRead,
-    workspace: input.workspace,
-    sessionRead: input.sessionRead,
-    session: input.sessionRead.value,
+    workspace: workspace,
+    sessionRead: sessionRead,
+    session: sessionRead.value,
     isRemote: isRemote,
     sourceAllowed: _canReadSources(
-      input.workspace,
-      input.sessionRead,
+      workspace,
+      sessionRead,
       isRemote,
-      input.refreshRequested,
+      refreshRequested,
     ),
   );
 }
