@@ -386,8 +386,7 @@ class const _ConversationLabelCheckboxRow({
     label: label,
     selected: selectedLabelIds.contains(label.id),
     enabled: enabled,
-    onChanged: (selected) =>
-        onChanged(labelId: label.id, selected: selected),
+    onChanged: (selected) => onChanged(labelId: label.id, selected: selected),
   );
 }
 
@@ -426,10 +425,8 @@ class _ConversationLabelManagementDialogState
       labels: labels,
       isWorking: _isWorking,
       onCreate: (name) => _run(
-        () => widget.actions.create(
-          workspaceId: widget.workspaceId,
-          name: name,
-        ),
+        () =>
+            widget.actions.create(workspaceId: widget.workspaceId, name: name),
       ),
       onRename: (label) => unawaited(_rename(label)),
       onDelete: (label) => unawaited(_delete(label)),
