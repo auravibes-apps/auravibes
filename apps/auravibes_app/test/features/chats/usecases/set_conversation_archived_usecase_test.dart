@@ -9,26 +9,29 @@ class _ConversationArchiveStateRepository extends Mock
     implements ConversationArchiveStateRepository {}
 
 void main() {
-  test('maps archive persistence failures to a user-facing exception', () async {
-    final repository = _ConversationArchiveStateRepository();
-    when(
-      () => repository.setArchived(
-        workspaceId: 'workspace-1',
-        conversationId: 'conversation-1',
-        isArchived: true,
-      ),
-    ).thenThrow(StateError('database is unavailable'));
-    final usecase = SetConversationArchivedUsecase(repository: repository);
+  test(
+    'maps archive persistence failures to a user-facing exception',
+    () async {
+      final repository = _ConversationArchiveStateRepository();
+      when(
+        () => repository.setArchived(
+          workspaceId: 'workspace-1',
+          conversationId: 'conversation-1',
+          isArchived: true,
+        ),
+      ).thenThrow(StateError('database is unavailable'));
+      final usecase = SetConversationArchivedUsecase(repository: repository);
 
-    await expectLater(
-      usecase.call(
-        workspaceId: 'workspace-1',
-        conversationId: 'conversation-1',
-        isArchived: true,
-      ),
-      throwsA(isA<ConversationArchiveStateException>()),
-    );
-  });
+      await expectLater(
+        usecase.call(
+          workspaceId: 'workspace-1',
+          conversationId: 'conversation-1',
+          isArchived: true,
+        ),
+        throwsA(isA<ConversationArchiveStateException>()),
+      );
+    },
+  );
 
   test('includes the localization key in the exception description', () {
     const exception = ConversationArchiveStateException();
