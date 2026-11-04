@@ -49,6 +49,22 @@ jobs:
         working-directory: packages/auravibes_ui
         run: flutter test --no-pub --tags=golden --update-goldens
 
+      - name: Capture conversation archive UX evidence
+        working-directory: apps/auravibes_app
+        run: >-
+          flutter test --no-pub test/widgets/ux_validation_layout_test.dart
+          --plain-name "captures device-local archive before and after"
+          --dart-define=UX_CAPTURE_DIR=$RUNNER_TEMP/conversation-archive-ux
+          --dart-define=UX_SOURCE_FINGERPRINT=$GITHUB_SHA
+
+      - name: Upload conversation archive UX evidence
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: conversation-archive-ux-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/conversation-archive-ux
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Update Widgetbook dashboard goldens
         working-directory: widgetbook
         run: flutter test test/dashboard_widgets_test.dart --no-pub --update-goldens

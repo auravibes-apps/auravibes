@@ -14,7 +14,6 @@ typedef ClearConversationDraft = Future<void> Function(
   String workspaceId,
   String conversationId,
 );
-
 typedef BulkConversationOperationError = ({
   ConversationEntity conversation,
   Object error,

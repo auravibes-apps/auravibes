@@ -5,6 +5,7 @@ import 'package:auravibes_app/features/agents/screens/agent_detail_screen.dart';
 import 'package:auravibes_app/features/agents/screens/agents_screen.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
+import 'package:auravibes_app/features/chats/screens/archived_conversations_screen.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
 import 'package:auravibes_app/features/chats/screens/chats_list_screen.dart';
 import 'package:auravibes_app/features/chats/screens/conversation_message_search_screen.dart';
@@ -112,6 +113,12 @@ abstract class const _AppGoRouteData() extends GoRouteData {
         TypedStatefulShellBranch<WorkspaceChatsBranchData>(
           routes: [
             TypedGoRoute<NewChatRoute>(path: 'chat/new'),
+            TypedGoRoute<ChatsRoute>(
+              path: 'chats',
+              routes: [
+                TypedGoRoute<ArchivedConversationsRoute>(path: 'archived'),
+              ],
+            ),
             TypedGoRoute<ConversationRoute>(
               path: 'chats/:chatId',
               routes: [
@@ -120,7 +127,6 @@ abstract class const _AppGoRouteData() extends GoRouteData {
                 ),
               ],
             ),
-            TypedGoRoute<ChatsRoute>(path: 'chats'),
             TypedGoRoute<MessageBookmarksRoute>(path: 'bookmarks'),
             TypedGoRoute<ConversationSearchRoute>(path: 'search'),
           ],
@@ -465,6 +471,14 @@ class ChatsRoute({required final String workspaceId})
   Widget build(BuildContext context, GoRouterState state) {
     return ChatsListScreen(workspaceId: workspaceId);
   }
+}
+
+class ArchivedConversationsRoute({required final String workspaceId})
+    extends _AppGoRouteData
+    with $ArchivedConversationsRoute {
+  @override
+  Widget build(BuildContext context, GoRouterState state) =>
+      ArchivedConversationsScreen(workspaceId: workspaceId);
 }
 
 class MessageBookmarksRoute({
