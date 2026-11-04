@@ -674,27 +674,20 @@ void main() {
           )
           .container;
 
-      Future<List<ConversationEntity>> waitForSearchResults(
-        String search,
-        bool Function(List<ConversationEntity>) isReady,
-      ) async {
-        final provider = conversationsStreamProvider((
-          workspaceId: workspace.id,
-          search: search,
-          scope: ConversationListScope.archived,
-          pagination: (limit: 21, offset: 0),
-        ));
+      Future<void> waitForSearchResult(bool isVisible) async {
         for (var attempt = 0; attempt < 30; attempt++) {
-          final state = container.read(provider);
-          if (state.hasValue && isReady(state.requireValue)) {
-            await tester.pump();
-
-            return state.requireValue;
-          }
           await tester.pump(const Duration(milliseconds: 100));
+          final isSearching = find
+              .byKey(const ValueKey('conversation-searching'))
+              .evaluate()
+              .isNotEmpty;
+          final titleIsVisible = find
+              .text('Project research')
+              .evaluate()
+              .isNotEmpty;
+          if (!isSearching && titleIsVisible == isVisible) return;
         }
-        final state = container.read(provider);
-        fail('Timed out waiting for archived search "$search": $state');
+        fail('Timed out waiting for archived search visibility: $isVisible');
       }
 
       final conversationState = container.read(
@@ -760,21 +753,12 @@ void main() {
       expect(find.text('Delete selected'), findsNothing);
       await tester.enterText(find.byType(EditableText), 'missing');
       await tester.pump(const Duration(milliseconds: 301));
-      final missingResults = await waitForSearchResults(
-        'missing',
-        (conversations) => conversations.isEmpty,
-      );
-      expect(missingResults, isEmpty);
+      await waitForSearchResult(false);
       expect(find.text('Project research'), findsNothing);
 
       await tester.enterText(find.byType(EditableText), 'Project');
       await tester.pump(const Duration(milliseconds: 301));
-      final projectResults = await waitForSearchResults(
-        'Project',
-        (conversations) =>
-            conversations.any((item) => item.id == conversation.id),
-      );
-      expect(projectResults.map((item) => item.id), contains(conversation.id));
+      await waitForSearchResult(true);
       expect(find.text('Project research'), findsOneWidget);
       await tester.tap(find.byIcon(Icons.more_vert));
       for (var attempt = 0; attempt < 5; attempt++) {
@@ -792,15 +776,7 @@ void main() {
         ),
         isEmpty,
       );
-      final restoredResults = await waitForSearchResults(
-        'Project',
-        (conversations) =>
-            conversations.every((item) => item.id != conversation.id),
-      );
-      expect(
-        restoredResults.map((item) => item.id),
-        isNot(contains(conversation.id)),
-      );
+      await waitForSearchResult(false);
       expect(find.text('Project research'), findsNothing);
     });
 
