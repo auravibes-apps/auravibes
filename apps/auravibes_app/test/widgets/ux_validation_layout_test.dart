@@ -648,10 +648,10 @@ void main() {
       find.descendant(of: card, matching: find.byTooltip('More options')),
     );
     await fixture.settle(tester);
-    await tester.tap(find.text('Export archive'));
+    await tester.tap(find.text('Export backup'));
     await fixture.settle(tester);
 
-    expect(find.text('Review your conversation archive'), findsOneWidget);
+    expect(find.text('Review your conversation backup'), findsOneWidget);
     if (!baselineCapture) {
       await tester.ensureVisible(find.text('Size: 2,048 bytes'));
       await fixture.settle(tester);
