@@ -458,8 +458,9 @@ class const _ConversationLabelManagementList({
               itemCount: value.length,
             ),
           ),
-    AsyncError() =>
-      Text(LocaleKeys.chats_screens_conversation_labels_load_error.tr()),
+    AsyncError() => Text(
+      LocaleKeys.chats_screens_conversation_labels_load_error.tr(),
+    ),
     AsyncLoading() => const Center(child: CircularProgressIndicator()),
   };
 }
