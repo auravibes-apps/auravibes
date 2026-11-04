@@ -1,5 +1,6 @@
 // Required: Tests repeat finders and fixture lookups for clarity.
 import 'dart:async';
+import 'dart:io';
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/conversation_repository.dart';
@@ -1169,6 +1170,37 @@ void main() {
           .new(title: 'Chat Two', workspaceId: workspace.id),
         ),
       ];
+      final attachmentDirectory = await Directory.systemTemp.createTemp(
+        'auravibes-chat-archive-',
+      );
+      addTearDown(() => attachmentDirectory.delete(recursive: true));
+      final attachmentFile = File(
+        '${attachmentDirectory.path}${Platform.pathSeparator}research-notes.txt',
+      );
+      await attachmentFile.writeAsString('note');
+      final firstMessage = await database.messageDao.insertMessage(
+        .insert(
+          conversationId: conversations.first.id,
+          content: 'See the attached research notes',
+          messageType: .text,
+          isUser: true,
+          status: .sent,
+        ),
+      );
+      final _ = await database
+          .into(database.messageAttachments)
+          .insert(
+            MessageAttachmentsCompanion.insert(
+              id: const Value('attachment-1'),
+              messageId: firstMessage.id,
+              localPath: attachmentFile.path,
+              fileName: attachmentFile.path,
+              displayName: const .new('research-notes.txt'),
+              mimeType: 'text/plain',
+              modality: 'file',
+              sizeBytes: 4,
+            ),
+          );
       final workspaceTools = WorkspaceToolsRepository(database);
       final archiveUsecase = _RecordingConversationArchiveUsecase(
         .new(

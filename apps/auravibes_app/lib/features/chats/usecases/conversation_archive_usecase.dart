@@ -225,24 +225,12 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
     bool includeAttachments = true,
   }) async {
     _validateConversationIds(conversationIds);
-    final snapshots = <_ConversationArchiveExportSnapshot>[];
-    for (final id in conversationIds) {
-      snapshots.add(
-        await _loadConversationSnapshot(id, workspaceId: workspaceId),
-      );
-    }
+    final snapshots = await _loadConversationSnapshots(
+      workspaceId: workspaceId,
+      conversationIds: conversationIds,
+    );
     _requireMatchingPreview(expectedPreview, snapshots);
-
-    final archives = <ConversationArchive>[];
-    for (final snapshot in snapshots) {
-      archives.add(
-        await _createArchive(
-          snapshot.conversation,
-          snapshot.transcript,
-          includeAttachments: includeAttachments,
-        ),
-      );
-    }
+    final archives = await _createArchives(snapshots, includeAttachments);
 
     return ConversationArchiveCodec.encodeMany(archives);
   }
@@ -271,17 +259,10 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
     String conversationId, {
     String? workspaceId,
   }) async {
-    final conversation = await conversationRepository.getConversationById(
+    final conversation = await _loadConversationForExport(
       conversationId,
+      workspaceId: workspaceId,
     );
-    if (conversation == null) {
-      if (workspaceId == null) throw StateError('Conversation not found');
-
-      throw const MalformedConversationArchiveException();
-    }
-    if (workspaceId != null && conversation.workspaceId != workspaceId) {
-      throw const MalformedConversationArchiveException();
-    }
 
     final transcript = List<MessageEntity>.unmodifiable(
       await messageRepository.getTranscriptMessagesByConversation(
@@ -290,6 +271,66 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
     );
 
     return (conversation: conversation, transcript: transcript);
+  }
+
+  Future<List<_ConversationArchiveExportSnapshot>> _loadConversationSnapshots({
+    required String workspaceId,
+    required List<String> conversationIds,
+  }) async {
+    final snapshots = <_ConversationArchiveExportSnapshot>[];
+    for (final id in conversationIds) {
+      snapshots.add(
+        await _loadConversationSnapshot(id, workspaceId: workspaceId),
+      );
+    }
+
+    return snapshots;
+  }
+
+  Future<List<ConversationArchive>> _createArchives(
+    List<_ConversationArchiveExportSnapshot> snapshots,
+    bool includeAttachments,
+  ) async {
+    final archives = <ConversationArchive>[];
+    for (final snapshot in snapshots) {
+      archives.add(
+        await _createArchive(
+          snapshot.conversation,
+          snapshot.transcript,
+          includeAttachments: includeAttachments,
+        ),
+      );
+    }
+
+    return archives;
+  }
+
+  Future<ConversationEntity> _loadConversationForExport(
+    String conversationId, {
+    String? workspaceId,
+  }) async {
+    final conversation = await conversationRepository.getConversationById(
+      conversationId,
+    );
+    if (conversation == null) {
+      if (workspaceId == null) throw StateError('Conversation not found');
+
+      throw const MalformedConversationArchiveException();
+    }
+    if (workspaceId != null) {
+      _requireConversationWorkspace(conversation, workspaceId);
+    }
+
+    return conversation;
+  }
+
+  void _requireConversationWorkspace(
+    ConversationEntity conversation,
+    String workspaceId,
+  ) {
+    if (conversation.workspaceId != workspaceId) {
+      throw const MalformedConversationArchiveException();
+    }
   }
 
   Future<String> _exportSnapshot(
