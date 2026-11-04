@@ -1866,7 +1866,10 @@ void main() {
             reason: '$name route must apply the app side safe area',
           );
           if (viewport.name != 'desktop') {
-            final expectedFixture = viewport.name == 'duo_closed' && !dark
+            final expectedFixture =
+                !dark &&
+                    (viewport.name == 'duo_closed' ||
+                        (viewport.name == 'duo_open' && name == 'IntroRoute'))
                 ? switch (name) {
                     'IntroRoute' =>
                       'Empty in-memory database; no workspace or account',
@@ -1899,7 +1902,7 @@ void main() {
               controlMeasurements: name == 'AgentsRoute' || name == 'DarkAgents'
                   ? _disabledBadgeMeasurement(tester)
                   : null,
-              fixture: expectedFixture,
+              fixtureName: name,
               outputDirectory: testOutput?.path,
               onSidecar: (file) {
                 sidecar = file;
@@ -2093,7 +2096,7 @@ void main() {
             size: .new(variant.width, 1200),
             scale: variant.scale,
             dark: variant.dark,
-            fixture: name,
+            fixtureName: name,
           );
           await fixture.close(tester);
         },

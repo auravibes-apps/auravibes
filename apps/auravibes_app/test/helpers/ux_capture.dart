@@ -75,6 +75,7 @@ Future<void> captureUxWidget(
   required bool dark,
   Map<String, Object>? controlMeasurements,
   String? fixture,
+  String? fixtureName,
   String? outputDirectory,
   void Function(File)? onSidecar,
 }) async {
@@ -109,7 +110,7 @@ Future<void> captureUxWidget(
         'name': name,
         'controlMeasurements': ?controlMeasurements,
         'route': route,
-        'fixture': fixture ?? _fixtureDescription(name),
+        'fixture': fixture ?? _fixtureDescription(fixtureName ?? name),
         'sourceFingerprint': fingerprint,
         'sourceProvenance': sourceProvenance.isEmpty
             ? {'kind': 'unverified', 'declaredFingerprint': fingerprint}
