@@ -5,6 +5,8 @@ import 'dart:ui' as ui;
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
 import 'package:auravibes_app/data/repositories/model_connection_repository.dart';
+import 'package:auravibes_app/data/repositories/skill_resources_repository.dart';
+import 'package:auravibes_app/data/repositories/skills_repository.dart';
 import 'package:auravibes_app/domain/entities/api_model_entity.dart';
 import 'package:auravibes_app/domain/entities/mcp_transport_type.dart';
 import 'package:auravibes_app/domain/entities/model_connection_entity.dart';
@@ -51,6 +53,7 @@ import 'package:auravibes_app/features/models/providers/chat_model_connections_p
 import 'package:auravibes_app/features/models/providers/model_store_providers.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/service_connections/models/cloud_service_connection.dart';
+import 'package:auravibes_app/features/service_connections/models/connector_connection_candidate.dart';
 import 'package:auravibes_app/features/service_connections/models/mcp_connection_test_status.dart';
 import 'package:auravibes_app/features/service_connections/models/service_connection_list_item.dart';
 import 'package:auravibes_app/features/service_connections/providers/service_connection_operations_provider.dart';
@@ -61,6 +64,10 @@ import 'package:auravibes_app/features/service_connections/screens/service_conne
 import 'package:auravibes_app/features/service_connections/usecases/test_mcp_connection_usecase.dart';
 import 'package:auravibes_app/features/settings/screens/settings_screen.dart';
 import 'package:auravibes_app/features/settings/screens/workspace_settings_screen.dart';
+import 'package:auravibes_app/features/skills/models/skill_detail.dart';
+import 'package:auravibes_app/features/skills/providers/skill_detail_provider.dart';
+import 'package:auravibes_app/features/skills/providers/skill_resources_provider.dart';
+import 'package:auravibes_app/features/skills/providers/workspace_skills_provider.dart';
 import 'package:auravibes_app/features/skills/screens/skill_detail_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skill_resource_edit_screen.dart';
 import 'package:auravibes_app/features/skills/screens/skills_screen.dart';
@@ -70,10 +77,14 @@ import 'package:auravibes_app/features/tools/providers/workspace_tools_notifier.
 import 'package:auravibes_app/features/tools/screens/tools_screen.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_route_failure.dart';
+import 'package:auravibes_app/features/workspaces/models/workspace_view.dart'
+    as app;
+import 'package:auravibes_app/features/workspaces/providers/workspace_connected_view_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/features/workspaces/screens/create_workspace_screen.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_management_screen.dart';
 import 'package:auravibes_app/features/workspaces/screens/workspace_setup_preflight_screen.dart';
+import 'package:auravibes_app/features/workspaces/widgets/workspace_connected_editor.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
 import 'package:auravibes_app/router/workspace_route.dart';
 import 'package:auravibes_app/services/cloud_auth_protocol.dart';
@@ -84,6 +95,7 @@ import 'package:auravibes_app/widgets/app_with_responsive_drawer.dart';
 import 'package:auravibes_app/widgets/responsive_sliding_drawer_controller.dart';
 import 'package:auravibes_app/widgets/route_recovery_view.dart';
 import 'package:auravibes_app/widgets/setup_page_frame.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:drift/drift.dart' show Variable;
@@ -2591,6 +2603,18 @@ const _mixedAccounts = [
 class _EmptyTools extends WorkspaceToolsNotifier {
   @override
   Future<List<WorkspaceToolEntity>> build(String workspaceId) async => [];
+}
+
+class _ControlledTools(
+  final bool Function() fails, {
+  final List<WorkspaceToolEntity> values = const [],
+}) extends WorkspaceToolsNotifier {
+  @override
+  Future<List<WorkspaceToolEntity>> build(String workspaceId) async {
+    if (fails()) throw StateError('Controlled tools load failure');
+
+    return values;
+  }
 }
 
 class _EmptyGroups extends GroupedToolsNotifier {
