@@ -203,6 +203,11 @@ RouteBase get $workspaceRoute => GoRouteData.$route(
               hasOverriddenOnExit: true,
               factory: $WorkspaceSettingsRoute._fromState,
             ),
+            GoRouteData.$route(
+              path: 'setup-preflight',
+              hasOverriddenOnExit: false,
+              factory: $WorkspaceSetupPreflightRoute._fromState,
+            ),
           ],
         ),
       ],
@@ -1075,6 +1080,34 @@ mixin $WorkspaceSettingsRoute on GoRouteData {
   @override
   String get location => GoRouteData.$location(
     '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/workspace-settings',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $WorkspaceSetupPreflightRoute on GoRouteData {
+  static WorkspaceSetupPreflightRoute _fromState(GoRouterState state) =>
+      WorkspaceSetupPreflightRoute(
+        workspaceId: state.pathParameters['workspaceId']!,
+      );
+
+  WorkspaceSetupPreflightRoute get _self =>
+      this as WorkspaceSetupPreflightRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/workspaces/${Uri.encodeComponent(_self.workspaceId)}/setup-preflight',
   );
 
   @override
