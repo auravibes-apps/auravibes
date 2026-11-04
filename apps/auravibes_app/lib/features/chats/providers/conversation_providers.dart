@@ -371,14 +371,13 @@ Future<List<ConversationSummary>> _readCloudConversationPageForRequest(
 ListConversationsRequest _cloudConversationPageRequest(
   CloudWorkspaceRef cloud,
   _ConversationListOptions options,
-) =>
-    .new(
-      workspaceId: cloud.cloudWorkspaceId,
-      limit: options.pagination.limit ?? _cloudConversationPageSize,
-      search: options.search.isEmpty ? null : options.search,
-      offset: options.pagination.offset,
-      labelIds: options.labelIds.toList(),
-    );
+) => .new(
+  workspaceId: cloud.cloudWorkspaceId,
+  limit: options.pagination.limit ?? _cloudConversationPageSize,
+  search: options.search.isEmpty ? null : options.search,
+  offset: options.pagination.offset,
+  labelIds: options.labelIds.toList(),
+);
 
 Future<List<ConversationSummary>> _readAllCloudConversationPages(
   CloudWorkspaceStateGateway gateway,
@@ -502,20 +501,18 @@ ConversationEntity _cloudConversationBase(
 List<ConversationLabelEntity> _cloudConversationLabels(
   List<ConversationLabelSummary>? labels,
   String localWorkspaceId,
-) =>
-    labels
-        ?.map((label) => _cloudConversationLabel(label, localWorkspaceId))
-        .toList() ??
+) => labels
+    ?.map((label) => _cloudConversationLabel(label, localWorkspaceId))
+    .toList() ??
     const [];
 
 ConversationLabelEntity _cloudConversationLabel(
   ConversationLabelSummary label,
   String localWorkspaceId,
-) =>
-    ConversationLabelEntity(
-      id: label.id,
-      workspaceId: localWorkspaceId,
-      name: label.name,
-      createdAt: label.createdAt,
-      updatedAt: label.updatedAt,
-    );
+) => ConversationLabelEntity(
+  id: label.id,
+  workspaceId: localWorkspaceId,
+  name: label.name,
+  createdAt: label.createdAt,
+  updatedAt: label.updatedAt,
+);
