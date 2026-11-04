@@ -303,7 +303,6 @@ class const _ConversationLabelCheckboxList({
           onChanged(labelId: label.id, selected: selected),
     );
   }
-
 }
 
 Future<void> _showManageConversationLabels(
