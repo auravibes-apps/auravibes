@@ -1459,6 +1459,91 @@ jobs:
         working-directory: apps/auravibes_server
         run: docker compose down -v --remove-orphans
 
+  issue-1509-ui-evidence:
+    name: issue-1509-ui-evidence
+    needs: change
+    if: >-
+      ${{ github.event_name == 'pull_request' &&
+          github.head_ref == 'codex/issue-1509-prompt-reordering' &&
+          needs.change.outputs.run_code_checks == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Export hosted formatting and provider generation
+        env:
+          CAPTURE_ROOT: ${{ runner.temp }}/issue-1509
+        shell: bash
+        run: |
+          set -euo pipefail
+          formatted="$CAPTURE_ROOT/formatted"
+          generated="$CAPTURE_ROOT/generated"
+          mkdir -p "$formatted" "$generated"
+          dart format --line-length 80 \
+            apps/auravibes_app/lib/features/chats/widgets/chat_queued_messages_indicator.dart \
+            apps/auravibes_app/test/features/chats/widgets/chat_queued_messages_indicator_test.dart \
+            apps/auravibes_app/test/widgets/ux_validation_layout_test.dart
+          cp apps/auravibes_app/lib/features/chats/widgets/chat_queued_messages_indicator.dart \
+            "$formatted/chat_queued_messages_indicator.dart"
+          cp apps/auravibes_app/test/features/chats/widgets/chat_queued_messages_indicator_test.dart \
+            "$formatted/chat_queued_messages_indicator_test.dart"
+          cp apps/auravibes_app/test/widgets/ux_validation_layout_test.dart \
+            "$formatted/ux_validation_layout_test.dart"
+          melos run generate --no-select
+          cp apps/auravibes_app/lib/features/chats/notifiers/conversation_queued_draft.g.dart \
+            "$generated/conversation_queued_draft.g.dart"
+
+      - name: Capture the exact base and PR renders
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          CAPTURE_ROOT: ${{ runner.temp }}/issue-1509
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$HEAD_SHA"
+          mkdir -p "$CAPTURE_ROOT"
+          test_file="apps/auravibes_app/test/widgets/ux_validation_layout_test.dart"
+          capture_test="$RUNNER_TEMP/ux_validation_layout_test.dart"
+          git show "$HEAD_SHA:$test_file" > "$capture_test"
+
+          git checkout --force --detach "$BASE_SHA"
+          cp "$capture_test" "$test_file"
+          cd apps/auravibes_app
+          flutter test test/widgets/ux_validation_layout_test.dart \
+            --no-pub \
+            --plain-name='production direct route ConversationRoute queued prompts reorder' \
+            --dart-define=UX_EXPECT_REORDER=false \
+            --dart-define="UX_CAPTURE_DIR=$CAPTURE_ROOT/before" \
+            --dart-define="UX_SOURCE_FINGERPRINT=$BASE_SHA"
+
+          cd "$GITHUB_WORKSPACE"
+          git checkout --force --detach "$HEAD_SHA"
+          cp "$capture_test" "$test_file"
+          cd apps/auravibes_app
+          flutter test test/widgets/ux_validation_layout_test.dart \
+            --no-pub \
+            --plain-name='production direct route ConversationRoute queued prompts reorder' \
+            --dart-define=UX_EXPECT_REORDER=true \
+            --dart-define="UX_CAPTURE_DIR=$CAPTURE_ROOT/after" \
+            --dart-define="UX_SOURCE_FINGERPRINT=$HEAD_SHA"
+
+      - name: Upload before and after captures
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: issue-1509-before-after
+          path: ${{ runner.temp }}/issue-1509
+          if-no-files-found: error
+          retention-days: 7
+
   ci-success:
     name: ci success
     if: ${{ always() }}
