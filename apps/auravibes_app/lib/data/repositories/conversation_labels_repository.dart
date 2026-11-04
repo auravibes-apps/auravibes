@@ -254,12 +254,17 @@ Future<ConversationLabelsTable?> _duplicateLabelName(
   _ConversationLabelDuplicateName request,
 ) =>
     (database.select(database.conversationLabels)..where(
-          (row) =>
-              row.workspaceId.equals(request.workspaceId) &
-              row.normalizedName.equals(request.normalizedName) &
-              row.id.isNotIn({request.labelId}),
+          (row) => _isDuplicateLabelName(row, request),
         ))
         .getSingleOrNull();
+
+Expression<bool> _isDuplicateLabelName(
+  $ConversationLabelsTable row,
+  _ConversationLabelDuplicateName request,
+) =>
+    row.workspaceId.equals(request.workspaceId) &
+    row.normalizedName.equals(request.normalizedName) &
+    row.id.isNotIn({request.labelId});
 
 Future<void> _updateLabelName(
   AppDatabase database,
@@ -371,13 +376,24 @@ Future<List<ConversationLabelsTable>> _loadLabelsForAssignment(
     return Future.value(const <ConversationLabelsTable>[]);
   }
 
-  return (database.select(database.conversationLabels)..where(
-        (row) =>
-            row.workspaceId.equals(assignment.workspaceId) &
-            row.id.isIn(assignment.labelIds),
-      ))
-      .get();
+  return _queryLabelsForAssignment(database, assignment);
 }
+
+Future<List<ConversationLabelsTable>> _queryLabelsForAssignment(
+  AppDatabase database,
+  _ConversationLabelAssignment assignment,
+) =>
+    (database.select(database.conversationLabels)..where(
+          (row) => _matchesAssignmentLabel(row, assignment),
+        ))
+        .get();
+
+Expression<bool> _matchesAssignmentLabel(
+  $ConversationLabelsTable row,
+  _ConversationLabelAssignment assignment,
+) =>
+    row.workspaceId.equals(assignment.workspaceId) &
+    row.id.isIn(assignment.labelIds);
 
 Future<void> _clearConversationLabels(
   AppDatabase database,

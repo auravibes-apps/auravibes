@@ -347,6 +347,11 @@ typedef _ChatListQueryState = ({
   String? debouncedSearch,
   AsyncValue<List<ConversationEntity>> chatListAsync,
 });
+typedef _ChatListRequest = ({
+  String workspaceId,
+  String search,
+  Set<String> labelIds,
+});
 
 _ChatListQueryState _useChatListQueryState(
   WidgetRef ref,
@@ -358,15 +363,11 @@ _ChatListQueryState _useChatListQueryState(
     normalizedSearch,
     _conversationSearchDebounce,
   );
-  final databaseSearch = debouncedSearch ?? '';
-  final chatListAsync = ref.watch(
-    conversationsStreamProvider(
-      workspaceId: workspaceId,
-      search: databaseSearch,
-      labelIds: input.selectedLabelIds.value,
-      pagination: (limit: _conversationPageSize + 1, offset: 0),
-    ),
-  );
+  final chatListAsync = _watchChatListConversations(ref, (
+    workspaceId: workspaceId,
+    search: debouncedSearch ?? '',
+    labelIds: input.selectedLabelIds.value,
+  ));
 
   return (
     normalizedSearch: normalizedSearch,
@@ -374,6 +375,18 @@ _ChatListQueryState _useChatListQueryState(
     chatListAsync: chatListAsync,
   );
 }
+
+AsyncValue<List<ConversationEntity>> _watchChatListConversations(
+  WidgetRef ref,
+  _ChatListRequest request,
+) => ref.watch(
+  conversationsStreamProvider(
+    workspaceId: request.workspaceId,
+    search: request.search,
+    labelIds: request.labelIds,
+    pagination: (limit: _conversationPageSize + 1, offset: 0),
+  ),
+);
 
 _ChatListDataState _chatListDataState(_ChatListHookState hooks) {
   final chatListAsync = hooks.chatListAsync;
