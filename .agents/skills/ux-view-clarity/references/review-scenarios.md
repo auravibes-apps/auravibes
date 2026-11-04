@@ -128,6 +128,18 @@ These preserve all 17 requests from the former two UX JSON files. Expectations n
 
 **Expected:** Does not load ux-task-audit because the request is documentation-only.
 
+### ux-task-audit 7
+
+**Request:** Audit this screen, fix the findings, and show before and after captures for each changed state.
+
+**Expected:** Loads ux-task-audit and ux-view-clarity. Lists and captures baseline states before editing. Uses an isolated baseline checkout for any missed state; does not replace edited source in the active worktree.
+
+### ux-task-audit 8
+
+**Request:** The invitation dialog feels confusing. Review the flow, improve it, and include a visual comparison in the PR.
+
+**Expected:** Loads ux-task-audit and ux-view-clarity. Captures the dialog baseline before changing it. If the baseline was missed, captures the verified original revision in an isolated checkout and preserves active edits; reports when no baseline is available.
+
 ## Failure cards from October feedback
 
 | Request | Expected decision | Reject |
