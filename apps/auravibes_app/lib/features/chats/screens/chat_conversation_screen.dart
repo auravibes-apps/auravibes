@@ -1640,7 +1640,7 @@ _ChatConversationAppBarActions _chatConversationAppBarActions(
   int workspaceTabs,
 ) => .new(
   workspaceId: data.workspaceId,
-  conversationId: data.conversation.id,
+  conversation: data.conversation,
   sidePanelVisible: sidePanel.values.isVisible,
   tabCount: _browserTabCount(
     browserSession,
@@ -1728,10 +1728,18 @@ class const _ChatConversationAppBar({
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
-  Widget build(BuildContext context) => AuraAppBarWithDrawer(
-    title: _ChatConversationAppBarTitle(data: data),
-    actions: actions.widgets,
-    leading: data.leading,
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final compact = constraints.maxWidth < 600;
+
+      return AuraAppBarWithDrawer(
+        title: compact
+            ? Text(data.conversation.title, overflow: .ellipsis, maxLines: 1)
+            : _ChatConversationAppBarTitle(data: data),
+        actions: actions.widgets(compact: compact),
+        leading: data.leading,
+      );
+    },
   );
 }
 
@@ -1843,35 +1851,104 @@ class const _CompactChatConversationBranchButton({
   );
 }
 
-class _ChatConversationAppBarActions({
-  required String workspaceId,
-  required String conversationId,
-  required bool sidePanelVisible,
-  required int? tabCount,
-  required VoidCallback onSidebarToggle,
+class const _ChatConversationAppBarActions({
+  required final String workspaceId,
+  required final ConversationEntity conversation,
+  required final bool sidePanelVisible,
+  required final int? tabCount,
+  required final VoidCallback onSidebarToggle,
 }) {
-  final List<Widget> widgets = [
-    WorkspaceViewChatButton(
-      workspaceId: workspaceId,
-      conversationId: conversationId,
-    ),
-    ModelUsageHeaderButton(conversationId: conversationId),
+  List<Widget> widgets({required bool compact}) => [
+    if (!compact)
+      WorkspaceViewChatButton(
+        workspaceId: workspaceId,
+        conversationId: conversation.id,
+      ),
+    if (!compact) ModelUsageHeaderButton(conversationId: conversation.id),
     BackgroundWorkHeaderButton(
       workspaceId: workspaceId,
-      conversationId: conversationId,
+      conversationId: conversation.id,
     ),
-    _ConversationBookmarksButton(
-      workspaceId: workspaceId,
-      conversationId: conversationId,
-    ),
+    if (compact)
+      _CompactConversationActionsMenu(
+        workspaceId: workspaceId,
+        conversation: conversation,
+      )
+    else
+      _ConversationBookmarksButton(
+        workspaceId: workspaceId,
+        conversationId: conversation.id,
+      ),
     WorkspaceViewBrowserToggle(
       workspaceId: workspaceId,
-      conversationId: conversationId,
+      conversationId: conversation.id,
       isPanelVisible: sidePanelVisible,
       tabCount: tabCount,
       onPressed: onSidebarToggle,
     ),
   ];
+}
+
+class const _CompactConversationActionsMenu({
+  required final String workspaceId,
+  required final ConversationEntity conversation,
+}) extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) => AuraPopupMenuButton(
+    items: [
+      _branchItem(context),
+      _viewItem(context, ref),
+      _usageItem(context),
+      _bookmarksItem(context),
+    ],
+    identifier: 'conversation-more-options',
+    tooltip:
+        '${LocaleKeys.chats_screens_chat_conversation_options_tooltip.tr()}: '
+        '${conversation.title}',
+  );
+
+  AuraPopupMenuItem _branchItem(BuildContext context) => AuraPopupMenuItem(
+    title: const TextLocale(
+      LocaleKeys.chats_screens_chat_conversation_branch_navigation,
+    ),
+    onTap: () => ConversationBranchNavigationButton.showBranchNavigation(
+      context,
+      workspaceId,
+      conversation,
+    ),
+    leading: const AuraIcon(Icons.account_tree_outlined),
+  );
+
+  AuraPopupMenuItem _viewItem(BuildContext context, WidgetRef ref) =>
+      AuraPopupMenuItem(
+        title: const TextLocale(LocaleKeys.workspace_views_title),
+        onTap: () => unawaited(
+          WorkspaceViewChatButton.pick(
+            context,
+            ref,
+            workspaceId,
+            conversation.id,
+          ),
+        ),
+        leading: const AuraIcon(Icons.dashboard_outlined),
+      );
+
+  AuraPopupMenuItem _usageItem(BuildContext context) => AuraPopupMenuItem(
+    title: const TextLocale(
+      LocaleKeys.chats_screens_chat_conversation_model_usage_open,
+    ),
+    onTap: () => ModelUsageHeaderButton.showDetails(context, conversation.id),
+    leading: const AuraIcon(Icons.analytics_outlined),
+  );
+
+  AuraPopupMenuItem _bookmarksItem(BuildContext context) => AuraPopupMenuItem(
+    title: const TextLocale(LocaleKeys.chats_screens_chats_list_saved_messages),
+    onTap: () => MessageBookmarksRoute(
+      workspaceId: workspaceId,
+      conversationId: conversation.id,
+    ).go(context),
+    leading: const AuraIcon(Icons.bookmark_border),
+  );
 }
 
 class const _ConversationBookmarksButton({
@@ -2925,7 +3002,10 @@ class const _ChatControlsPadding({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
-    padding: EdgeInsets.all(context.auraTheme.fromSpacing(.md)),
+    padding: EdgeInsets.symmetric(
+      vertical: context.auraTheme.fromSpacing(.xs),
+      horizontal: context.auraTheme.fromSpacing(.md),
+    ),
     child: _ChatControlsAlignment(
       workspaceId: workspaceId,
       conversationId: conversationId,
@@ -4161,20 +4241,23 @@ class const _ConversationOrientationContent({
   required final VoidCallback onReturn,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraColumn(
-    children: [
-      Text(
-        'conversation_orientation.delegated'.tr(
-          namedArgs: {'parent': parentTitle},
+  Widget build(BuildContext context) => AuraPadding(
+    child: AuraColumn(
+      children: [
+        Text(
+          'conversation_orientation.delegated'.tr(
+            namedArgs: {'parent': parentTitle},
+          ),
         ),
-      ),
-      const TextLocale('conversation_orientation.read_only'),
-      AuraButton(
-        onPressed: onReturn,
-        child: const TextLocale('route_state.return_parent'),
-      ),
-    ],
-    mainAxisSize: .min,
+        const TextLocale('conversation_orientation.read_only'),
+        AuraButton(
+          onPressed: onReturn,
+          child: const TextLocale('route_state.return_parent'),
+        ),
+      ],
+      mainAxisSize: .min,
+    ),
+    padding: const .horizontal(.md),
   );
 }
 
