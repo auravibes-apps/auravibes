@@ -1682,7 +1682,6 @@ void main() {
 
 class _PassthroughConversationLabelsRepository(super._database)
     extends ConversationLabelsRepository {
-
   @override
   Stream<List<ConversationEntity>> withLabels({
     required String workspaceId,

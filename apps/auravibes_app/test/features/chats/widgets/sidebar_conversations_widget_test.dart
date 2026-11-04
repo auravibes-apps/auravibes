@@ -17,14 +17,12 @@ import 'package:auravibes_app/features/chats/notifiers/agent_run_activity_notifi
 import 'package:auravibes_app/features/chats/notifiers/conversation_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_streaming_notifier.dart';
 import 'package:auravibes_app/features/chats/providers/compaction_execution.dart';
-import 'package:auravibes_app/features/chats/providers/conversation_labels_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_labels_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/widgets/sidebar_conversations_widget.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:drift/drift.dart' hide Column, isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -42,7 +40,7 @@ void main() {
       addTearDown(repository.close);
 
       await tester.pumpWidget(
-        _conversationTestScope(
+        _ConversationTestScope(
           overrides: [
             workspaceSessionForRouteProvider.overrideWith(
               (_, workspaceId) async => WorkspaceSession(
@@ -74,7 +72,7 @@ void main() {
     addTearDown(repository.close);
 
     await tester.pumpWidget(
-      _conversationTestScope(
+      _ConversationTestScope(
         overrides: [
           workspaceSessionForRouteProvider.overrideWith(
             (_, workspaceId) async => WorkspaceSession(
@@ -121,7 +119,7 @@ void main() {
     addTearDown(repository.close);
 
     await tester.pumpWidget(
-      _conversationTestScope(
+      _ConversationTestScope(
         overrides: [
           workspaceSessionForRouteProvider.overrideWith(
             (_, workspaceId) async => WorkspaceSession(
@@ -143,7 +141,7 @@ void main() {
     addTearDown(repository.close);
 
     await tester.pumpWidget(
-      _conversationTestScope(
+      _ConversationTestScope(
         overrides: [
           workspaceSessionForRouteProvider.overrideWith(
             (_, workspaceId) async => WorkspaceSession(
@@ -167,7 +165,7 @@ void main() {
     addTearDown(repository.close);
 
     await tester.pumpWidget(
-      _conversationTestScope(
+      _ConversationTestScope(
         overrides: [
           workspaceSessionForRouteProvider.overrideWith(
             (_, workspaceId) async => WorkspaceSession(
@@ -438,7 +436,7 @@ void main() {
     addTearDown(repository.close);
 
     await tester.pumpWidget(
-      _conversationTestScope(
+      _ConversationTestScope(
         overrides: [
           workspaceSessionForRouteProvider.overrideWith(
             (_, workspaceId) async => WorkspaceSession(
@@ -475,7 +473,7 @@ void main() {
     addTearDown(repository.close);
 
     await tester.pumpWidget(
-      _conversationTestScope(
+      _ConversationTestScope(
         overrides: [
           workspaceSessionForRouteProvider.overrideWith(
             (_, workspaceId) async => WorkspaceSession(
@@ -517,7 +515,7 @@ void main() {
         EasyLocalization(
           child: Builder(
             builder: (context) {
-              return _conversationTestScope(
+              return _ConversationTestScope(
                 overrides: [
                   workspaceSessionForRouteProvider.overrideWith(
                     (_, workspaceId) async => WorkspaceSession(
@@ -587,7 +585,7 @@ void main() {
           child: Builder(
             builder: (context) {
               return Portal(
-                child: _conversationTestScope(
+                child: _ConversationTestScope(
                   overrides: [
                     workspaceSessionForRouteProvider.overrideWith(
                       (_, workspaceId) async => WorkspaceSession(
@@ -710,20 +708,16 @@ void main() {
   });
 }
 
-_ConversationTestScope _conversationTestScope({
-  required List<Override> overrides,
-  required Widget child,
-}) => .new(
-  overrides: overrides,
-  child: child,
-  labelsDatabase: .new(connection: .new(NativeDatabase.memory())),
-);
+class _ConversationTestScope extends StatefulWidget {
+  _ConversationTestScope({
+    required this.overrides,
+    required this.child,
+  }) : labelsDatabase = AppDatabase(connection: NativeDatabase.memory());
 
-class const _ConversationTestScope({
-  required final List<Override> overrides,
-  required final Widget child,
-  required final AppDatabase labelsDatabase,
-}) extends StatefulWidget {
+  final List<Override> overrides;
+  final Widget child;
+  final AppDatabase labelsDatabase;
+
   @override
   State<_ConversationTestScope> createState() => _ConversationTestScopeState();
 }
@@ -741,9 +735,6 @@ class _ConversationTestScopeState extends State<_ConversationTestScope> {
       ...widget.overrides,
       conversationLabelsRepositoryProvider.overrideWithValue(
         _PassthroughConversationLabelsRepository(widget.labelsDatabase),
-      ),
-      conversationLabelsStreamProvider.overrideWith(
-        (ref, workspaceId) => Stream.value(const []),
       ),
     ],
     child: widget.child,
@@ -863,7 +854,7 @@ Future<void> _pumpSidebarAtConversation(
       EasyLocalization(
         child: Builder(
           builder: (context) => Portal(
-            child: _conversationTestScope(
+            child: _ConversationTestScope(
               overrides: [
                 workspaceSessionForRouteProvider.overrideWith(
                   (_, workspaceId) async => WorkspaceSession(

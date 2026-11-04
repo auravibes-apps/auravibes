@@ -14,9 +14,9 @@ class const ConversationLabelBadges({
 
     final labelNames = labels.map((label) => label.name).join(', ');
     final localizedSemanticsLabel =
-        LocaleKeys
-            .chats_screens_conversation_labels_label_semantics
-            .tr(context: context);
+        LocaleKeys.chats_screens_conversation_labels_label_semantics.tr(
+          context: context,
+        );
     final semanticsLabel = '$localizedSemanticsLabel: $labelNames';
 
     return Semantics(

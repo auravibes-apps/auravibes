@@ -39,8 +39,7 @@ class _ConversationLabelsToolbarState
     final selectedLabelIds = widget.selectedLabelIds;
     final count = selectedLabelIds.length;
     final selectedCountSemantics =
-        LocaleKeys
-            .chats_screens_conversation_labels_selected_count_semantics
+        LocaleKeys.chats_screens_conversation_labels_selected_count_semantics
             .tr(args: [count.toString()]);
     final filterSemantics = count == 0
         ? LocaleKeys.chats_screens_conversation_labels_filter_semantics.tr()
