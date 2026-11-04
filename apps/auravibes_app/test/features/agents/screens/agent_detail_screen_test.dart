@@ -415,7 +415,7 @@ void main() {
     await _openPromptEditor(tester);
     await tester.tap(find.text('Apply'));
     final _ = await tester.pumpAndSettle();
-    expect(find.text('Add a system prompt.'), findsOneWidget);
+    expect(find.text('Add instructions for this agent.'), findsOneWidget);
     expect(find.text('Validation failed'), findsNothing);
 
     await _openPromptEditor(tester);
@@ -576,7 +576,7 @@ Future<void> _openPromptEditor(WidgetTester tester) async {
   await tester.drag(find.byType(ListView).first, const Offset(0, -300));
   await tester.drag(find.byType(ListView).first, const Offset(0, 100));
   final _ = await tester.pumpAndSettle();
-  await tester.tap(find.text('Add system prompt'));
+  await tester.tap(find.text('Add instructions'));
   final _ = await tester.pumpAndSettle();
 }
 
