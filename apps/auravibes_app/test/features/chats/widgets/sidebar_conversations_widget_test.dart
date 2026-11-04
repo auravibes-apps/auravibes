@@ -708,15 +708,13 @@ void main() {
   });
 }
 
-class _ConversationTestScope extends StatefulWidget {
-  _ConversationTestScope({
-    required this.overrides,
-    required this.child,
-  }) : labelsDatabase = AppDatabase(connection: NativeDatabase.memory());
-
-  final List<Override> overrides;
-  final Widget child;
-  final AppDatabase labelsDatabase;
+class _ConversationTestScope({
+  required final List<Override> overrides,
+  required final Widget child,
+}) extends StatefulWidget {
+  final AppDatabase labelsDatabase = AppDatabase(
+    connection: NativeDatabase.memory(),
+  );
 
   @override
   State<_ConversationTestScope> createState() => _ConversationTestScopeState();
@@ -743,7 +741,6 @@ class _ConversationTestScopeState extends State<_ConversationTestScope> {
 
 class _PassthroughConversationLabelsRepository(super._database)
     extends ConversationLabelsRepository {
-
   @override
   Stream<List<ConversationEntity>> withLabels({
     required String workspaceId,

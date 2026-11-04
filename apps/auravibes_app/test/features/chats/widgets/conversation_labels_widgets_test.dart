@@ -109,7 +109,7 @@ void main() {
           )
           .label,
       '${LocaleKeys.chats_screens_conversation_labels_label_semantics.tr()}: '
-          'Urgent, Planning',
+      'Urgent, Planning',
     );
     expect(
       tester.widget<AuraBadge>(urgentBadge).variant,
