@@ -1526,7 +1526,7 @@ class const _ChatListManagementActions({
       children: [
         _ChatListBulkDeleteButton(
           isWorking: isWorking,
-          onDelete: callbacks.actions.onDelete,
+          onDelete: callbacks.onDelete,
         ),
         _ChatListBulkClearButton(
           isWorking: isWorking,
