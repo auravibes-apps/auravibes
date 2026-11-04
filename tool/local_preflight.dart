@@ -54,6 +54,12 @@ Future<int> runLocalPreflight(List<String> arguments) async {
   final sortedChanges = changes.toList()
     ..sort((left, right) => _changeLabel(left).compareTo(_changeLabel(right)));
   final changedDartPaths = _existingChangedDartPaths(root, sortedChanges);
+  final auditLocalization = sortedChanges.any(
+    (change) => [
+      change.oldPath,
+      change.newPath,
+    ].whereType<String>().any(_affectsLocalization),
+  );
   final analyzeGroups = await analyzedPathGroups(root, changedDartPaths);
   final analyzePaths = analyzeGroups.expand((group) => group).toList();
   final selection = await selectRepository(
@@ -112,6 +118,15 @@ Future<int> runLocalPreflight(List<String> arguments) async {
     }
   }
 
+  stdout.writeln('Localization audit:');
+  if (auditLocalization) {
+    stdout.writeln(
+      '  (cd apps/auravibes_app && fvm dart run tool/localization_audit.dart)',
+    );
+  } else {
+    stdout.writeln('  No command; no app Dart or translation catalog changes.');
+  }
+
   final plannedCommands = <_PlannedCommand>[];
   final diagnostics = <String>[];
   final planningExitCode = await runSelectedTests(
@@ -168,8 +183,20 @@ Future<int> runLocalPreflight(List<String> arguments) async {
   }
   if (analyzeExitCode != 0) return analyzeExitCode;
 
+  if (auditLocalization) {
+    final app = Directory(p.join(root.path, 'apps', 'auravibes_app'));
+    const arguments = ['run', 'tool/localization_audit.dart'];
+    final result = await _run(dart, arguments, app);
+    if (result != 0) return result;
+  }
+
   return await runSelectedTests(selection, rootPath: root.path);
 }
+
+bool _affectsLocalization(String path) =>
+    (path.startsWith('apps/auravibes_app/') && path.endsWith('.dart')) ||
+    (path.startsWith('apps/auravibes_app/assets/i18n/') &&
+        path.endsWith('.json'));
 
 Future<List<ChangedFile>> _workingTreeChanges(
   Directory root,
@@ -290,7 +317,8 @@ Usage: melos run preflight:changed [-- --base <ref>]
        [--dry-run] [--full-validation]
 
 The default base is origin/main. The current working tree and untracked files
-are included. --dry-run prints selected formatter, analyzer, and test commands.
+are included. --dry-run prints selected formatter, analyzer, localization audit,
+and test commands.
 --full-validation explicitly runs the complete Melos validate script.
 ''';
 

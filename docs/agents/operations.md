@@ -49,6 +49,12 @@ gh pr checks <number> --json name,bucket \
 
 ## PR delivery and review
 
+Immediately before updating an existing PR branch from its base, fetch the base
+and head. Compare `gh pr view <number> --json headRefOid,baseRefOid` with local
+`HEAD` and both fetched refs. If the PR head moved, inspect and sync it before
+merging. Recheck before pushing, and handle a non-fast-forward rejection without
+forcing; another update can race either check.
+
 For PR images outside Git, inspect `gh pr create --help` or `gh pr edit --help`
 for `--attach`. Preview the PR body and validate local files first; `--attach`
 cannot be combined with `--dry-run`. Verify the resulting PR body and hosted

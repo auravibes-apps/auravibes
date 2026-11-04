@@ -1588,6 +1588,28 @@ void main() {
             reason: '$name route must apply the app side safe area',
           );
           if (viewport.name != 'desktop') {
+            final expectedFixture = viewport.name == 'duo_closed' && !dark
+                ? switch (name) {
+                    'IntroRoute' =>
+                      'Empty in-memory database; no workspace or account',
+                    'MixedAccounts' =>
+                      'Two origins with stored accounts; controlled expired '
+                          'and unknown health',
+                    'CloudWorkspaceDetailRoute' =>
+                      'Controlled cloud workspace admin detail with '
+                          'authoritative capability values; no remote mutation',
+                    _ => null,
+                  }
+                : null;
+            final testOutput =
+                expectedFixture != null &&
+                    const String.fromEnvironment('UX_CAPTURE_DIR').isEmpty
+                ? Directory.systemTemp.createTempSync('ux-capture-')
+                : null;
+            if (testOutput != null) {
+              addTearDown(() => testOutput.deleteSync(recursive: true));
+            }
+            File? sidecar;
             await _capture(
               tester,
               '$name-${viewport.name}-${dark ? 'dark' : 'light'}',
@@ -1596,10 +1618,25 @@ void main() {
               size: viewport.size,
               scale: 1,
               dark: dark,
+              fixtureName: name,
               controlMeasurements: name == 'AgentsRoute' || name == 'DarkAgents'
                   ? _disabledBadgeMeasurement(tester)
                   : null,
+              outputDirectory: testOutput?.path,
+              onSidecar: (file) {
+                sidecar = file;
+              },
             );
+            if (expectedFixture != null) {
+              final capturedSidecar = sidecar;
+              if (capturedSidecar == null) {
+                fail('Capture did not produce a JSON sidecar');
+              }
+              final metadata = jsonDecode(
+                capturedSidecar.readAsStringSync(),
+              ) as Map<String, Object?>;
+              expect(metadata['fixture'], expectedFixture);
+            }
           }
           for (final side in const [
             (name: 'left', padding: FakeViewPadding(left: 40)),
@@ -1778,6 +1815,7 @@ void main() {
             size: .new(variant.width, 1200),
             scale: variant.scale,
             dark: variant.dark,
+            fixtureName: name,
           );
           await fixture.close(tester);
         },
@@ -2153,11 +2191,34 @@ Future<void> _capture(
   required Size size,
   required double scale,
   required bool dark,
+  String? fixtureName,
   Map<String, Object>? controlMeasurements,
+  String? outputDirectory,
+  void Function(File)? onSidecar,
 }) async {
-  const output = String.fromEnvironment('UX_CAPTURE_DIR');
+  final output =
+      outputDirectory ?? const String.fromEnvironment('UX_CAPTURE_DIR');
   if (output.isEmpty) return;
   const fingerprint = String.fromEnvironment('UX_SOURCE_FINGERPRINT');
+  final metadata = <String, Object?>{
+    'name': name,
+    'controlMeasurements': ?controlMeasurements,
+    'route': route,
+    'fixture': _fixtureDescription(fixtureName ?? name),
+    'sourceFingerprint': fingerprint,
+    'renderer': 'Flutter widget-test Skia, ${Platform.operatingSystem}',
+    'viewport': [size.width, size.height],
+    'locale': locale,
+    'textScale': scale,
+    'theme': dark ? 'dark' : 'light',
+    'accentHue': 186.0,
+    'flavor': 'prod view under controlled widget fixture',
+    'disableAnimations': true,
+    'fonts': _captureFontMetadata,
+    'fontLimitations':
+        'Flutter widget-test text only; native system typography and '
+        'assistive technology are not represented.',
+  };
   final boundary = tester.renderObject<RenderRepaintBoundary>(
     find.byKey(const ValueKey('ux-capture')),
   );
@@ -2171,27 +2232,11 @@ Future<void> _capture(
     final _ = await File('$output/$artifact.png').writeAsBytes(
       (bytes ?? (throw StateError('PNG encoding failed'))).buffer.asUint8List(),
     );
-    final _ = await File('$output/$artifact.json').writeAsString(
-      const JsonEncoder.withIndent('  ').convert({
-        'name': name,
-        'controlMeasurements': ?controlMeasurements,
-        'route': route,
-        'fixture': _fixtureDescription(name),
-        'sourceFingerprint': fingerprint,
-        'renderer': 'Flutter widget-test Skia, ${Platform.operatingSystem}',
-        'viewport': [size.width, size.height],
-        'locale': locale,
-        'textScale': scale,
-        'theme': dark ? 'dark' : 'light',
-        'accentHue': 186.0,
-        'flavor': 'prod view under controlled widget fixture',
-        'disableAnimations': true,
-        'fonts': _captureFontMetadata,
-        'fontLimitations':
-            'Flutter widget-test text only; native system typography and '
-            'assistive technology are not represented.',
-      }),
+    final sidecar = File('$output/$artifact.json');
+    final _ = await sidecar.writeAsString(
+      const JsonEncoder.withIndent('  ').convert(metadata),
     );
+    onSidecar?.call(sidecar);
   });
 }
 
