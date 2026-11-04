@@ -1,8 +1,8 @@
 {
   "name": "ConversationRoute-compact-menu",
-  "route": "/workspaces/01a1a4c8-6506-7aa3-b7eb-276549660c70/chats/01a1a4c8-650b-7205-ab9d-211ccfa2b2a8",
+  "route": "/workspaces/01a1a4cb-c1e1-72b4-b803-bc3b5a738edc/chats/01a1a4cb-c1e6-792b-8762-a9791c32e4de",
   "fixture": "Persisted local in-memory workspace, two agents sharing a custom skill, disabled agent/skill, schema without credential, template resource/tool, parent and child chats; no models or cloud accounts",
-  "sourceFingerprint": "ead297c013d83cc9f9709b9876ef492f2f6cc4f4d970a6da1b97b622d94b2da8",
+  "sourceFingerprint": "1925881293ed20528e1370708009349d9edd484f857537defe57ab1d6e1d9ac9",
   "renderer": "Flutter widget-test Skia, macos",
   "viewport": [
     360.0,

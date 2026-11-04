@@ -1729,18 +1729,18 @@ class const _ChatConversationAppBar({
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      final compact = constraints.maxWidth < 600;
-
-      return AuraAppBarWithDrawer(
-        title: compact
-            ? Text(data.conversation.title, overflow: .ellipsis, maxLines: 1)
-            : _ChatConversationAppBarTitle(data: data),
-        actions: actions.widgets(compact: compact),
-        leading: data.leading,
-      );
-    },
+    builder: (context, constraints) => _appBar(constraints.maxWidth < 600),
   );
+
+  Widget _appBar(bool compact) => AuraAppBarWithDrawer(
+    title: _title(compact),
+    actions: actions.widgets(compact: compact),
+    leading: data.leading,
+  );
+
+  Widget _title(bool compact) => compact
+      ? Text(data.conversation.title, overflow: .ellipsis, maxLines: 1)
+      : _ChatConversationAppBarTitle(data: data);
 }
 
 class const _ChatConversationAppBarTitle({
@@ -1859,26 +1859,12 @@ class const _ChatConversationAppBarActions({
   required final VoidCallback onSidebarToggle,
 }) {
   List<Widget> widgets({required bool compact}) => [
-    if (!compact)
-      WorkspaceViewChatButton(
-        workspaceId: workspaceId,
-        conversationId: conversation.id,
-      ),
-    if (!compact) ModelUsageHeaderButton(conversationId: conversation.id),
+    if (!compact) ..._wideActions(),
     BackgroundWorkHeaderButton(
       workspaceId: workspaceId,
       conversationId: conversation.id,
     ),
-    if (compact)
-      _CompactConversationActionsMenu(
-        workspaceId: workspaceId,
-        conversation: conversation,
-      )
-    else
-      _ConversationBookmarksButton(
-        workspaceId: workspaceId,
-        conversationId: conversation.id,
-      ),
+    _secondaryAction(compact),
     WorkspaceViewBrowserToggle(
       workspaceId: workspaceId,
       conversationId: conversation.id,
@@ -1887,6 +1873,24 @@ class const _ChatConversationAppBarActions({
       onPressed: onSidebarToggle,
     ),
   ];
+
+  List<Widget> _wideActions() => [
+    WorkspaceViewChatButton(
+      workspaceId: workspaceId,
+      conversationId: conversation.id,
+    ),
+    ModelUsageHeaderButton(conversationId: conversation.id),
+  ];
+
+  Widget _secondaryAction(bool compact) => compact
+      ? _CompactConversationActionsMenu(
+          workspaceId: workspaceId,
+          conversation: conversation,
+        )
+      : _ConversationBookmarksButton(
+          workspaceId: workspaceId,
+          conversationId: conversation.id,
+        );
 }
 
 class const _CompactConversationActionsMenu({
