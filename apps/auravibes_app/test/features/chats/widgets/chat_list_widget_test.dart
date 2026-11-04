@@ -162,8 +162,12 @@ void main() {
 
       await tester.tap(find.text('Open review'));
       final _ = await tester.pumpAndSettle();
+      final reviewTitle =
+          'Revisa la copia de seguridad de tu conversaci' +
+          String.fromCharCode(243) +
+          'n';
       expect(
-        find.text('Revisa la copia de seguridad de tu conversaci\u00F3n'),
+        find.text(reviewTitle),
         findsOneWidget,
       );
       expect(find.text('informe.pdf'), findsOneWidget);

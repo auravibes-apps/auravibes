@@ -146,21 +146,12 @@ void main() {
     );
     final repository = ConversationRepository(database);
     final firstConversation = await repository.createConversation(
-      .new(
-        title: 'First chat',
-        workspaceId: workspace.id,
-      ),
+      .new(title: 'First chat', workspaceId: workspace.id),
     );
     final secondConversation = await repository.createConversation(
-      .new(
-        title: 'Second chat',
-        workspaceId: workspace.id,
-      ),
+      .new(title: 'Second chat', workspaceId: workspace.id),
     );
-    final conversationIds = [
-      firstConversation.id,
-      secondConversation.id,
-    ];
+    final conversationIds = [firstConversation.id, secondConversation.id];
     final usecase = _usecase(database);
     final preview = await usecase.previewConversations(
       workspaceId: workspace.id,
