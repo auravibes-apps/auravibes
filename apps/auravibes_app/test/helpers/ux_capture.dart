@@ -130,13 +130,6 @@ Future<void> captureUxWidget(
   });
 }
 
-Map<String, double> _viewPadding(ui.ViewPadding padding) => {
-  'left': padding.left,
-  'top': padding.top,
-  'right': padding.right,
-  'bottom': padding.bottom,
-};
-
 String _fixtureDescription(String name) => switch (name) {
   'cloud-workspace-invite-dialog' =>
     'Controlled cloud workspace admin detail with invitation dialog open; '
@@ -186,4 +179,11 @@ String _fixtureDescription(String name) => switch (name) {
         'sharing a custom skill, disabled agent/skill, schema '
         'without credential, template resource/tool, parent and '
         'child chats; no models or cloud accounts',
+};
+
+Map<String, double> _viewPadding(ui.ViewPadding padding) => {
+  'left': padding.left,
+  'top': padding.top,
+  'right': padding.right,
+  'bottom': padding.bottom,
 };
