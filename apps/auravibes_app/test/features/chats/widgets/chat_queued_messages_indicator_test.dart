@@ -1,7 +1,11 @@
 // Required: Tests repeat finders and fixture lookups for clarity.
+import 'dart:ui' show Tristate;
+
+import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/notifiers/conversation_queued_draft.dart';
 import 'package:auravibes_app/features/chats/providers/message_id_list.dart';
+import 'package:auravibes_app/features/chats/usecases/local_chat_attachment_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_queued_messages_indicator.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -28,11 +32,17 @@ class const _EasyLocalizationTestWrapper({required final Widget child})
 void main() {
   Widget buildSubject({
     required List<ConversationQueuedDraft> queuedDrafts,
+    bool watchQueue = false,
     ValueChanged<ChatDraft>? onEditDraft,
     void Function(ProviderContainer)? onContainer,
   }) {
     final container = ProviderContainer(
-      overrides: [conversationSelectedProvider.overrideWithValue('conv-1')],
+      overrides: [
+        conversationSelectedProvider.overrideWithValue('conv-1'),
+        localChatAttachmentUsecaseProvider.overrideWithValue(
+          _NoopLocalChatAttachmentUsecase(),
+        ),
+      ],
     );
     addTearDown(container.dispose);
     onContainer?.call(container);
@@ -48,10 +58,26 @@ void main() {
                 child: Theme(
                   data: .new(),
                   child: Material(
-                    child: ChatQueuedMessagesIndicator(
-                      conversationId: 'conv-1',
-                      queuedDrafts: queuedDrafts,
-                      onEditDraft: onEditDraft,
+                    child: Portal(
+                      child: Consumer(
+                        builder: (context, ref, _) {
+                          final visibleDrafts = watchQueue
+                              ? ref.watch(
+                                  conversationSendQueueProvider.select(
+                                    (queues) =>
+                                        queues['conv-1'] ??
+                                        const <ConversationQueuedDraft>[],
+                                  ),
+                                )
+                              : queuedDrafts;
+
+                          return ChatQueuedMessagesIndicator(
+                            conversationId: 'conv-1',
+                            queuedDrafts: visibleDrafts,
+                            onEditDraft: onEditDraft,
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),
@@ -102,6 +128,172 @@ void main() {
     expect(find.byType(AuraBadge), findsOneWidget);
     expect(find.text('2'), findsOneWidget);
     expect(find.byIcon(Icons.close), findsNWidgets(2));
+    expect(find.byType(AuraPopupMenuButton), findsNWidgets(2));
+  });
+
+  testWidgets('moves a queued row through its accessible actions', (
+    tester,
+  ) async {
+    final enqueuedDrafts = <ConversationQueuedDraft>[];
+    const attachment = MessageAttachmentToCreate(
+      localPath: '/tmp/middle.pdf',
+      fileName: 'middle.pdf',
+      displayName: 'Middle PDF',
+      mimeType: 'application/pdf',
+      modality: .file,
+      sizeBytes: 12,
+    );
+    const middleContent = ChatDraft(text: 'Middle', attachments: [attachment]);
+    ChatDraft? loadedDraft;
+    final queueSnapshots = <Map<String, List<ConversationQueuedDraft>>>[];
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        queuedDrafts: const [],
+        watchQueue: true,
+        onContainer: (container) {
+          final subscription = container.listen(
+            conversationSendQueueProvider,
+            (_, next) => queueSnapshots.add(next),
+          );
+          addTearDown(subscription.close);
+          final notifier = container.read(
+            conversationSendQueueProvider.notifier,
+          );
+          enqueuedDrafts.addAll([
+            notifier.enqueue(
+              conversationId: 'conv-1',
+              draft: const ChatDraft(text: 'First'),
+            ),
+            notifier.enqueue(conversationId: 'conv-1', draft: middleContent),
+            notifier.enqueue(
+              conversationId: 'conv-1',
+              draft: const ChatDraft(text: 'Last'),
+            ),
+            notifier.enqueue(
+              conversationId: 'conv-2',
+              draft: const ChatDraft(text: 'Other conversation'),
+            ),
+          ]);
+        },
+        onEditDraft: (draft) => loadedDraft = draft,
+      ),
+    );
+
+    final [first, middle, last, other] = enqueuedDrafts;
+    final queuedMiddle = middle;
+    final rowActions = find.byKey(
+      ValueKey('queued-prompt-${queuedMiddle.id}-actions'),
+    );
+    await tester.tap(rowActions);
+    final _ = await tester.pumpAndSettle();
+    expect(find.text('Move up'), findsOneWidget);
+    expect(find.text('Move down'), findsOneWidget);
+    await tester.tap(
+      find.byKey(ValueKey('queued-prompt-${queuedMiddle.id}-move-up')),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    expect(
+      tester.getTopLeft(find.text('Middle')).dy,
+      lessThan(tester.getTopLeft(find.text('First')).dy),
+    );
+    expect(queueSnapshots.last['conv-1'], [middle, first, last]);
+    expect(middle.draft, same(middleContent));
+    expect(middle.draft.attachments.single, same(attachment));
+    expect(queueSnapshots.last['conv-2'], [other]);
+
+    await tester.tap(rowActions);
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(ValueKey('queued-prompt-${queuedMiddle.id}-move-down')),
+    );
+    final _ = await tester.pumpAndSettle();
+
+    expect(
+      tester.getTopLeft(find.text('First')).dy,
+      lessThan(tester.getTopLeft(find.text('Middle')).dy),
+    );
+    expect(queueSnapshots.last['conv-1'], [first, middle, last]);
+
+    await tester.tap(find.byIcon(Icons.edit_outlined).at(1));
+    await tester.pump();
+
+    expect(loadedDraft, same(middleContent));
+    expect(loadedDraft?.attachments.single, same(attachment));
+    expect(queueSnapshots.last['conv-1'], [first, last]);
+  });
+
+  testWidgets('disables move actions at the first and last boundaries', (
+    tester,
+  ) async {
+    final enqueuedDrafts = <ConversationQueuedDraft>[];
+    final queueSnapshots = <Map<String, List<ConversationQueuedDraft>>>[];
+
+    await pumpAndInit(
+      tester,
+      buildSubject(
+        queuedDrafts: const [],
+        watchQueue: true,
+        onContainer: (container) {
+          final subscription = container.listen(
+            conversationSendQueueProvider,
+            (_, next) => queueSnapshots.add(next),
+          );
+          addTearDown(subscription.close);
+          final notifier = container.read(
+            conversationSendQueueProvider.notifier,
+          );
+          enqueuedDrafts.addAll([
+            notifier.enqueue(
+              conversationId: 'conv-1',
+              draft: const ChatDraft(text: 'First'),
+            ),
+            notifier.enqueue(
+              conversationId: 'conv-1',
+              draft: const ChatDraft(text: 'Last'),
+            ),
+          ]);
+        },
+      ),
+    );
+
+    final [first, last] = enqueuedDrafts;
+    final queuedFirst = first;
+    await tester.tap(
+      find.byKey(ValueKey('queued-prompt-${queuedFirst.id}-actions')),
+    );
+    final _ = await tester.pumpAndSettle();
+    final moveUpAtTop = tester
+        .getSemantics(
+          find.byKey(ValueKey('queued-prompt-${queuedFirst.id}-move-up')),
+        )
+        .getSemanticsData();
+    expect(moveUpAtTop.flagsCollection.isButton, isTrue);
+    expect(moveUpAtTop.flagsCollection.isEnabled, Tristate.isFalse);
+    await tester.tap(
+      find.byKey(ValueKey('queued-prompt-${queuedFirst.id}-move-up')),
+    );
+    final _ = await tester.pumpAndSettle();
+    expect(queueSnapshots.last['conv-1'], [first, last]);
+
+    final _ = await tester.sendKeyEvent(.escape);
+    final _ = await tester.pumpAndSettle();
+    await tester.tap(find.byKey(ValueKey('queued-prompt-${last.id}-actions')));
+    final _ = await tester.pumpAndSettle();
+    final moveDownAtBottom = tester
+        .getSemantics(
+          find.byKey(ValueKey('queued-prompt-${last.id}-move-down')),
+        )
+        .getSemanticsData();
+    expect(moveDownAtBottom.flagsCollection.isButton, isTrue);
+    expect(moveDownAtBottom.flagsCollection.isEnabled, Tristate.isFalse);
+    await tester.tap(
+      find.byKey(ValueKey('queued-prompt-${last.id}-move-down')),
+    );
+    final _ = await tester.pumpAndSettle();
+    expect(queueSnapshots.last['conv-1'], [first, last]);
   });
 
   testWidgets('loads edited draft before removing it from the queue', (
@@ -142,4 +334,12 @@ void main() {
     expect(queueWasPresentWhenLoaded, isTrue);
     expect(queueState, isEmpty);
   });
+}
+
+class _NoopLocalChatAttachmentUsecase implements LocalChatAttachmentUsecase {
+  @override
+  Future<void> deleteAttachment(String localPath) => Future<void>.value();
+
+  @override
+  Never noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
