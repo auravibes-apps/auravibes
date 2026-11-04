@@ -166,10 +166,10 @@ void main() {
     );
     final archives = ConversationArchiveCodec.decodeMany(exported);
 
-    expect(
-      archives.map((archive) => archive.title),
-      ['First chat', 'Second chat'],
-    );
+    expect(archives.map((archive) => archive.title), [
+      'First chat',
+      'Second chat',
+    ]);
     expect(archives.every((archive) => archive.messages.isEmpty), isTrue);
   });
 

@@ -165,10 +165,7 @@ void main() {
       final accent = String.fromCharCode(243);
       final reviewTitle =
           'Revisa la copia de seguridad de tu conversaci${accent}n';
-      expect(
-        find.text(reviewTitle),
-        findsOneWidget,
-      );
+      expect(find.text(reviewTitle), findsOneWidget);
       expect(find.text('informe.pdf'), findsOneWidget);
       expect(find.text('Tipo: application/pdf'), findsOneWidget);
       final checkbox = find.byKey(

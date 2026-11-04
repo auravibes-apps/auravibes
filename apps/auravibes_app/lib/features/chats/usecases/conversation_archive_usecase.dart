@@ -161,9 +161,9 @@ class const ConversationArchiveUsecase({
 
   Future<ConversationArchiveExportPreview> previewConversation({
     required String conversationId,
-  }) => _ConversationArchiveExporter(this).previewConversation(
-    conversationId: conversationId,
-  );
+  }) =>
+      _ConversationArchiveExporter(this)
+          .previewConversation(conversationId: conversationId);
 
   Future<ConversationArchiveExportPreview> previewConversations({
     required String workspaceId,
@@ -231,20 +231,15 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
       conversationIds: conversationIds,
     );
     _requireMatchingPreview(expectedPreview, snapshots);
-    final archives = await _createArchives(
-      this,
-      snapshots,
-      includeAttachments,
-    );
+    final archives = await _createArchives(this, snapshots, includeAttachments);
 
     return ConversationArchiveCodec.encodeMany(archives);
   }
 
   Future<ConversationArchiveExportPreview> previewConversation({
     required String conversationId,
-  }) async => _previewSnapshots([
-    await _loadConversationSnapshot(conversationId),
-  ]);
+  }) async =>
+      _previewSnapshots([await _loadConversationSnapshot(conversationId)]);
 
   Future<ConversationArchiveExportPreview> previewConversations({
     required String workspaceId,
