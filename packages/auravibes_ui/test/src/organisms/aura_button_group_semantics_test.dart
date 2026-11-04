@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:auravibes_ui/src/organisms/aura_button_group.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +7,35 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  testWidgets('uses visible item names when labels are omitted', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    String? selected = 'ask';
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) => AuraButtonGroup<String>.single(
+            items: const [
+              AuraButtonGroupItem(value: 'ask', child: Text('Always ask')),
+              AuraButtonGroupItem(value: 'allow', child: Text('Always allow')),
+            ],
+            selectedValue: selected,
+            onChanged: (value) => setState(() => selected = value),
+          ),
+        ),
+      ),
+    );
+    final ask = tester.getSemantics(find.bySemanticsLabel('Always ask'));
+    expect(ask.flagsCollection.isSelected, ui.Tristate.isTrue);
+    final allow = tester.getSemantics(find.bySemanticsLabel('Always allow'));
+    expect(allow.getSemanticsData().hasAction(.tap), isTrue);
+    await tester.tap(find.text('Always allow'));
+    await tester.pump();
+    expect(selected, 'allow');
+    semantics.dispose();
+  });
+
   testWidgets('merges labeled item semantics and keeps a 48px hit target', (
     tester,
   ) async {

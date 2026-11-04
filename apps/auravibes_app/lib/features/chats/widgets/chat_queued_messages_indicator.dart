@@ -139,7 +139,9 @@ class const _QueuedMessagesHeader({
   @override
   Widget build(BuildContext context) => Row(
     children: [
-      AuraBadge.count(count: count, variant: .neutral, size: .small),
+      ExcludeSemantics(
+        child: AuraBadge.count(count: count, variant: .neutral, size: .small),
+      ),
       const AuraSizedBox(width: .sm),
       AuraText(
         child: Text(

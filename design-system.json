@@ -2,7 +2,8 @@
   "metadata": {
     "version": "1.0",
     "extractionDate": "2025-09-10",
-    "source": "Dribbble design images analysis"
+    "source": "Dribbble design images analysis",
+    "status": "Historical reference only; current Flutter tokens and interaction requirements live in packages/auravibes_ui/lib/src/tokens and packages/auravibes_ui/STYLE_GUIDE.md."
   },
   "designPhilosophy": {
     "style": "Modern minimalist with glassmorphism accents",

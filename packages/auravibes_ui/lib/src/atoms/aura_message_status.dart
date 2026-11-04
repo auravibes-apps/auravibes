@@ -51,6 +51,7 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
   AnimationController? _scaleController;
   Animation<double>? _rotationAnimation;
   Animation<double>? _scaleAnimation;
+  bool _reduceMotion = false;
 
   @override
   void initState() {
@@ -65,13 +66,25 @@ class _AuraMessageStatusState extends State<AuraMessageStatus>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final media = MediaQuery.maybeOf(context);
+    final reduceMotion =
+        media?.disableAnimations == true || media?.accessibleNavigation == true;
+    if (reduceMotion == _reduceMotion) return;
+    _reduceMotion = reduceMotion;
+    _disposeControllers();
+    if (!_reduceMotion) _setupAnimations();
+  }
+
+  @override
   void didUpdateWidget(AuraMessageStatus oldWidget) {
     super.didUpdateWidget(oldWidget);
 
     if (oldWidget.status != widget.status ||
         oldWidget.showAnimation != widget.showAnimation) {
       _disposeControllers();
-      _setupAnimations();
+      if (!_reduceMotion) _setupAnimations();
     }
   }
 
@@ -176,7 +189,7 @@ class _AuraMessageStatusIcon extends StatelessWidget {
            _statusIcon(status.status),
            size: _statusIconSize(status.size),
            color: _statusColor(status, colors),
-           semanticLabel: _statusSemanticLabel(status),
+           semanticLabel: status.semanticLabel,
          ),
          rotationController: rotationController,
          rotationAnimation: rotationAnimation,
@@ -379,20 +392,6 @@ double _statusPadding(AuraMessageStatusSize size) => switch (size) {
   .medium => _AuraMessageStatusState._mediumPadding,
   .large => _AuraMessageStatusState._largePadding,
 };
-
-String _statusSemanticLabel(AuraMessageStatus status) {
-  final semanticLabel = status.semanticLabel;
-  if (semanticLabel != null) return semanticLabel;
-
-  return switch (status.status) {
-    .sending => 'Message is being sent',
-    .unfinished => 'Message was interrupted before completion',
-    .sent => 'Message sent successfully',
-    .delivered => 'Message delivered',
-    .read => 'Message read by recipient',
-    .error => 'Message failed to send',
-  };
-}
 
 /// The delivery status of a message.
 enum AuraMessageDeliveryStatus {

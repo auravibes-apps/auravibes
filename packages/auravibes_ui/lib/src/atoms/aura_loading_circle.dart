@@ -120,17 +120,34 @@ class _AuraLoadingCircleState extends State<AuraLoadingCircle>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (widget.controller != null) return;
+    final media = MediaQuery.maybeOf(context);
+    if (media?.disableAnimations == true ||
+        media?.accessibleNavigation == true) {
+      _requiredController.stop();
+    } else if (!_requiredController.isAnimating) {
+      final _ = _requiredController.repeat();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return _LoadingCircleLayout(
       circle: widget,
-      controller: _requiredController,
+      controller:
+          MediaQuery.maybeOf(context)?.disableAnimations == true ||
+              MediaQuery.maybeOf(context)?.accessibleNavigation == true
+          ? const AlwaysStoppedAnimation(0.5)
+          : _requiredController,
     );
   }
 }
 
 class const _LoadingCircleLayout({
   required final AuraLoadingCircle circle,
-  required final AnimationController controller,
+  required final Animation<double> controller,
 }) extends StatelessWidget {
   double get _itemSize => circle.itemSize ?? circle.size * 0.15;
 
@@ -152,7 +169,7 @@ class const _LoadingCircleLayout({
 
 class const _LoadingCircleStack({
   required final AuraLoadingCircle circle,
-  required final AnimationController controller,
+  required final Animation<double> controller,
   required final double itemSize,
   required final int itemCount,
 }) extends StatelessWidget {
@@ -176,7 +193,7 @@ class const _LoadingCircleItem({
   required final int index,
   required final int itemCount,
   required final double itemSize,
-  required final AnimationController controller,
+  required final Animation<double> controller,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -223,7 +240,7 @@ class const _LoadingCircleDot({
   required final double itemSize,
   required final IndexedWidgetBuilder? itemBuilder,
   required final AuraTint tint,
-  required final AnimationController controller,
+  required final Animation<double> controller,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => FadeTransition(

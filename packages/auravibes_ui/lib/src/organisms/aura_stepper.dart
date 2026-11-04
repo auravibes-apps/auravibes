@@ -36,7 +36,7 @@ class _AuraStepperItem extends StatelessWidget {
         crossAxisAlignment: .start,
         spacing: spacing,
         children: [
-          _AuraStepperIcon(state: step.state),
+          _AuraStepperIcon(state: step.state, label: step.semanticLabel),
           Expanded(child: _AuraStepperText(step: step)),
           if (!isLast) const SizedBox.shrink(),
         ],
@@ -48,14 +48,13 @@ class _AuraStepperItem extends StatelessWidget {
   Widget build(BuildContext context) => _child;
 }
 
-class const _AuraStepperIcon({required final AuraStepState state})
-    extends StatelessWidget {
+class const _AuraStepperIcon({
+  required final AuraStepState state,
+  required final String? label,
+}) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => AuraIcon(
-    _stepIcon(state),
-    tint: _stepTint(state),
-    semanticLabel: state.name,
-  );
+  Widget build(BuildContext context) =>
+      AuraIcon(_stepIcon(state), tint: _stepTint(state), semanticLabel: label);
 }
 
 class const _AuraStepperText({required final AuraStep step})

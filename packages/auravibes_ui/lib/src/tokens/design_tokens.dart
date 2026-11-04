@@ -197,14 +197,14 @@ class DesignBreakpoints._() {
 ///
 /// Defines heights and padding for small, medium, and large input variants.
 class DesignInputSizes._() {
-  /// Small input height (32px, 2rem) for compact input fields.
-  static const double heightSm = 32;
+  /// Small input height (48px) for compact input fields.
+  static const double heightSm = 48;
 
-  /// Medium input height (40px, 2.5rem) for standard input fields.
-  static const double heightMd = 40;
+  /// Medium input height (56px) for standard input fields.
+  static const double heightMd = 56;
 
-  /// Large input height (48px, 3rem) for prominent input fields.
-  static const double heightLg = 48;
+  /// Large input height (64px) for prominent input fields.
+  static const double heightLg = 64;
 
   /// Small input padding for compact input fields.
   static const EdgeInsets paddingSm = .symmetric(vertical: 6, horizontal: 8);
@@ -259,12 +259,8 @@ class DesignShadows._() {
     blurRadius: 4,
   );
 
-  /// Glass shadow for glassmorphism effects and translucent elements.
-  static const BoxShadow glass = .new(
-    color: Color(0x5F1F2687),
-    offset: Offset(0, 8),
-    blurRadius: 32,
-  );
+  /// Neutral elevation for legacy glass surfaces.
+  static const BoxShadow glass = lg;
 }
 
 /// Spacing selector for layout gaps, padding, and sizing.

@@ -717,6 +717,7 @@ class const _AgentDetailAppBar({required final _AgentDetailScreenState state})
       leading: AuraIconButton(
         icon: Icons.arrow_back,
         onPressed: () => unawaited(state._requestClose()),
+        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
       ),
     );
   }
@@ -1352,7 +1353,11 @@ class const _AgentEnabledRow({
     return Row(
       children: [
         const Expanded(child: _AgentEnabledDescription()),
-        AuraSwitch(value: value, onChanged: onChanged),
+        AuraSwitch(
+          value: value,
+          onChanged: onChanged,
+          semanticLabel: LocaleKeys.agents_enabled_label.tr(context: context),
+        ),
       ],
     );
   }

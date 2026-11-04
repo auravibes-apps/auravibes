@@ -1,8 +1,8 @@
 import 'package:auravibes_app/features/workspaces/models/workspace_exact_value_validation.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_time_zones.dart';
-import 'package:auravibes_app/features/workspaces/widgets/workspace_date_time_labels.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/widgets/aura_date_time_labels.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -79,9 +79,7 @@ class const _TemporalPickerControl({
     enabled: !input.disabled,
     semanticLabel: input.column.name,
     onChanged: _pick,
-    labels: timeOnly
-        ? WorkspaceDateTimeLabels.time()
-        : WorkspaceDateTimeLabels.date(),
+    labels: AuraDateTimeLabels.forContext(context),
   );
   void _pick(DateTime? selected) {
     if (selected == null) return;

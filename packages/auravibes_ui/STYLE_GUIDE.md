@@ -4,6 +4,13 @@
 
 This guide establishes the **const-first design pattern** for the AuraVibes UI component library. Use enums for semantic choices and resolve them from the active Aura theme at build time. This preserves const-friendly APIs without pretending every low-level rendering primitive can accept an enum.
 
+Shared components and tokens follow the [visual blacklist](../../.agents/skills/ux-view-clarity/references/visual-design-rules.md#assessing-generic-looking-ui), including accessible alternatives for prohibited treatments.
+
+`AuraCardStyle.glass` is a compatibility alias for the bordered surface. Input
+height tokens are 48, 56, and 64 logical pixels. Components accept optional
+semantic labels from callers; applications supply localized labels when the
+visible child does not describe a control or status.
+
 ## Core Principle
 
 **Components should use const-compatible selectors (`AuraTint`) for semantic accent colors.** Runtime colors remain valid for low-level primitives whose job is to render a resolved interaction layer.
