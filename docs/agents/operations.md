@@ -21,7 +21,7 @@ gh pr checks <number> --json name,bucket \
 - Repeat every 60 seconds while rows remain. Exit code 8 means checks are pending; empty output means no checks need attention. Use `--watch` only when full live output is useful.
 - For one long workflow on the confirmed head, `gh run watch <run_id> --compact --exit-status --interval 60` can reduce repeated snapshots. Run it in a resumable session and inspect failures promptly. It watches only that run: separately check the PR head, other checks, and base/merge state.
 - After a watch interruption, query current status before restarting; follow [validation policy](task-policies.md#validation).
-- For job-level diagnosis, with `run_id` set to the relevant run, project unfinished jobs instead of printing full job objects:
+- Fetch job-level details when a check changes, fails, or needs stall diagnosis, not on every unchanged poll. With `run_id` set to the relevant run, project unfinished jobs instead of printing full job objects:
   ```sh
   gh run view "$run_id" --json jobs --jq \
     '[.jobs[] | select(.status != "completed") | {name, status, activeStep: ([.steps[]? | select(.status == "in_progress") | .name][0])}]'
@@ -74,20 +74,36 @@ Command arguments are saved in redacted form, and inherited environment
 variables are never recorded. Evidence lives in the user's local state
 directory, outside tracked source.
 
-Run a check and reuse a matching successful result when the command, toolchain,
-and source snapshot are unchanged:
-
-```sh
-cd apps/auravibes_app
-python3 ../../tool/validation_evidence.py run --reuse --package . -- \
-  fvm dart analyze lib --fatal-infos --fatal-warnings
-```
+Reuse the latest matching successful result when the command, toolchain, and
+source snapshot are unchanged.
 
 Use `--toolchain-version` when the tool cannot be identified safely from its
 standard version switch. Use `--redact-arg INDEX` for a command argument that
 must be omitted from the saved command; indexes start at zero after `--`.
 Redacted commands are not eligible for evidence reuse because their arguments
 cannot be compared safely.
+
+To gate a push on a specific local check, record it and require the latest
+matching success for the current source snapshot. Run these commands
+sequentially; a pending, failed, skipped, cancelled, or stale run is not a pass.
+For a command wrapped by the validation lease, specify the Flutter and Dart
+versions so the wrapper's Python version is not mistaken for the toolchain:
+
+```sh
+toolchain="$(fvm flutter --version --machine | python3 -c 'import json,sys; v=json.load(sys.stdin); print("Flutter " + v["frameworkVersion"] + "; Dart " + v["dartSdkVersion"])')"
+python3 tool/validation_evidence.py run --reuse --toolchain-version "$toolchain" -- \
+  python3 tool/validation_lease.py --label validate:quick -- fvm dart run melos run validate:quick
+python3 tool/validation_evidence.py require --toolchain-version "$toolchain" -- \
+  python3 tool/validation_lease.py --label validate:quick -- fvm dart run melos run validate:quick
+```
+
+`require` checks one named command; it does not select the required checks or
+authorize a push. On a clean committed branch, `validate:changed` has no files
+to check; choose a command that covers the committed changes. `require` rejects
+redacted commands and successful runs whose source snapshots differ between the
+start and end of execution. It trusts the wrapped command's exit status. If a
+stopped child is hidden by a successful wrapper exit, record the same command as
+skipped before requiring it.
 
 Record an intentional skip without claiming validation, then inspect evidence
 in human or machine-readable form:
