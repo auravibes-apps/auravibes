@@ -845,7 +845,7 @@ jobs:
         if: ${{ always() && steps.setup_workspace.outcome == 'success' && github.event_name == 'pull_request' && matrix.package == 'apps/auravibes_app' && matrix.shardIndex == 0 }}
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: 1aaa31f61128fe810ca35ef7a00205edb9233175
+          ref: ${{ github.event.pull_request.base.sha }}
           path: .ux-current-main
           persist-credentials: false
 

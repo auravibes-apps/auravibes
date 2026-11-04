@@ -133,6 +133,7 @@ class const _WorkspaceManagementAppBar()
               icon: Icons.arrow_back,
               onPressed: () => Navigator.of(context).maybePop(),
               identifier: 'workspace_management_back',
+              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
             )
           : null,
     );
@@ -464,7 +465,7 @@ _WorkspaceListSource _workspaceListSource(
   connectView: widget.connectView,
   accounts: widget.accounts,
   editingWorkspace: widget.editingWorkspace,
-  searchQuery: normalizeWorkspaceSearch(searchQuery.trim()),
+  searchQuery: WorkspaceSearchIndex.normalize(searchQuery.trim()),
   sort: sort,
   isBulkDeleting: isBulkDeleting,
   workspaces: widget.workspaces,
@@ -552,7 +553,7 @@ typedef _WorkspaceArchiveImportRequest = ({
 bool _matchesWorkspaceName(String name, String query) {
   if (query.isEmpty) return true;
 
-  return normalizeWorkspaceSearch(name).contains(query);
+  return WorkspaceSearchIndex.normalize(name).contains(query);
 }
 
 bool _isAvailableCloudWorkspace(

@@ -347,6 +347,7 @@ class const _ToolItemActions({required final _ToolItemBody body})
           onChanged: body.isWorking ? null : body.onEnabledChanged,
           size: .sm,
           disabled: body.isWorking,
+          semanticLabel: _toolEnabledLabel(context, body.tool),
         ),
         _ToolExpandButton(
           isExpanded: body.isExpanded,
@@ -356,6 +357,12 @@ class const _ToolItemActions({required final _ToolItemBody body})
     );
   }
 }
+
+String _toolEnabledLabel(BuildContext context, WorkspaceToolEntity tool) =>
+    LocaleKeys.common_enable_named.tr(
+      context: context,
+      args: [tool.localizedName(context)],
+    );
 
 class const _ToolExpandButton({
   required final bool isExpanded,

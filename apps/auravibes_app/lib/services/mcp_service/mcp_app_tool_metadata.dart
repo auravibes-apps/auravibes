@@ -3,22 +3,22 @@ typedef McpAppToolMetadataValue = ({
   List<String>? visibility,
 });
 
-McpAppToolMetadataValue parseMcpAppToolMetadata(
-  Map<String, dynamic>? metadata,
-) {
-  final ui = _metadataMap(metadata?['ui']);
+abstract final class McpAppToolMetadata {
+  static McpAppToolMetadataValue parse(Map<String, dynamic>? metadata) {
+    final ui = _metadataMap(metadata?['ui']);
 
-  return (
-    resourceUri: _resourceUri(ui, metadata),
-    visibility: _visibility(ui?['visibility']),
-  );
+    return (
+      resourceUri: _resourceUri(ui, metadata),
+      visibility: _visibility(ui?['visibility']),
+    );
+  }
+
+  static bool isVisibleToApp(McpAppToolMetadataValue metadata) =>
+      metadata.visibility?.contains('app') ?? true;
+
+  static bool isVisibleToModel(McpAppToolMetadataValue metadata) =>
+      metadata.visibility?.contains('model') ?? true;
 }
-
-bool isMcpAppToolVisibleToApp(McpAppToolMetadataValue metadata) =>
-    metadata.visibility?.contains('app') ?? true;
-
-bool isMcpAppToolVisibleToModel(McpAppToolMetadataValue metadata) =>
-    metadata.visibility?.contains('model') ?? true;
 
 Map<String, dynamic>? _metadataMap(Object? value) =>
     value is Map ? Map<String, dynamic>.from(value) : null;

@@ -1905,15 +1905,27 @@ class const _ConnectionTileMenu({
     final menuController = AuraPopupMenuController();
 
     return AuraPopupMenu(
-      child: AuraIconButton(
-        icon: Icons.more_vert,
-        onPressed: menuController.toggle,
-        identifier: 'service_connection_menu_${connection.id}',
+      child: _ConnectionMenuButton(
+        connection: connection,
+        controller: menuController,
       ),
       items: [..._connectionMenuItems(context, ref, connection)],
       controller: menuController,
     );
   }
+}
+
+class const _ConnectionMenuButton({
+  required final ServiceConnectionListItem connection,
+  required final AuraPopupMenuController controller,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.more_vert,
+    onPressed: controller.toggle,
+    identifier: 'service_connection_menu_${connection.id}',
+    tooltip: MaterialLocalizations.of(context).showMenuTooltip,
+  );
 }
 
 IconData _connectionIcon(ServiceConnectionListItem connection) {

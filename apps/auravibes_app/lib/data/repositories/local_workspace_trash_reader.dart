@@ -6,6 +6,12 @@ import 'package:auravibes_app/data/repositories/local_workspace_trash_store.dart
 import 'package:auravibes_app/features/workspaces/models/workspace_trash_target.dart';
 
 class const LocalWorkspaceTrashReader(final LocalWorkspaceTrashStore store) {
+  static List<LocalTrashNode> members(WorkspaceTrashBatchRow row) =>
+      (jsonDecode(row.membersJson) as List<dynamic>)
+          .cast<Map<String, dynamic>>()
+          .map(LocalTrashNode.fromJson)
+          .toList();
+
   Future<List<WorkspaceTrashBatch>> list() async {
     await store.requireLocal();
 
@@ -20,7 +26,7 @@ class const LocalWorkspaceTrashReader(final LocalWorkspaceTrashStore store) {
     final nodes = await store.nodes();
     if (!_deleted(nodes, tableId, recordId)) return null;
     for (final batch in await store.batches()) {
-      final members = localTrashMembers(batch);
+      final members = LocalWorkspaceTrashReader.members(batch);
       if (!_contains(members, .record, recordId)) continue;
 
       return _recovery(batch, nodes, members, tableId);
@@ -55,16 +61,11 @@ bool _tableAvailable(
   return table != null && (!table.deleted || _contains(members, .table, id));
 }
 
-List<LocalTrashNode> localTrashMembers(WorkspaceTrashBatchRow row) =>
-    (jsonDecode(row.membersJson) as List<dynamic>)
-        .cast<Map<String, dynamic>>()
-        .map(LocalTrashNode.fromJson)
-        .toList();
 WorkspaceTrashBatch _batch(WorkspaceTrashBatchRow row) => .new(
   id: row.id,
   target: _target(row.targetJson),
   name: row.name,
-  affectedCount: localTrashMembers(row).length,
+  affectedCount: LocalWorkspaceTrashReader.members(row).length,
 );
 WorkspaceTrashTarget _target(String encoded) =>
     .fromJson(jsonDecode(encoded) as Map<String, dynamic>);

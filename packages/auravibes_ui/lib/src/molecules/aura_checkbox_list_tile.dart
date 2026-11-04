@@ -16,7 +16,7 @@ class AuraCheckboxListTile extends StatelessWidget {
     this.tint,
     this.disabled = false,
     this.autofocus = false,
-    this.semanticLabel = 'Checkbox',
+    this.semanticLabel,
   });
 
   /// Whether the checkbox is selected.
@@ -80,7 +80,6 @@ class _AuraCheckboxTileRow extends StatelessWidget {
             tint: tile.tint,
             disabled: isDisabled,
             autofocus: tile.autofocus,
-            semanticLabel: tile.semanticLabel,
           ),
           const SizedBox(width: 12),
           Expanded(child: _AuraCheckboxTileText(tile: tile)),

@@ -16,7 +16,7 @@ class AuraImage extends StatelessWidget {
     this.fit = BoxFit.fill,
     this.semanticLabel,
     this.imageProvider,
-    this.errorSemanticLabel = 'Image failed to load',
+    this.errorSemanticLabel,
     this.loadingChild,
     this.errorChild,
   });

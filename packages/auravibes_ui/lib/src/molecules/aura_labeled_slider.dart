@@ -200,8 +200,8 @@ class const _AuraLabeledSliderMarks({
   required final String Function(double) format,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) => SizedBox(
-    height: _markLabelHeight,
+  Widget build(BuildContext context) => ConstrainedBox(
+    constraints: const BoxConstraints(minHeight: _markLabelHeight),
     child: Stack(
       clipBehavior: .none,
       children: [
@@ -226,6 +226,7 @@ class const _AuraLabeledSliderControl({
     precision: slider.precision,
     enabled: slider.enabled,
     semanticLabel: slider.semanticLabel ?? slider.label,
+    valueFormatter: slider.valueFormatter,
     tint: slider.tint,
   );
 }

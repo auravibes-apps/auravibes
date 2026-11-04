@@ -223,7 +223,12 @@ class const _TrashRow({
       return;
     }
     if (context.mounted) {
-      await restoreTrashBatch(context, ref, workspaceId, batch.id);
+      await WorkspaceTrashRestoreButton.restoreBatch(
+        context,
+        ref,
+        workspaceId,
+        batch.id,
+      );
     }
   }
 

@@ -4,19 +4,47 @@ import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
 import 'package:auravibes_app/domain/enums/tool_call_result_status.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 
-/// Stored tool history is not an enduring grant to workspace data.
-MessageToolCallEntity sanitizeWorkspaceToolResult(MessageToolCallEntity call) {
-  if (!_isReadWithOutput(call)) return call;
-  final response = _safeResponse(call);
+/// Sanitizes workspace tool history before it is reused as model context.
+abstract final class WorkspaceToolResultSanitizer {
+  /// Stored tool history is not an enduring grant to workspace data.
+  static MessageToolCallEntity sanitizeResult(MessageToolCallEntity call) {
+    if (!_isReadWithOutput(call)) return call;
+    final response = _safeResponse(call);
 
-  return call.copyWith(
-    responseRaw: response,
-    responseContextRaw: response,
-    appData: null,
-    outputTruncated: false,
-    originalResponseBytes: null,
-    fullOutputForContext: false,
+    return call.copyWith(
+      responseRaw: response,
+      responseContextRaw: response,
+      appData: null,
+      outputTruncated: false,
+      originalResponseBytes: null,
+      fullOutputForContext: false,
+    );
+  }
+
+  static MessageMetadataEntity sanitizeMetadata(
+    MessageMetadataEntity metadata,
+  ) => metadata.copyWith(
+    toolCalls: [for (final call in metadata.toolCalls) sanitizeResult(call)],
   );
+
+  /// Materialized fork history cannot grant access to its source tool results.
+  static MessageMetadataEntity redactInheritedMetadata(
+    MessageMetadataEntity metadata,
+  ) {
+    if (!metadata.toolCalls.any((call) => isWorkspaceToolName(call.name))) {
+      return metadata;
+    }
+
+    return metadata.copyWith(
+      toolCalls: [
+        for (final call in metadata.toolCalls)
+          if (isWorkspaceToolName(call.name))
+            _redactInheritedCall(call)
+          else
+            call,
+      ],
+    );
+  }
 }
 
 bool _isReadWithOutput(MessageToolCallEntity call) {
@@ -81,33 +109,6 @@ String _safeDirectoryResult(MessageToolCallEntity call) {
   }
 
   return '{"redacted":true}';
-}
-
-MessageMetadataEntity sanitizeWorkspaceToolMetadata(
-  MessageMetadataEntity metadata,
-) => metadata.copyWith(
-  toolCalls: [
-    for (final call in metadata.toolCalls) sanitizeWorkspaceToolResult(call),
-  ],
-);
-
-/// Materialized fork history cannot grant access to its source tool results.
-MessageMetadataEntity redactInheritedWorkspaceToolMetadata(
-  MessageMetadataEntity metadata,
-) {
-  if (!metadata.toolCalls.any((call) => isWorkspaceToolName(call.name))) {
-    return metadata;
-  }
-
-  return metadata.copyWith(
-    toolCalls: [
-      for (final call in metadata.toolCalls)
-        if (isWorkspaceToolName(call.name))
-          _redactInheritedCall(call)
-        else
-          call,
-    ],
-  );
 }
 
 MessageToolCallEntity _redactInheritedCall(MessageToolCallEntity call) {

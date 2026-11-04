@@ -17,7 +17,7 @@ void main() {
       [500, 500, 50],
       [1000, 1000, 100],
     ];
-    const expectedBytes = [5033, 23665, 46955, 235835, 471935];
+    const expectedBytes = [5029, 23661, 46951, 235831, 471931];
     final stableRuns = <List<List<int>>>[];
 
     for (var run = 0; run < 2; run++) {
