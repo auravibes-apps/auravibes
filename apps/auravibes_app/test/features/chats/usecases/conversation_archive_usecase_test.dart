@@ -86,10 +86,10 @@ void main() {
     final workspace = await database.workspaceDao.insertWorkspace(
       .insert(name: 'Archive preview test', type: .local),
     );
-    final conversation = await ConversationRepository(database)
-        .createConversation(
-          .new(title: 'Research notes', workspaceId: workspace.id),
-        );
+    final repository = ConversationRepository(database);
+    final conversation = await repository.createConversation(
+      .new(title: 'Research notes', workspaceId: workspace.id),
+    );
     final message = await database.messageDao.insertMessage(
       .insert(
         conversationId: conversation.id,
@@ -181,10 +181,10 @@ void main() {
     final workspace = await database.workspaceDao.insertWorkspace(
       .insert(name: 'Stale archive preview', type: .local),
     );
-    final conversation = await ConversationRepository(database)
-        .createConversation(
-          .new(title: 'Reviewed notes', workspaceId: workspace.id),
-        );
+    final repository = ConversationRepository(database);
+    final conversation = await repository.createConversation(
+      .new(title: 'Reviewed notes', workspaceId: workspace.id),
+    );
     final message = await database.messageDao.insertMessage(
       .insert(
         conversationId: conversation.id,
