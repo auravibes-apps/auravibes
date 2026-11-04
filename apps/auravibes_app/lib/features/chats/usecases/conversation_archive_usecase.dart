@@ -25,8 +25,8 @@ import 'package:auravibes_engine/auravibes_engine.dart'
 import 'package:path/path.dart' as p;
 import 'package:uuid/v7.dart';
 
-class const ConversationArchiveExportPreviewChangedException
-    implements Exception {}
+class const ConversationArchiveExportPreviewChangedException()
+    implements Exception;
 
 typedef _ArchivedContextUpdates = ({
   List<ConversationArchiveAgentContextEntry> entries,
@@ -270,9 +270,9 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
   }
 
   Future<_ConversationArchiveExportSnapshot> _loadConversationSnapshot(
-    String conversationId,
-    {String? workspaceId},
-  ) async {
+    String conversationId, {
+    String? workspaceId,
+  }) async {
     final conversation = await conversationRepository.getConversationById(
       conversationId,
     );
