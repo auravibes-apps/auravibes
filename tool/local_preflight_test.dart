@@ -68,7 +68,99 @@ name: other
       output,
       isNot(contains('Changed paths considered for this selection')),
     );
+    expect(output, isNot(contains('tool/localization_audit.dart')));
   });
+
+  test('catalog changes select the localization audit', () async {
+    final fixture = await _localizationFixture();
+    addTearDown(() => fixture.root.delete(recursive: true));
+    final _ = await fixture.catalog.writeAsString('{"changed": "Changed"}\n');
+    final result = await _preflight(fixture.root, fixture.base, dryRun: true);
+    expect(result.exitCode, 0, reason: result.stderr.toString());
+    expect(
+      result.stdout,
+      contains('fvm dart run tool/localization_audit.dart'),
+    );
+  });
+
+  test('app Dart changes select the localization audit', () async {
+    final fixture = await _localizationFixture();
+    addTearDown(() => fixture.root.delete(recursive: true));
+    final source = File('${fixture.app.path}/lib/message.dart');
+    final _ = await source.parent.create(recursive: true);
+    final _ = await source.writeAsString('class Message {}\n');
+    final result = await _preflight(fixture.root, fixture.base, dryRun: true);
+    expect(result.exitCode, 0, reason: result.stderr.toString());
+    expect(result.stdout, contains('tool/localization_audit.dart'));
+  });
+
+  test('localization failure stops preflight with its exit code', () async {
+    final fixture = await _localizationFixture();
+    addTearDown(() => fixture.root.delete(recursive: true));
+    final _ = await fixture.catalog.writeAsString('{"changed": "Changed"}\n');
+    final result = await _preflight(fixture.root, fixture.base, dryRun: false);
+    expect(result.exitCode, 42, reason: result.stderr.toString());
+  });
+}
+
+Future<({Directory root, Directory app, File catalog, String base})>
+_localizationFixture() async {
+  final root = await Directory.systemTemp.createTemp('local-preflight-i18n-');
+  final app = Directory('${root.path}/apps/auravibes_app');
+  final catalog = File('${app.path}/assets/i18n/en.json');
+  final _ = await catalog.parent.create(recursive: true);
+  final audit = File('${app.path}/tool/localization_audit.dart');
+  final _ = await audit.parent.create(recursive: true);
+  final _ = await audit.writeAsString('''
+import 'dart:io';
+void main() => exit(42);
+''');
+  final _ = await File('${root.path}/pubspec.yaml').writeAsString('''
+name: fixture
+environment:
+  sdk: ^3.13.0
+workspace:
+  - apps/auravibes_app
+''');
+  final _ = await File('${app.path}/pubspec.yaml').writeAsString('''
+name: auravibes_app
+environment:
+  sdk: ^3.13.0
+resolution: workspace
+''');
+  final _ = await catalog.writeAsString('{}\n');
+  final _ = await _git(root, ['init', '--quiet']);
+  final _ = await _git(root, ['config', 'user.name', 'Fixture']);
+  final _ = await _git(root, [
+    'config',
+    'user.email',
+    'fixture@example.invalid',
+  ]);
+  final _ = await _git(root, ['add', '.']);
+  final _ = await _git(root, ['commit', '--quiet', '-m', 'base']);
+
+  return (
+    root: root,
+    app: app,
+    catalog: catalog,
+    base: await _git(root, ['rev-parse', 'HEAD']),
+  );
+}
+
+Future<ProcessResult> _preflight(
+  Directory root,
+  String base, {
+  required bool dryRun,
+}) {
+  final arguments = [
+    '${Directory.current.path}/tool/local_preflight.dart',
+    if (dryRun) '--dry-run',
+    '--base',
+    base,
+  ];
+  final executable = Platform.resolvedExecutable;
+
+  return Process.run(executable, arguments, workingDirectory: root.path);
 }
 
 Future<String> _git(Directory root, List<String> arguments) async {

@@ -291,6 +291,7 @@ jobs:
           python3 tool/plan_test_shards_test.py
           python3 tool/validation_lease_test.py
           python3 tool/validation_evidence_test.py
+          python3 tool/ux_capture_test.py
           python3 tool/test_server_test.py
           python3 tool/agent_worktree_test.py
 
@@ -1525,9 +1526,13 @@ jobs:
           test_file="apps/auravibes_app/test/widgets/ux_validation_layout_test.dart"
           capture_test="$RUNNER_TEMP/ux_validation_layout_test.dart"
           git show "$HEAD_SHA:$test_file" > "$capture_test"
+          git show "$HEAD_SHA:apps/auravibes_app/test/helpers/ux_capture.dart" > "$RUNNER_TEMP/ux_capture.dart"
+          git show "$HEAD_SHA:apps/auravibes_app/test/helpers/intro_journey_capture.dart" > "$RUNNER_TEMP/intro_journey_capture.dart"
 
           git checkout --force --detach "$BASE_SHA"
           cp "$capture_test" "$test_file"
+          cp "$RUNNER_TEMP/ux_capture.dart" apps/auravibes_app/test/helpers/ux_capture.dart
+          cp "$RUNNER_TEMP/intro_journey_capture.dart" apps/auravibes_app/test/helpers/intro_journey_capture.dart
           cd apps/auravibes_app
           flutter test test/widgets/ux_validation_layout_test.dart \
             --no-pub \
@@ -1539,6 +1544,8 @@ jobs:
           cd "$GITHUB_WORKSPACE"
           git checkout --force --detach "$HEAD_SHA"
           cp "$capture_test" "$test_file"
+          cp "$RUNNER_TEMP/ux_capture.dart" apps/auravibes_app/test/helpers/ux_capture.dart
+          cp "$RUNNER_TEMP/intro_journey_capture.dart" apps/auravibes_app/test/helpers/intro_journey_capture.dart
           cd apps/auravibes_app
           flutter test test/widgets/ux_validation_layout_test.dart \
             --no-pub \
