@@ -162,7 +162,7 @@ void main() {
 
       await tester.tap(find.text('Open review'));
       final _ = await tester.pumpAndSettle();
-      final String accent = .fromCharCode(243);
+      final accent = String.fromCharCode(243);
       final reviewTitle =
           'Revisa la copia de seguridad de tu conversaci${accent}n';
       expect(
