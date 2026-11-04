@@ -18,6 +18,69 @@ void main() {
     expect(result.packages, isEmpty);
   });
 
+  test('audit screenshot sidecars preserve affected test selection', () {
+    for (final change in [
+      const ChangedFile.added('docs/audits/example/after.json'),
+      const ChangedFile.modified('docs/audits/example/after.json'),
+      const ChangedFile.deleted('docs/audits/example/after.json'),
+      const ChangedFile.renamed(
+        oldPath: 'docs/audits/example/before.json',
+        newPath: 'docs/audits/example/after.json',
+      ),
+    ]) {
+      final result = selectChangedTests(
+        changes: [
+          change,
+          const ChangedFile.modified('packages/core/lib/leaf.dart'),
+        ],
+        headSources: _sources,
+        baseSources: _sources,
+        packageRoots: _roots,
+      );
+      expect(result.mode, SelectionMode.affected, reason: change.status);
+      expect(
+        result.packages['packages/core'],
+        contains('test/behavior_test.dart'),
+      );
+    }
+  });
+
+  test('audit sidecars alone select no Dart tests', () {
+    final result = selectChangedTests(
+      changes: [const ChangedFile.modified('docs/audits/example/after.json')],
+      headSources: {},
+      baseSources: {},
+      packageRoots: {},
+    );
+    expect(result.mode, SelectionMode.none);
+  });
+
+  test(
+    'runtime JSON and audit sidecars moved outside docs remain conservative',
+    () {
+      for (final change in [
+        const ChangedFile.modified('apps/example/assets/config.json'),
+        const ChangedFile.modified('docs/audits/example/assets/config.json'),
+        const ChangedFile.modified('docs/audits/example/generated/config.json'),
+        const ChangedFile.renamed(
+          oldPath: 'docs/audits/example/before.json',
+          newPath: 'apps/example/test/fixtures/before.json',
+        ),
+      ]) {
+        final result = selectChangedTests(
+          changes: [
+            change,
+            const ChangedFile.modified('packages/core/lib/leaf.dart'),
+          ],
+          headSources: _sources,
+          baseSources: _sources,
+          packageRoots: _roots,
+        );
+        expect(result.mode, SelectionMode.full, reason: change.status);
+      }
+    },
+  );
+
   test('skill guidance and eval metadata select no Dart tests', () {
     final result = selectChangedTests(
       changes: [
