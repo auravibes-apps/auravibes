@@ -1914,7 +1914,7 @@ class _RecordingConversationArchiveUsecase extends ConversationArchiveUsecase {
     this.conversationIds.add(List.of(conversationIds));
 
     return ConversationArchiveCodec.encodeMany([
-      for (final conversation in preview.sourceConversations)
+      for (final conversation in preview.conversations)
         ConversationArchive(
           title: conversation.title,
           createdAt: DateTime.utc(2025),
