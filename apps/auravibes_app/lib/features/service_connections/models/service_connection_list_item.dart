@@ -28,6 +28,7 @@ typedef ServiceConnectionCloudMcp = ({
   ServiceConnectionCloudMcpIdentity identity,
   ServiceConnectionDisplayStatus displayStatus,
   McpConnectionTestSummary? lastTestSummary,
+  bool isEnabled,
   bool canRefresh,
   bool canReconnect,
 });
@@ -59,6 +60,7 @@ class const ServiceConnectionListItem({
   required final bool canReconnect,
   final McpTransportType? transport,
   final McpConnectionTestSummary? lastTestSummary,
+  final bool isEnabled = true,
 }) {
   new _fromModelConnection(ModelConnectionEntity connection)
     : this(
@@ -144,6 +146,7 @@ class const ServiceConnectionListItem({
         canReconnect: true,
         transport: data.transport,
         lastTestSummary: data.lastTestSummary,
+        isEnabled: data.isEnabled,
       );
 
   new fromCloudMcp(ServiceConnectionCloudMcp data)
@@ -165,6 +168,7 @@ class const ServiceConnectionListItem({
         canReconnect: data.canReconnect,
         transport: data.identity.transport,
         lastTestSummary: data.lastTestSummary,
+        isEnabled: data.isEnabled,
       );
 
   factory fromConnectorConnection({

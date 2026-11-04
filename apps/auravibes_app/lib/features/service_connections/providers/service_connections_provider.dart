@@ -140,6 +140,7 @@ ServiceConnectionCloudMcp _cloudMcpConnectionFields(
     identity: identity,
     displayStatus: _cloudMcpDisplayStatus(data['authStatus'], authType),
     lastTestSummary: _cloudMcpTestSummary(data),
+    isEnabled: data['isEnabled'] != false,
     canRefresh: isOAuth,
     canReconnect: isOAuth,
   );
