@@ -121,13 +121,15 @@ _CloudConversationPageRequest _allPagesRequest(
   CloudWorkspaceStateGateway gateway,
   CloudWorkspaceRef cloud,
   String? cursor,
-) => (
-  gateway: gateway,
-  cloud: cloud,
-  cursor: cursor,
-  search: '',
-  labelIds: const {},
-);
+) {
+  return (
+    gateway: gateway,
+    cloud: cloud,
+    cursor: cursor,
+    search: '',
+    labelIds: const {},
+  );
+}
 
 String? _nextCloudConversationCursor(
   String? nextCursor,
@@ -141,9 +143,10 @@ String? _nextCloudConversationCursor(
   return nextCursor;
 }
 
-Never _throwInvalidCloudConversationCursor() =>
-    throw const CloudAppException(
-      localizationKey: LocaleKeys.cloud_errors_malformed_resource,
-      context: .conversation,
-      code: 'invalidCursor',
-    );
+Never _throwInvalidCloudConversationCursor() {
+  throw const CloudAppException(
+    localizationKey: LocaleKeys.cloud_errors_malformed_resource,
+    context: .conversation,
+    code: 'invalidCursor',
+  );
+}
