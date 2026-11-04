@@ -195,14 +195,6 @@ Use these with the review process above. The cases test explicit and indirect re
 | Audit this screen for AI slop. Do not edit it. | Uses ux-task-audit and the shared blacklist; cites observed violations and what works, with scoped recommendations. | App edits, an invented user study, or treating a style violation as proved task harm. |
 | Review and unslop this interface. Do not edit it. | Uses ux-task-audit for the review despite the word unslop; reports scoped findings without editing. | Routing to implementation or changing app files. |
 | This dashboard feels like a template. Explain what to improve. | Routes the indirect review to ux-task-audit; reports a visible gradient-text heading as a blacklist observation even without proven task impact. | Ignoring a listed violation because no user impact is proven, or asserting the UI was AI-generated. |
-
-## Capture provenance cards
-
-| Request | Expected decision | Reject |
-| --- | --- | --- |
-| Audit Skills and include screenshots. | Captures the selected Skills route with verified source metadata. | Capturing Agent Detail only because it appears in an example. |
-| Compare an old screen with a new test fixture. | Records the fixture overlay and labels the before image as mixed-source in the PR. | Calling the mixed image a clean base capture. |
-| Change a backend retry without altering UI. | Uses backend validation; does not load ux-task-audit or require screenshots. | Routing a non-visual change to a visual audit. |
 | Review this task flow and its current screen for visual clarity. | Uses relevant shared checks for the visible scope, including repetitive decoration or unsupported data when evidence shows them. | Waiting for the request to name AI slop or asserting a visual issue from source alone. |
 | This heading has a decorative eyebrow and a subtitle that repeats it. Unslop the screen. | Removes the redundant text within scope while preserving useful context and localized strings at their source. | Keeping the decoration or hard-coding replacement copy in the widget. |
 | A small uppercase eyebrow above the title is the only place that names its parent section. Review it. | Flags the eyebrow and retains its needed context in a compliant heading or body. | Exempting the eyebrow or deleting the only context. |
@@ -218,3 +210,11 @@ Use these with the review process above. The cases test explicit and indirect re
 | This screen uses a solid purple accent and rounded cards. Review it for slop. | Recognizes that neither is on the blacklist by itself. | Treating every purple color or rounded card as a violation. |
 | The focus indicator glows for visibility. Remove glows. | Replaces the glow with a visible, accessible non-glowing focus indicator and verifies the affected states. | Keeping the blacklisted glow or removing focus visibility. |
 | Check the button's WCAG contrast only. | Routes the accessibility-only review to accessibility guidance; does not perform a generic-appearance audit. | Loading a full UX audit solely because the request mentions appearance. |
+
+## Capture provenance cards
+
+| Request | Expected decision | Reject |
+| --- | --- | --- |
+| Audit Skills and include screenshots. | Captures the selected Skills route with verified source metadata. | Capturing Agent Detail only because it appears in an example. |
+| Compare an old screen with a new test fixture. | Records the fixture overlay and labels the before image as mixed-source in the PR. | Calling the mixed image a clean base capture. |
+| Change a backend retry without altering UI. | Uses backend validation; does not load ux-task-audit or require screenshots. | Routing a non-visual change to a visual audit. |
