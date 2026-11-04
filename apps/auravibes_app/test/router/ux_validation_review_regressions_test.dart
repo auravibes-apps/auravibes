@@ -28,15 +28,15 @@ void main() {
       find.byType(AuraInput).first,
       'Retained parent draft',
     );
-    await tester.ensureVisible(find.text('Edit prompt'));
-    await tester.tap(find.text('Edit prompt'));
+    await tester.ensureVisible(find.text('Edit instructions'));
+    await tester.tap(find.text('Edit instructions'));
     await f.settle(tester);
     await tester.tap(find.byIcon(Icons.close));
     await f.settle(tester);
     expect(find.byType(MarkdownEditorScreen), findsNothing);
     expect(find.text('Keep editing'), findsNothing);
     expect(find.text('Retained parent draft'), findsOneWidget);
-    await tester.tap(find.text('Edit prompt'));
+    await tester.tap(find.text('Edit instructions'));
     await f.settle(tester);
     await tester.enterText(find.byType(TextFormField), 'Applied nested draft');
     await tester.tap(find.text('Apply'));
@@ -50,8 +50,8 @@ void main() {
     expect(find.text('Discard'), findsOneWidget);
     await tester.tap(find.text('Keep editing'));
     await f.settle(tester);
-    await tester.ensureVisible(find.text('Edit prompt'));
-    await tester.tap(find.text('Edit prompt'));
+    await tester.ensureVisible(find.text('Edit instructions'));
+    await tester.tap(find.text('Edit instructions'));
     await f.settle(tester);
     expect(
       tester.widget<TextFormField>(find.byType(TextFormField)).controller?.text,
@@ -107,8 +107,8 @@ void main() {
             'Unsaved parent name',
           );
         }
-        await tester.ensureVisible(find.text('Edit prompt'));
-        await tester.tap(find.text('Edit prompt'));
+        await tester.ensureVisible(find.text('Edit instructions'));
+        await tester.tap(find.text('Edit instructions'));
         await f.settle(tester);
         final draft = drafts.editor
             ? 'Exact nested unsaved Markdown'

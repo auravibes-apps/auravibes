@@ -13,6 +13,7 @@ class RouteRecoveryView extends StatelessWidget {
     this.returnLabelKey,
     this.retryLabelKey,
     this.isLoading = false,
+    this.embedded = false,
     super.key,
   });
 
@@ -22,37 +23,31 @@ class RouteRecoveryView extends StatelessWidget {
   final String? returnLabelKey;
   final String? retryLabelKey;
   final bool isLoading;
+  final bool embedded;
 
   @override
-  Widget build(BuildContext context) => AppScreen(
-    child: _RouteRecoveryBody(
+  Widget build(BuildContext context) {
+    final content = _RouteRecoveryBody(
       messageKey: messageKey,
       onRetry: onRetry,
       onReturn: onReturn,
       returnLabelKey: returnLabelKey,
       retryLabelKey: retryLabelKey,
       isLoading: isLoading,
-    ),
-  );
+    );
+
+    return embedded ? content : AppScreen(child: content);
+  }
 }
 
-class _RouteRecoveryBody extends StatelessWidget {
-  const new({
-    required this.messageKey,
-    required this.onRetry,
-    required this.onReturn,
-    required this.returnLabelKey,
-    required this.retryLabelKey,
-    required this.isLoading,
-  });
-
-  final String messageKey;
-  final VoidCallback? onRetry;
-  final VoidCallback? onReturn;
-  final String? returnLabelKey;
-  final String? retryLabelKey;
-  final bool isLoading;
-
+class const _RouteRecoveryBody({
+  required final String messageKey,
+  required final VoidCallback? onRetry,
+  required final VoidCallback? onReturn,
+  required final String? returnLabelKey,
+  required final String? retryLabelKey,
+  required final bool isLoading,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
     child: SingleChildScrollView(
