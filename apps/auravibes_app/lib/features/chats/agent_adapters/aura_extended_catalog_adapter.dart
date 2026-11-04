@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_form_scope.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_external_link.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/utils/localization_context.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -87,7 +88,7 @@ Map<String, _Builder> _builders(IconData Function(String?) icon) => {
           ),
     ],
   ),
-  'Stepper': (_, data) => AuraStepper(
+  'Stepper': (context, data) => AuraStepper(
     steps: [
       for (final value in _asList(data['steps']))
         if (value is Map)
@@ -95,6 +96,10 @@ Map<String, _Builder> _builders(IconData Function(String?) icon) => {
             title: _string(value['title']),
             description: _nullableString(value['description']),
             state: AuraStepState.values.byName(_asStringOr(value['state'])),
+            semanticLabel: _stepStateLabel(
+              context.buildContext,
+              _asStringOr(value['state']),
+            ),
           ),
     ],
   ),
@@ -149,6 +154,16 @@ Map<String, _Builder> _builders(IconData Function(String?) icon) => {
           value: _asNumIntOr(value),
           max: _asIntOr(data['max'], 5),
           label: _nullableString(data['label']),
+          semanticValue:
+              !LocalizationContext.hasAppLocalizations(context.buildContext)
+              ? null
+              : LocaleKeys.aura_ui_rating.tr(
+                  context: context.buildContext,
+                  args: [
+                    _asNumIntOr(value).toString(),
+                    _asIntOr(data['max'], 5).toString(),
+                  ],
+                ),
           onChanged: (next) => _updateData(context, path, next),
         );
       },
@@ -197,6 +212,23 @@ Map<String, _Builder> _builders(IconData Function(String?) icon) => {
   // A Tab is rendered by the Tabs template owner, never independently.
   'Tab': (_, _) => const SizedBox.shrink(),
 };
+
+String? _stepStateLabel(BuildContext context, String value) {
+  if (!LocalizationContext.hasAppLocalizations(context)) return null;
+
+  return switch (AuraStepState.values.byName(value)) {
+    AuraStepState.pending => LocaleKeys.aura_ui_step_pending.tr(
+      context: context,
+    ),
+    AuraStepState.current => LocaleKeys.aura_ui_step_current.tr(
+      context: context,
+    ),
+    AuraStepState.complete => LocaleKeys.aura_ui_step_complete.tr(
+      context: context,
+    ),
+    AuraStepState.error => LocaleKeys.aura_ui_step_error.tr(context: context),
+  };
+}
 
 Map<String, Object?> _data(CatalogItemContext context) =>
     Map<String, Object?>.from(context.data as Map<Object?, Object?>);

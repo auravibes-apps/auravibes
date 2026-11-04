@@ -75,6 +75,7 @@ class const _RefreshTableButton({
             screen.workspaceId,
             screen.tableId,
           ),
+    tooltip: MaterialLocalizations.of(context).refreshIndicatorSemanticLabel,
   );
 }
 

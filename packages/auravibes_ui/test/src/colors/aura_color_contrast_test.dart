@@ -4,6 +4,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('dark semantic colors remain readable on surfaces', () {
+    final colors = AuraTheme.dark.colors;
+    for (final foreground in [
+      colors.error,
+      colors.warning,
+      colors.success,
+      colors.info,
+    ]) {
+      for (final background in [
+        colors.surface,
+        colors.surfaceVariant,
+        colors.background,
+      ]) {
+        expect(
+          ColorContrast.wcagContrastRatio(foreground, background),
+          greaterThanOrEqualTo(4.5),
+        );
+      }
+    }
+  });
+
   test('light and dark foreground/background roles meet WCAG AA', () {
     final schemes = {
       'light': AuraTheme.light.colors,

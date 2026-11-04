@@ -302,30 +302,38 @@ class AuraTheme {
     onSurfaceVariant: DesignColors.neutral300,
     background: DesignColors.neutral900,
     onBackground: DesignColors.neutral100,
-    error: OKLCHColor(
-      hue: HueColorValues.error,
-      lightness: AuraColorScheme._lightnessDark,
-      chroma: AuraColorScheme._standardChroma,
-    ).toColor(),
-    onError: Colors.white,
-    warning: OKLCHColor(
-      hue: HueColorValues.warning,
-      lightness: AuraColorScheme._lightnessDark,
-      chroma: AuraColorScheme._standardChroma,
-    ).toColor(),
-    onWarning: Colors.white,
-    success: OKLCHColor(
-      hue: HueColorValues.success,
-      lightness: AuraColorScheme._lightnessDark,
-      chroma: AuraColorScheme._standardChroma,
-    ).toColor(),
-    onSuccess: Colors.white,
-    info: OKLCHColor(
-      hue: HueColorValues.info,
-      lightness: AuraColorScheme._lightnessDark,
-      chroma: AuraColorScheme._standardChroma,
-    ).toColor(),
-    onInfo: Colors.white,
+    error: AuraColorRange.darkPastel
+        .resolve(
+          hue: HueColorValues.error,
+          lightness: AuraColorScheme._lightnessDark,
+          chroma: AuraColorScheme._darkSemanticChroma,
+        )
+        .toColor(),
+    onError: Colors.black,
+    warning: AuraColorRange.darkPastel
+        .resolve(
+          hue: HueColorValues.warning,
+          lightness: AuraColorScheme._lightnessDark,
+          chroma: AuraColorScheme._darkSemanticChroma,
+        )
+        .toColor(),
+    onWarning: Colors.black,
+    success: AuraColorRange.darkPastel
+        .resolve(
+          hue: HueColorValues.success,
+          lightness: AuraColorScheme._lightnessDark,
+          chroma: AuraColorScheme._darkSemanticChroma,
+        )
+        .toColor(),
+    onSuccess: Colors.black,
+    info: AuraColorRange.darkPastel
+        .resolve(
+          hue: HueColorValues.info,
+          lightness: AuraColorScheme._lightnessDark,
+          chroma: AuraColorScheme._darkSemanticChroma,
+        )
+        .toColor(),
+    onInfo: Colors.black,
     outline: DesignColors.neutral600,
     outlineVariant: DesignColors.neutral700,
     shadow: const Color(0xFF000000),
@@ -1335,7 +1343,8 @@ Color _lerpColor(Color begin, Color end, double t) =>
 @immutable
 class AuraColorScheme {
   static const _lightnessLight = 0.45;
-  static const _lightnessDark = 0.4;
+  static const _lightnessDark = 0.86;
+  static const _darkSemanticChroma = 0.12;
   static const _standardChroma = 0.2;
 
   /// Creates a [AuraColorScheme] with the specified colors.

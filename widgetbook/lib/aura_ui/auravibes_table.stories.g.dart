@@ -49,6 +49,8 @@ class AuraTableStory extends Story<AuraTable, AuraTableArgs> {
                rowTints: args.rowTints,
                emptyText: args.emptyText,
                noValueLabel: args.noValueLabel,
+               ascendingLabel: args.ascendingLabel,
+               descendingLabel: args.descendingLabel,
              ),
        );
 }
@@ -64,7 +66,9 @@ class AuraTableArgs extends StoryArgs<AuraTable> {
     Arg<List<bool>>? sortableColumns,
     Arg<List<AuraTint?>>? rowTints,
     Arg<String?>? emptyText,
-    Arg<String>? noValueLabel,
+    Arg<String?>? noValueLabel,
+    Arg<String?>? ascendingLabel,
+    Arg<String?>? descendingLabel,
   }) : this.columnsArg = $initArg('columns', columns, null)!,
        this.rowsArg = $initArg('rows', rows, null)!,
        this.keyArg = $initArg('key', key, null),
@@ -93,7 +97,17 @@ class AuraTableArgs extends StoryArgs<AuraTable> {
        this.noValueLabelArg = $initArg(
          'noValueLabel',
          noValueLabel,
-         StringArg('No value'),
+         NullableStringArg(null),
+       )!,
+       this.ascendingLabelArg = $initArg(
+         'ascendingLabel',
+         ascendingLabel,
+         NullableStringArg(null),
+       )!,
+       this.descendingLabelArg = $initArg(
+         'descendingLabel',
+         descendingLabel,
+         NullableStringArg(null),
        )!;
 
   AuraTableArgs.fixed({
@@ -106,7 +120,9 @@ class AuraTableArgs extends StoryArgs<AuraTable> {
     List<bool> sortableColumns = const [],
     List<AuraTint?> rowTints = const [],
     String? emptyText = null,
-    String noValueLabel = 'No value',
+    String? noValueLabel = null,
+    String? ascendingLabel = null,
+    String? descendingLabel = null,
   }) : this.columnsArg = $initArg('columns', Arg.fixed(columns), null)!,
        this.rowsArg = $initArg('rows', Arg.fixed(rows), null)!,
        this.keyArg = $initArg('key', key == null ? null : Arg.fixed(key), null),
@@ -138,9 +154,19 @@ class AuraTableArgs extends StoryArgs<AuraTable> {
        ),
        this.noValueLabelArg = $initArg(
          'noValueLabel',
-         Arg.fixed(noValueLabel),
+         noValueLabel == null ? null : Arg.fixed(noValueLabel),
          null,
-       )!;
+       ),
+       this.ascendingLabelArg = $initArg(
+         'ascendingLabel',
+         ascendingLabel == null ? null : Arg.fixed(ascendingLabel),
+         null,
+       ),
+       this.descendingLabelArg = $initArg(
+         'descendingLabel',
+         descendingLabel == null ? null : Arg.fixed(descendingLabel),
+         null,
+       );
 
   final Arg<List<String>> columnsArg;
 
@@ -160,7 +186,11 @@ class AuraTableArgs extends StoryArgs<AuraTable> {
 
   final Arg<String?>? emptyTextArg;
 
-  final Arg<String> noValueLabelArg;
+  final Arg<String?>? noValueLabelArg;
+
+  final Arg<String?>? ascendingLabelArg;
+
+  final Arg<String?>? descendingLabelArg;
 
   List<String> get columns => columnsArg.value;
 
@@ -180,7 +210,11 @@ class AuraTableArgs extends StoryArgs<AuraTable> {
 
   String? get emptyText => emptyTextArg?.value;
 
-  String get noValueLabel => noValueLabelArg.value;
+  String? get noValueLabel => noValueLabelArg?.value;
+
+  String? get ascendingLabel => ascendingLabelArg?.value;
+
+  String? get descendingLabel => descendingLabelArg?.value;
 
   @override
   List<Arg?> get list => [
@@ -194,5 +228,7 @@ class AuraTableArgs extends StoryArgs<AuraTable> {
     rowTintsArg,
     emptyTextArg,
     noValueLabelArg,
+    ascendingLabelArg,
+    descendingLabelArg,
   ];
 }

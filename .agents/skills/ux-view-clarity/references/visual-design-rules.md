@@ -12,9 +12,34 @@ Use the user-approved reference directions deliberately:
 
 These are quality references, not exact screenshot targets or new framework requirements. Inspect current examples before making a specific comparison; do not claim this skill's reference selection is itself a rendered comparison or a usability study.
 
-Preserve identity by default, but challenge a component, token, or identity choice when it demonstrably harms legibility, task hierarchy, navigation, accessibility, or consistency. Try a composition fix first when it fully solves the problem. If the shared source owns the defect, propose or implement the scoped shared fix instead of repeating compensating overrides in screens. A justified identity proposal should connect the proposed visual change to the user problem, describe affected surfaces and trade-offs, and state a check that could confirm or reject it. Pure personal preference is not enough.
+Preserve identity where it complies with the blacklist below. Apply the blacklist to documented branding too; flag or fix the affected treatment within the requested scope and propose broader identity changes when needed. Challenge other components, tokens, or identity choices when they demonstrably harm legibility, task hierarchy, navigation, accessibility, or consistency. Try a composition fix first when it fully solves the problem. If the shared source owns the defect, propose or implement the scoped shared fix instead of repeating compensating overrides in screens. Describe affected surfaces, trade-offs, and a check that could confirm or reject the change.
 
 For example, if a shared input's internal layout clips scaled labels, identify that shared constraint and its consumers rather than shrinking each screen's type. If the available semantic treatment cannot make an important state readable in both themes, propose a consistent token/component correction with its cross-screen impact. Do not assume either defect exists without checking.
+
+## Assessing generic-looking UI
+
+When reviewing or polishing a screen, including requests to remove “AI slop” or a generic appearance, start with the screen's task, intended audience, existing identity, and available evidence. Inspect the requested surface and relevant states; a source-only review cannot establish how the rendered screen looks. Do not claim a design was AI-generated from its appearance.
+
+Apply this visual blacklist to new or modified interface treatments and flag observed violations in reviews:
+
+- Purple-to-indigo gradients on interface elements, including brand assets; gradient text; and glows.
+- Decorative sparkle or emoji in navigation, headings, controls, or badges. Preserve emoji in user-authored content.
+- Small uppercase or widely tracked eyebrow labels above headings, and numbering that does not represent a real sequence. Preserve essential context in a compliant heading or body.
+- Badges or status indicators presented as real state when the app does not track that state.
+- Nested cards used only for decoration.
+- Looping decorative motion, including shimmer or bouncing loops that do not communicate a state or respond to an action.
+
+Do not exempt a listed treatment for existing branding or any other reason. The blacklist does not prohibit purple as a color, every gradient, rounded cards, or common fonts. Preserve necessary actions, semantic states, focus visibility, user content, and recovery with compliant alternatives. For example, replace a glowing focus indicator with a visible, accessible non-glowing indicator rather than removing focus feedback.
+
+In an audit, cite the visible location and blacklist item and suggest a scoped alternative. Report a style violation separately from a usability finding. If a generic appearance suggests a brand-fit concern but user impact is unknown, label it as a subjective, low-confidence visual observation. Do not invent a usability problem or claim a design was AI-generated. Identify what already works. For vague labels, repeated stat tiles, unrelated emphasis, or inconsistent data, describe the specific issue. Check statistics and statuses against their source when possible: a screenshot alone does not prove a value is fabricated. Do not present invented claims or example data as real.
+
+Use the existing identity and the smallest appropriate changes. For copy, indicators, or charts, also apply [interface copy, status, and charts](#interface-copy-status-and-charts). Do not require a new brand, visual asset, external service, or paid research to complete this assessment.
+
+## Interface copy, status, and charts
+
+Remove subtitles, captions, and design commentary that repeat a heading or narrate an already clear control without adding information. Avoid repeating the same words across a field's label, placeholder, and help. Replace empty slogans with accurate, task-specific wording. Preserve useful context, actual progress, consequences, recovery guidance, persistent field labels, and accessible names. Change localized text at its source using the localization workflow, not by hard-coding a replacement in the widget. Keep status details people need, and verify badges and indicators against their data sources; if a source is unknown, report the uncertainty rather than claiming the status is decorative or live.
+
+For charts, name the information being shown and remove repeated visual labels, obvious reading instructions, or competing frames and gridlines only when the remaining display stays understandable. Consider direct series labels when they remain legible; keep a legend when it is clearer. Preserve units, time ranges, exact values, and access by touch, keyboard, and assistive technology. Accessible text can intentionally repeat information shown visually.
 
 ## Attention and emphasis
 
@@ -52,7 +77,7 @@ Use the active Aura semantic colors, surface roles, radii, and interaction state
 
 Contrast distinguishes a task, a group, or a state. Give text/control/focus contrast the applicable accessibility check; “subtle” does not justify illegibility. Do not rely on color alone to distinguish selected, failed, pending, and completed states. Pair meaningful color with text, shape, or an established indicator.
 
-Use a surface, border, or elevation when it identifies a real container, layer, interaction boundary, or selected group. Prefer spacing and headings when they already establish the structure. Avoid redundant nested cards and simultaneous border, shadow, tinted background, and badge treatments for the same hierarchy. Neutrality is not a ban on character; existing brand expression can remain where it does not compete with the task.
+Use a surface, border, or elevation when it identifies a real container, layer, interaction boundary, or selected group. Prefer spacing and headings when they already establish the structure. Avoid simultaneous border, shadow, tinted background, and badge treatments for the same hierarchy. Neutrality is not a ban on character; brand expression may remain when it complies with the blacklist.
 
 Use the established icon family, size roles, stroke weight, and placement. Icons must help recognition, not decorate every label. Keep an accessible name on icon-only actions and visible wording when an unfamiliar action needs explanation. Do not add an icon without a semantic job, or swap the icon family for one screen.
 
@@ -80,4 +105,4 @@ The rationale is explicit: fewer competing accents establish hierarchy; proximit
 
 Inspect the result at relevant sizes, themes, and states using approved controls. First fix composition problems visible in the same capture, then inspect again; avoid a screenshot after every minor tweak. Record what was actually rendered and exercised. Code review and passing tests cannot establish visual balance or measured usability.
 
-For guidance maintenance, the [research follow-up](../../../../docs/research/2026-10-23-ux-skills.md#follow-up-visual-reasoning-and-automatic-use) records source quality, adoption choices, and limits. These are original project adaptations of visual-design principles, not a copy of a vendor design system or paid skill.
+For guidance maintenance, the [research follow-up](../../../../docs/research/2026-10-23-ux-skills.md#follow-up-visual-reasoning-and-automatic-use) and [anti-slop source review](../../../../docs/research/2026-10-23-ux-skills.md#anti-slop-source-review) record source quality, attribution, adoption choices, and limits. These are project adaptations, not a copy of a vendor design system or paid skill.

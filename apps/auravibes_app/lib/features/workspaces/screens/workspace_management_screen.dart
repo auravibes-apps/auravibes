@@ -133,6 +133,7 @@ class const _WorkspaceManagementAppBar()
               icon: Icons.arrow_back,
               onPressed: () => Navigator.of(context).maybePop(),
               identifier: 'workspace_management_back',
+              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
             )
           : null,
     );

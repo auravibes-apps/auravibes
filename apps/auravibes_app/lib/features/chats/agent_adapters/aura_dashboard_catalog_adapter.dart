@@ -2,8 +2,11 @@ import 'dart:convert';
 
 import 'package:auravibes_app/features/chats/widgets/chat_a2ui_warning.dart';
 import 'package:auravibes_app/features/chats/widgets/chat_catalog_avatar.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/utils/localization_context.dart';
 import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:auravibes_ui/ui.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 import 'package:genui/genui.dart';
 import 'package:json_schema_builder/json_schema_builder.dart';
@@ -22,12 +25,18 @@ typedef _DashboardTableOptions = ({
   List<bool> sortableColumns,
   List<AuraTint?> rowTints,
   String? emptyText,
-  String noValueLabel,
+  String? noValueLabel,
 });
 
 typedef _DashboardTableData = ({
   _DashboardTableContent content,
   _DashboardTableOptions options,
+});
+
+typedef _DashboardTableLabels = ({
+  String? noValue,
+  String? ascending,
+  String? descending,
 });
 
 typedef _DashboardChartContent = ({
@@ -345,24 +354,23 @@ abstract final class _DashboardTableBuilder {
     sortableColumns: _sortableColumns(columns),
     rowTints: _rowTints(rows),
     emptyText: _DashboardValues.nullableString(data['emptyText']),
-    noValueLabel:
-        _DashboardValues.nullableString(data['noValueLabel']) ?? 'No value',
+    noValueLabel: _DashboardValues.nullableString(data['noValueLabel']),
   );
 
-  static AuraTable _buildTable(_DashboardTableData values) {
-    final content = values.content;
-    final options = values.options;
+  static _DashboardTableLabels _tableLabels(
+    BuildContext context,
+    String? noValue,
+  ) {
+    if (!LocalizationContext.hasAppLocalizations(context)) {
+      return (noValue: noValue, ascending: null, descending: null);
+    }
 
-    return AuraTable(
-      columns: content.columns,
-      rows: content.rows,
-      caption: options.caption,
-      columnAlignments: options.columnAlignments,
-      columnFormats: options.columnFormats,
-      sortableColumns: options.sortableColumns,
-      rowTints: options.rowTints,
-      emptyText: options.emptyText,
-      noValueLabel: options.noValueLabel,
+    return (
+      noValue:
+          noValue ??
+          LocaleKeys.workspace_items_missing_value.tr(context: context),
+      ascending: LocaleKeys.workspace_items_ascending.tr(context: context),
+      descending: LocaleKeys.workspace_items_descending.tr(context: context),
     );
   }
 
@@ -426,22 +434,47 @@ List<AuraTableValueFormat> _tableColumnFormats(
 ];
 
 class _DashboardTable extends StatelessWidget {
-  new(Map<String, Object?> data) : _table = _DashboardTableConfig(data).build();
-
-  final AuraTable _table;
-
-  @override
-  Widget build(BuildContext context) => _table;
-}
-
-class _DashboardTableConfig {
   const new(this.data);
 
   final Map<String, Object?> data;
 
-  AuraTable build() => _DashboardTableBuilder._buildTable(
+  @override
+  Widget build(BuildContext context) => _DashboardTableConfig(
     _DashboardTableBuilder._tableData(data),
-  );
+    context,
+  ).table;
+}
+
+class _DashboardTableConfig {
+  new(_DashboardTableData values, BuildContext context)
+    : this._(
+        values.content,
+        values.options,
+        _DashboardTableBuilder._tableLabels(
+          context,
+          values.options.noValueLabel,
+        ),
+      );
+
+  new _(
+    _DashboardTableContent content,
+    _DashboardTableOptions options,
+    _DashboardTableLabels labels,
+  ) : table = AuraTable(
+        columns: content.columns,
+        rows: content.rows,
+        caption: options.caption,
+        columnAlignments: options.columnAlignments,
+        columnFormats: options.columnFormats,
+        sortableColumns: options.sortableColumns,
+        rowTints: options.rowTints,
+        emptyText: options.emptyText,
+        noValueLabel: labels.noValue,
+        ascendingLabel: labels.ascending,
+        descendingLabel: labels.descending,
+      );
+
+  final AuraTable table;
 }
 
 abstract final class _DashboardLoadingBuilder {
@@ -487,21 +520,30 @@ abstract final class _DashboardLoadingBuilder {
 }
 
 abstract final class _DashboardChartBuilder {
-  static Widget chart(CatalogItemContext _, Map<String, Object?> data) =>
-      _DashboardChart(.fromData(data));
+  static Widget chart(CatalogItemContext context, Map<String, Object?> data) =>
+      _DashboardChart(.fromData(data, context.buildContext));
 
-  static _DashboardChartData _chartData(Map<String, Object?> data) {
-    return (content: _chartContent(data), options: _chartOptions(data));
+  static _DashboardChartData _chartData(
+    Map<String, Object?> data,
+    String separator,
+  ) {
+    return (
+      content: _chartContent(data, separator),
+      options: _chartOptions(data),
+    );
   }
 
-  static _DashboardChartContent _chartContent(Map<String, Object?> data) {
+  static _DashboardChartContent _chartContent(
+    Map<String, Object?> data,
+    String separator,
+  ) {
     final labels = (data['labels']! as List).cast<String>();
     final series = _chartSeries(data);
 
     return (
       labels: labels,
       series: series,
-      semanticLabel: _chartSummary(data, labels, series),
+      semanticLabel: _chartSummary(data, labels, series, separator),
     );
   }
 
@@ -533,14 +575,21 @@ abstract final class _DashboardChartBuilder {
     Map<String, Object?> data,
     List<String> labels,
     List<AuraChartSeries> series,
+    String separator,
   ) => [
     if (data['label'] case final String label) label,
-    for (final item in series) _chartSeriesSummary(item, labels),
+    if (data['unit'] case final String unit when unit.isNotEmpty) unit,
+    for (final item in series) _chartSeriesSummary(item, labels, separator),
   ].join('\n');
 
-  static String _chartSeriesSummary(AuraChartSeries item, List<String> labels) {
+  static String _chartSeriesSummary(
+    AuraChartSeries item,
+    List<String> labels,
+    String separator,
+  ) {
     final values = [
-      for (var i = 0; i < labels.length; i++) '${labels[i]}: ${item.values[i]}',
+      for (var i = 0; i < labels.length; i++)
+        '${labels[i]}: ${_chartNumber(item.values[i], separator)}',
     ].join(', ');
 
     return '${item.label}: $values';
@@ -594,13 +643,15 @@ class _DashboardChart extends StatelessWidget {
 }
 
 class _DashboardChartConfig {
-  factory fromData(Map<String, Object?> data) {
-    final values = _DashboardChartBuilder._chartData(data);
+  factory fromData(Map<String, Object?> data, BuildContext context) {
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final separator = NumberFormat.decimalPattern(locale).symbols.DECIMAL_SEP;
+    final values = _DashboardChartBuilder._chartData(data, separator);
 
-    return _DashboardChartConfig._(data, values);
+    return _DashboardChartConfig._(data, values, separator);
   }
 
-  new _(this.data, _DashboardChartData values)
+  new _(this.data, _DashboardChartData values, String separator)
     : chart = AuraChart(
         labels: values.content.labels,
         series: values.content.series,
@@ -613,12 +664,20 @@ class _DashboardChartConfig {
         yAxisTitle: values.options.axes.y,
         unit: values.options.axes.unit,
         palette: values.options.palette,
+        valueFormatter: (value) => _chartNumber(value, separator),
       );
 
   final Map<String, Object?> data;
   final AuraChart chart;
 
   AuraChart build() => chart;
+}
+
+String _chartNumber(double value, String separator) {
+  final raw = value.toString();
+  final formatted = raw.endsWith('.0') ? raw.replaceFirst('.0', '') : raw;
+
+  return formatted.replaceFirst('.', separator);
 }
 
 abstract final class _DashboardValues {

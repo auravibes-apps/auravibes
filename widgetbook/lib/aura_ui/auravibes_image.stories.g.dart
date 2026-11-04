@@ -78,7 +78,7 @@ class AuraImageArgs extends StoryArgs<AuraImage> {
        this.errorSemanticLabelArg = $initArg(
          'errorSemanticLabel',
          errorSemanticLabel,
-         NullableStringArg('Image failed to load'),
+         NullableStringArg(null),
        )!,
        this.loadingChildArg = $initArg('loadingChild', loadingChild, null),
        this.errorChildArg = $initArg('errorChild', errorChild, null);
@@ -89,7 +89,7 @@ class AuraImageArgs extends StoryArgs<AuraImage> {
     BoxFit fit = BoxFit.fill,
     String? semanticLabel = null,
     ImageProvider<Object>? imageProvider,
-    String? errorSemanticLabel = 'Image failed to load',
+    String? errorSemanticLabel = null,
     Widget? loadingChild,
     Widget? errorChild,
   }) : this.urlArg = $initArg('url', Arg.fixed(url), null)!,

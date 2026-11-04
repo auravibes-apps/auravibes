@@ -72,6 +72,7 @@ class const _CreateWorkspaceAppBar()
     leading: AuraIconButton(
       icon: Icons.arrow_back,
       onPressed: () => Navigator.of(context).maybePop(),
+      tooltip: MaterialLocalizations.of(context).backButtonTooltip,
     ),
   );
 }

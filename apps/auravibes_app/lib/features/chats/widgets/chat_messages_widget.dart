@@ -1470,6 +1470,7 @@ class const _MessageTextContent({
           isUser: true,
           key: ValueKey(message.id),
           status: status,
+          statusSemanticLabel: _messageStatusLabel(context, status),
         ),
       );
     }
@@ -1512,7 +1513,10 @@ class const _MessageFooter({
         ),
         if (status != AuraMessageDeliveryStatus.sent) ...[
           SizedBox(height: context.auraTheme.fromSpacing(.xs) / 2),
-          AuraMessageStatus(status: status),
+          AuraMessageStatus(
+            status: status,
+            semanticLabel: _messageStatusLabel(context, status),
+          ),
         ],
       ],
     );
@@ -1521,6 +1525,18 @@ class const _MessageFooter({
 
 bool _canForkMessage(MessageEntity message) =>
     !message.isUser && message.status == MessageStatus.sent;
+
+String _messageStatusLabel(
+  BuildContext context,
+  AuraMessageDeliveryStatus status,
+) => (switch (status) {
+  .sending => LocaleKeys.common_message_status_sending,
+  .unfinished => LocaleKeys.common_message_status_unfinished,
+  .sent => LocaleKeys.common_message_status_sent,
+  .delivered => LocaleKeys.common_message_status_delivered,
+  .read => LocaleKeys.common_message_status_read,
+  .error => LocaleKeys.common_message_status_error,
+}).tr(context: context);
 
 class const _MessageActions({
   required final MessageEntity message,
@@ -1869,7 +1885,10 @@ class const _AiMessageContent({
         ),
         if (showMetadata && status != AuraMessageDeliveryStatus.sent) ...[
           const AuraSizedBox(height: .xs),
-          AuraMessageStatus(status: status),
+          AuraMessageStatus(
+            status: status,
+            semanticLabel: _messageStatusLabel(context, status),
+          ),
         ],
       ],
     );
