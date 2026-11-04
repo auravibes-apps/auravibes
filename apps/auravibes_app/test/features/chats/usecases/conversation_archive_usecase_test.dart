@@ -69,8 +69,12 @@ void main() {
       archiveJson: json,
     );
     expect(imported.toolAccessMode, ConversationToolAccessMode.allowAll);
+    final preview = await usecase.previewConversation(
+      conversationId: imported.id,
+    );
     final exported = await usecase.exportConversation(
       conversationId: imported.id,
+      expectedPreview: preview,
     );
     expect(
       ConversationArchiveCodec.decode(exported).toolAccessMode,
@@ -158,7 +162,7 @@ void main() {
       conversationId: conversation.id,
     );
 
-    await database.into(database.messageAttachments).insert(
+    final _ = await database.into(database.messageAttachments).insert(
       MessageAttachmentsCompanion.insert(
         messageId: message.id,
         localPath: '/private/account/new-report.pdf',
@@ -175,7 +179,7 @@ void main() {
         conversationId: conversation.id,
         expectedPreview: preview,
       ),
-      throwsA(isA<ConversationArchiveExportPreviewChangedException>()),
+      throwsA(isA<ArchiveExportPreviewChangedException>()),
     );
   });
 
@@ -315,8 +319,12 @@ void main() {
       );
 
       final usecase = _usecase(database);
+      final preview = await usecase.previewConversation(
+        conversationId: source.id,
+      );
       final archiveJson = await usecase.exportConversation(
         conversationId: source.id,
+        expectedPreview: preview,
       );
       final imported = await usecase.importConversation(
         workspaceId: workspace.id,
@@ -421,8 +429,12 @@ void main() {
       );
 
       final usecase = _usecase(database);
+      final preview = await usecase.previewConversation(
+        conversationId: source.id,
+      );
       final archiveJson = await usecase.exportConversation(
         conversationId: source.id,
+        expectedPreview: preview,
       );
       final imported = await usecase.importConversation(
         workspaceId: workspace.id,
@@ -830,8 +842,12 @@ void main() {
       permissionMode: .alwaysDeny,
     );
     final usecase = _usecase(database);
+    final preview = await usecase.previewConversation(
+      conversationId: sourceConversation.id,
+    );
     final encoded = await usecase.exportConversation(
       conversationId: sourceConversation.id,
+      expectedPreview: preview,
     );
     final archive = ConversationArchiveCodec.decode(encoded);
     final imported = (await usecase.importArchive(

@@ -8,8 +8,9 @@ import 'package:flutter/foundation.dart';
 final class ConversationArchiveExportPreview({
   required List<ConversationArchivePreviewConversation> sourceConversations,
 }) {
-  final List<ConversationArchivePreviewConversation> conversations =
-      .unmodifiable(sourceConversations);
+  final List<ConversationArchivePreviewConversation> conversations = .unmodifiable(
+    sourceConversations,
+  );
 
   int countAttachments() {
     var total = 0;

@@ -25,9 +25,6 @@ import 'package:auravibes_engine/auravibes_engine.dart'
 import 'package:path/path.dart' as p;
 import 'package:uuid/v7.dart';
 
-class const ConversationArchiveExportPreviewChangedException()
-    implements Exception;
-
 typedef _ArchivedContextUpdates = ({
   List<ConversationArchiveAgentContextEntry> entries,
   bool isComplete,
@@ -140,9 +137,9 @@ class const ConversationArchiveUsecase({
 }) {
   Future<String> exportConversation({
     required String conversationId,
+    required ConversationArchiveExportPreview expectedPreview,
     String? modelLabel,
     bool includeAttachments = true,
-    ConversationArchiveExportPreview? expectedPreview,
   }) => _ConversationArchiveExporter(this).exportConversation(
     conversationId: conversationId,
     modelLabel: modelLabel,
@@ -153,8 +150,8 @@ class const ConversationArchiveUsecase({
   Future<String> exportConversations({
     required String workspaceId,
     required List<String> conversationIds,
+    required ConversationArchiveExportPreview expectedPreview,
     bool includeAttachments = true,
-    ConversationArchiveExportPreview? expectedPreview,
   }) => _ConversationArchiveExporter(this).exportConversations(
     workspaceId: workspaceId,
     conversationIds: conversationIds,
@@ -190,6 +187,8 @@ class const ConversationArchiveUsecase({
           .importArchive(workspaceId: workspaceId, archiveJson: archiveJson);
 }
 
+class const ArchiveExportPreviewChangedException() implements Exception;
+
 class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
   final ConversationRepository conversationRepository =
       usecase.conversationRepository;
@@ -205,9 +204,9 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
 
   Future<String> exportConversation({
     required String conversationId,
+    required ConversationArchiveExportPreview expectedPreview,
     String? modelLabel,
     bool includeAttachments = true,
-    ConversationArchiveExportPreview? expectedPreview,
   }) async {
     final snapshot = await _loadConversationSnapshot(conversationId);
     _requireMatchingPreview(expectedPreview, [snapshot]);
@@ -222,8 +221,8 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
   Future<String> exportConversations({
     required String workspaceId,
     required List<String> conversationIds,
+    required ConversationArchiveExportPreview expectedPreview,
     bool includeAttachments = true,
-    ConversationArchiveExportPreview? expectedPreview,
   }) async {
     _validateConversationIds(conversationIds);
     final snapshots = <_ConversationArchiveExportSnapshot>[];
@@ -342,12 +341,11 @@ class _ConversationArchiveExporter(ConversationArchiveUsecase usecase) {
   );
 
   void _requireMatchingPreview(
-    ConversationArchiveExportPreview? expectedPreview,
+    ConversationArchiveExportPreview expectedPreview,
     List<_ConversationArchiveExportSnapshot> snapshots,
   ) {
-    if (expectedPreview == null) return;
     if (!expectedPreview.matchesSnapshot(_previewSnapshots(snapshots))) {
-      throw const ConversationArchiveExportPreviewChangedException();
+      throw const ArchiveExportPreviewChangedException();
     }
   }
 
