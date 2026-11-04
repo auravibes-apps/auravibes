@@ -121,6 +121,12 @@ Future<void> captureUxWidget(
 }
 
 String _fixtureDescription(String name) => switch (name) {
+  'cloud-workspace-invite-dialog' =>
+    'Controlled cloud workspace admin detail with invitation dialog open; '
+        'no remote mutation',
+  'cloud-workspace-populated-membership' =>
+    'Controlled cloud workspace admin detail with one member and one '
+        'pending invitation; no remote mutation',
   'queued-prompts-before' || 'queued-prompts-after' =>
     'Persisted local conversation with three fixed text-only queued drafts; '
         'no model requests, attachments, network access, or remote mutations',

@@ -343,6 +343,90 @@ void main() {
     );
     await fixture.close(tester);
   });
+
+  testWidgets('cloud workspace populated membership capture', (tester) async {
+    const size = Size(466, 678);
+    final fixture = await UxValidationFixture.create();
+    final scenario = _scenario('CloudWorkspaceDetailRoute', fixture);
+    final router = await fixture.pump(
+      tester,
+      scenario.location,
+      size: size,
+      accounts: _accounts,
+      overrides: _overrides(fixture, 'CloudWorkspaceDetailRoute'),
+    );
+    await fixture.settle(tester);
+    expect(find.text('Shared research'), findsOneWidget);
+    expect(find.text('Account: reviewer@example.test'), findsOneWidget);
+    expect(find.text('Owner: owner@example.test'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('Connection to this app')).dy,
+      lessThan(tester.getTopLeft(find.text('Not connected to this app')).dy),
+    );
+    final list = find.ancestor(
+      of: find.text('Members'),
+      matching: find.byType(ListView),
+    );
+    await tester.drag(list.first, const Offset(0, -480));
+    await fixture.settle(tester);
+    expect(find.text('Pending invitations'), findsOneWidget);
+    final invitation = find.ancestor(
+      of: find.text('invited@example.test'),
+      matching: find.byType(AuraTile),
+    );
+    expect(
+      find.descendant(of: invitation, matching: find.text('Member')),
+      findsOneWidget,
+    );
+    await captureUxWidget(
+      tester,
+      'cloud-workspace-populated-membership',
+      router.routeInformationProvider.value.uri.toString(),
+      locale: 'en',
+      size: size,
+      scale: 1,
+      dark: false,
+    );
+    expect(tester.takeException(), isNull);
+    await fixture.close(tester);
+  });
+
+  testWidgets('cloud workspace invite dialog capture', (tester) async {
+    const size = Size(466, 678);
+    final fixture = await UxValidationFixture.create();
+    final scenario = _scenario('CloudWorkspaceDetailRoute', fixture);
+    final router = await fixture.pump(
+      tester,
+      scenario.location,
+      size: size,
+      accounts: _accounts,
+      overrides: _overrides(fixture, 'CloudWorkspaceDetailRoute'),
+    );
+    await fixture.settle(tester);
+    await tester.scrollUntilVisible(
+      find.text('Invite member'),
+      200,
+      scrollable: find.descendant(
+        of: find.byType(CloudWorkspaceDetailScreen),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await fixture.settle(tester);
+    await tester.tap(find.text('Invite member'));
+    await fixture.settle(tester);
+    expect(find.byType(AlertDialog), findsOneWidget);
+    await captureUxWidget(
+      tester,
+      'cloud-workspace-invite-dialog',
+      router.routeInformationProvider.value.uri.toString(),
+      locale: 'en',
+      size: size,
+      scale: 1,
+      dark: false,
+    );
+    await fixture.close(tester);
+  });
+
   testWidgets('captures device-local archive before and after', (tester) async {
     const size = Size(960, 1400);
     final fixture = await UxValidationFixture.create();
@@ -425,6 +509,37 @@ void main() {
           'Same persisted local workspace after archiving the conversation; '
           'archived conversation list visible, with no remote access',
     );
+    await fixture.close(tester);
+  });
+
+  testWidgets('cloud workspace detail supports enlarged Spanish text', (
+    tester,
+  ) async {
+    final fixture = await UxValidationFixture.create();
+    final scenario = _scenario('CloudWorkspaceDetailRoute', fixture);
+    final _ = await fixture.pump(
+      tester,
+      scenario.location,
+      size: const Size(360, 678),
+      locale: 'es',
+      scale: 1.4,
+      accounts: _accounts,
+      overrides: _overrides(fixture, 'CloudWorkspaceDetailRoute'),
+    );
+    await fixture.settle(tester);
+    await tester.scrollUntilVisible(
+      find.text('Invitar miembro'),
+      200,
+      scrollable: find.descendant(
+        of: find.byType(CloudWorkspaceDetailScreen),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await fixture.settle(tester);
+    await tester.tap(find.text('Invitar miembro'));
+    await fixture.settle(tester);
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(tester.takeException(), isNull);
     await fixture.close(tester);
   });
   for (final dark in [false, true]) {
@@ -1853,20 +1968,39 @@ List<Object> _overrides(UxValidationFixture fixture, String name) {
             updatedAt: .utc(2026),
           ),
           ownerUserId: 'other-owner',
+          ownerEmail: 'owner@example.test',
           capabilities: .new(
             canViewMembers: true,
             canInviteMembers: true,
             canInviteAdmins: false,
             canManageMembers: true,
             canManageAdmins: false,
-            canRename: true,
+            canRename: false,
             canTransferOwnership: false,
             canLeave: true,
             canDelete: false,
           ),
         ),
-        members: [],
-        invites: [],
+        members: [
+          CloudWorkspaceMemberSummary(
+            userId: 'member-1',
+            email: 'member@example.test',
+            role: 'member',
+            revision: 1,
+            createdAt: .utc(2026),
+          ),
+        ],
+        invites: [
+          CloudWorkspaceInviteSummary(
+            id: 1,
+            email: 'invited@example.test',
+            role: 'member',
+            invitedByUserId: 'fixture-account',
+            revision: 1,
+            createdAt: .utc(2026),
+            expiresAt: .utc(2026, 12),
+          ),
+        ],
       ),
     ),
   ];
