@@ -255,18 +255,16 @@ Future<List<ConversationEntity>> _readNextConversationPage(
 
 ConversationsStreamProvider _nextConversationPageProvider(
   _ChatListPaginationState state,
-) => conversationsStreamProvider(
-  (
-    workspaceId: state.workspaceId,
-    search: state.search,
-    labelIds: state.labelIds,
-    scope: state.scope,
-    pagination: (
-      limit: _conversationPageSize + 1,
-      offset: state.loadedChats.value.length,
-    ),
+) => conversationsStreamProvider((
+  workspaceId: state.workspaceId,
+  search: state.search,
+  labelIds: state.labelIds,
+  scope: state.scope,
+  pagination: (
+    limit: _conversationPageSize + 1,
+    offset: state.loadedChats.value.length,
   ),
-);
+));
 
 void _stopLoadingMore(BuildContext context, ValueNotifier<bool> isLoadingMore) {
   if (context.mounted) isLoadingMore.value = false;
@@ -411,15 +409,13 @@ _ChatListQueryState _useChatListQueryState(_ChatListQueryRequest request) {
 
 ConversationsStreamProvider _chatListPageProvider(
   _ChatListPageRequest request,
-) => conversationsStreamProvider(
-  (
-    workspaceId: request.workspaceId,
-    search: request.search,
-      labelIds: request.labelIds,
-    scope: request.scope,
-    pagination: (limit: _conversationPageSize + 1, offset: 0),
-  ),
-);
+) => conversationsStreamProvider((
+  workspaceId: request.workspaceId,
+  search: request.search,
+  labelIds: request.labelIds,
+  scope: request.scope,
+  pagination: (limit: _conversationPageSize + 1, offset: 0),
+));
 
 _ChatListDataState _chatListDataState(_ChatListHookState hooks) {
   final chatListAsync = hooks.chatListAsync;

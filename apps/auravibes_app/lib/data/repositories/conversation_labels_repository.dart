@@ -38,7 +38,8 @@ class ConversationLabelsRepository(final AppDatabase _database) {
       int? limit,
       int offset,
       Set<String> labelIds,
-    }) query, {
+    })
+    query, {
     bool archivedOnly = false,
   }) => _database.conversationDao
       .watchConversationsWithLabelsByWorkspace((

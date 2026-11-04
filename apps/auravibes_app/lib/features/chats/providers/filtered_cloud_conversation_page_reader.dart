@@ -11,9 +11,9 @@ class FilteredCloudConversationPageReader(
   final ConversationListScope _scope,
   final ({int? limit, int offset}) _pagination,
   final String _search,
-  final Set<String> _archivedIds,
-  {final Set<String> labelIds = const {}}
-) {
+  final Set<String> _archivedIds, {
+  final Set<String> labelIds = const {},
+}) {
   final _conversations = <ConversationSummary>[];
   final _seenCursors = <String>{};
   int _skipped = 0;
