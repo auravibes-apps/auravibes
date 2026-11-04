@@ -1,3 +1,5 @@
+// coverage:ignore-file
+// Required: Drift table DSL is unreachable at runtime.
 // Drift generates behavior for these schema getters.
 // ignore_for_file: weight-of-class
 import 'package:auravibes_app/data/database/drift/tables/workspaces.dart';
