@@ -145,17 +145,13 @@ void main() {
       .insert(name: 'Bulk archive export', type: .local),
     );
     final repository = ConversationRepository(database);
-    final conversations = [
-      await repository.createConversation(
-        .new(title: 'First chat', workspaceId: workspace.id),
-      ),
-      await repository.createConversation(
-        .new(title: 'Second chat', workspaceId: workspace.id),
-      ),
-    ];
-    final conversationIds = conversations
-        .map((conversation) => conversation.id)
-        .toList();
+    final first = await repository.createConversation(
+      .new(title: 'First chat', workspaceId: workspace.id),
+    );
+    final second = await repository.createConversation(
+      .new(title: 'Second chat', workspaceId: workspace.id),
+    );
+    final conversationIds = [first.id, second.id];
     final usecase = _usecase(database);
     final preview = await usecase.previewConversations(
       workspaceId: workspace.id,
@@ -174,7 +170,7 @@ void main() {
       archives.map((archive) => archive.title),
       ['First chat', 'Second chat'],
     );
-    expect(archives.map((archive) => archive.messages), [[], []]);
+    expect(archives.every((archive) => archive.messages.isEmpty), isTrue);
   });
 
   test('rejects an export when attachments changed after review', () async {
