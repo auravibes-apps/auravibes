@@ -60,6 +60,183 @@ void main() {
       expect(notifier.dequeue('conversation-1'), isNull);
     });
 
+    test('moves drafts only within the requested conversation', () {
+      final notifier = container.read(conversationSendQueueProvider.notifier);
+      final first = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'First'),
+      );
+      final middle = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'Middle'),
+      );
+      final last = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'Last'),
+      );
+      final other = notifier.enqueue(
+        conversationId: 'conv-2',
+        draft: const ChatDraft(text: 'Other conversation'),
+      );
+
+      notifier.move(conversationId: 'conv-1', draftId: middle.id, offset: -1);
+
+      expect(container.read(conversationSendQueueProvider)['conv-1'], [
+        middle,
+        first,
+        last,
+      ]);
+      expect(container.read(conversationSendQueueProvider)['conv-2'], [other]);
+
+      notifier.move(conversationId: 'conv-1', draftId: middle.id, offset: 1);
+
+      expect(container.read(conversationSendQueueProvider)['conv-1'], [
+        first,
+        middle,
+        last,
+      ]);
+      expect(container.read(conversationSendQueueProvider)['conv-2'], [other]);
+
+      notifier.move(conversationId: 'conv-1', draftId: first.id, offset: 1);
+      expect(container.read(conversationSendQueueProvider)['conv-1'], [
+        middle,
+        first,
+        last,
+      ]);
+
+      notifier.move(conversationId: 'conv-1', draftId: first.id, offset: -1);
+      expect(container.read(conversationSendQueueProvider)['conv-1'], [
+        first,
+        middle,
+        last,
+      ]);
+
+      notifier.move(conversationId: 'conv-1', draftId: last.id, offset: -1);
+      expect(container.read(conversationSendQueueProvider)['conv-1'], [
+        first,
+        last,
+        middle,
+      ]);
+
+      notifier.move(conversationId: 'conv-1', draftId: last.id, offset: 1);
+      expect(container.read(conversationSendQueueProvider)['conv-1'], [
+        first,
+        middle,
+        last,
+      ]);
+      expect(container.read(conversationSendQueueProvider)['conv-2'], [other]);
+    });
+
+    test('dequeues drafts in their reordered display order', () {
+      final notifier = container.read(conversationSendQueueProvider.notifier);
+      final first = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'First'),
+      );
+      final middle = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'Middle'),
+      );
+      final last = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'Last'),
+      );
+
+      notifier.move(conversationId: 'conv-1', draftId: last.id, offset: -1);
+
+      expect(notifier.peek('conv-1'), same(first));
+      expect(notifier.dequeue('conv-1'), same(first));
+      expect(notifier.dequeue('conv-1'), same(last));
+      expect(notifier.dequeue('conv-1'), same(middle));
+      expect(notifier.dequeue('conv-1'), isNull);
+    });
+
+    test('drains in reordered visible order for active run continuation', () {
+      final notifier = container.read(conversationSendQueueProvider.notifier);
+      final first = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'First'),
+      );
+      final middle = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'Middle'),
+      );
+      final last = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'Last'),
+      );
+
+      notifier.move(conversationId: 'conv-1', draftId: last.id, offset: -1);
+
+      expect(notifier.dequeueAll('conv-1'), [first, last, middle]);
+      expect(container.read(conversationSendQueueProvider), isEmpty);
+    });
+
+    test('boundary and unknown-draft moves leave state unchanged', () {
+      final notifier = container.read(conversationSendQueueProvider.notifier);
+      final first = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'First'),
+      );
+      final last = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'Last'),
+      );
+      final state = container.read(conversationSendQueueProvider);
+
+      notifier.move(conversationId: 'conv-1', draftId: first.id, offset: -1);
+      expect(container.read(conversationSendQueueProvider), same(state));
+
+      notifier.move(conversationId: 'conv-1', draftId: last.id, offset: 1);
+      expect(container.read(conversationSendQueueProvider), same(state));
+
+      notifier.move(conversationId: 'conv-1', draftId: 'unknown', offset: -1);
+      expect(container.read(conversationSendQueueProvider), same(state));
+
+      notifier.move(conversationId: 'missing', draftId: first.id, offset: 1);
+      expect(container.read(conversationSendQueueProvider), same(state));
+    });
+
+    test('moves preserve the queued draft and its attachment ownership', () {
+      final notifier = container.read(conversationSendQueueProvider.notifier);
+      const attachedDraft = ChatDraft(
+        text: 'Attached draft',
+        attachments: [_attachment],
+      );
+      final attached = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: attachedDraft,
+      );
+      final next = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'Next'),
+      );
+
+      notifier.move(conversationId: 'conv-1', draftId: attached.id, offset: 1);
+
+      final reordered = container.read(conversationSendQueueProvider)['conv-1'];
+      expect(reordered, [next, attached]);
+      expect(reordered?.last, same(attached));
+      expect(attached.draft, same(attachedDraft));
+      expect(attached.draft.attachments, same(attachedDraft.attachments));
+      expect(attachmentService.deletedPaths, isEmpty);
+    });
+
+    test('moving a single queued draft is a no-op in both directions', () {
+      final notifier = container.read(conversationSendQueueProvider.notifier);
+      final only = notifier.enqueue(
+        conversationId: 'conv-1',
+        draft: const ChatDraft(text: 'Only'),
+      );
+      final state = container.read(conversationSendQueueProvider);
+
+      notifier.move(conversationId: 'conv-1', draftId: only.id, offset: -1);
+      expect(container.read(conversationSendQueueProvider), same(state));
+
+      notifier.move(conversationId: 'conv-1', draftId: only.id, offset: 1);
+      expect(container.read(conversationSendQueueProvider), same(state));
+    });
+
     test('keeps conversation queues independent across peek and dequeue', () {
       final notifier = container.read(conversationSendQueueProvider.notifier);
 
