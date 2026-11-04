@@ -161,9 +161,9 @@ class const ConversationArchiveUsecase({
 
   Future<ConversationArchiveExportPreview> previewConversation({
     required String conversationId,
-  }) =>
-      _ConversationArchiveExporter(this)
-          .previewConversation(conversationId: conversationId);
+  }) => _ConversationArchiveExporter(this).previewConversation(
+    conversationId: conversationId,
+  );
 
   Future<ConversationArchiveExportPreview> previewConversations({
     required String workspaceId,

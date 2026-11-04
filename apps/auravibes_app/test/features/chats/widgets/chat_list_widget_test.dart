@@ -31,7 +31,6 @@ import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_server_client/auravibes_server_client.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:collection/collection.dart';
 import 'package:drift/drift.dart' hide Column, isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -1182,7 +1181,7 @@ void main() {
         preview: .new(
           sourceConversations: [
             ConversationArchivePreviewConversation(
-              conversationId: conversations.firstOrNull!.id,
+              conversationId: conversations.first.id,
               title: 'Chat One',
               sourceAttachments: const [
                 ConversationArchivePreviewAttachment(
