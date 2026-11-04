@@ -708,22 +708,26 @@ void main() {
   });
 }
 
-class _ConversationTestScope({
+class const _ConversationTestScope({
   required final List<Override> overrides,
   required final Widget child,
 }) extends StatefulWidget {
-  final AppDatabase labelsDatabase = AppDatabase(
-    connection: NativeDatabase.memory(),
-  );
-
   @override
   State<_ConversationTestScope> createState() => _ConversationTestScopeState();
 }
 
 class _ConversationTestScopeState extends State<_ConversationTestScope> {
+  late final AppDatabase labelsDatabase;
+
+  @override
+  void initState() {
+    super.initState();
+    labelsDatabase = .new(connection: NativeDatabase.memory());
+  }
+
   @override
   void dispose() {
-    unawaited(widget.labelsDatabase.close());
+    unawaited(labelsDatabase.close());
     super.dispose();
   }
 
@@ -732,7 +736,7 @@ class _ConversationTestScopeState extends State<_ConversationTestScope> {
     overrides: [
       ...widget.overrides,
       conversationLabelsRepositoryProvider.overrideWithValue(
-        _PassthroughConversationLabelsRepository(widget.labelsDatabase),
+        _PassthroughConversationLabelsRepository(labelsDatabase),
       ),
     ],
     child: widget.child,
