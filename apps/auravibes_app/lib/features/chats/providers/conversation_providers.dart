@@ -114,24 +114,46 @@ Stream<List<ConversationEntity>> conversationsStream(
 Stream<List<ConversationEntity>> _conversationsForSession(
   _ConversationSessionRequest request,
 ) {
-  final ref = request.ref;
-  final options = request.options;
   if (request.session.cloud case final cloud?) {
-    return _cloudConversations(ref, cloud, options);
+    return _cloudConversations(ref, cloud, request.options);
   }
 
-  final labelsRepository = ref.watch(conversationLabelsRepositoryProvider);
-  if (options.labelIds.isNotEmpty) {
-    return labelsRepository.watchConversationsByWorkspace((
-      workspaceId: request.workspaceId,
-      search: options.search,
-      limit: options.pagination.limit,
-      offset: options.pagination.offset,
-      labelIds: options.labelIds,
-    ));
+  return _localConversationsForSession(request);
+}
+
+Stream<List<ConversationEntity>> _localConversationsForSession(
+  _ConversationSessionRequest request,
+) {
+  if (request.options.labelIds.isNotEmpty) {
+    return _localConversationsWithLabels(request);
   }
 
-  final conversations = ref
+  return _localConversationsWithAllLabels(request);
+}
+
+Stream<List<ConversationEntity>> _localConversationsWithLabels(
+  _ConversationSessionRequest request,
+) {
+  final options = request.options;
+  return request.ref
+      .watch(conversationLabelsRepositoryProvider)
+      .watchConversationsByWorkspace((
+        workspaceId: request.workspaceId,
+        search: options.search,
+        limit: options.pagination.limit,
+        offset: options.pagination.offset,
+        labelIds: options.labelIds,
+      ));
+}
+
+Stream<List<ConversationEntity>> _localConversationsWithAllLabels(
+  _ConversationSessionRequest request,
+) {
+  final options = request.options;
+  final labelsRepository = request.ref.watch(
+    conversationLabelsRepositoryProvider,
+  );
+  final conversations = request.ref
       .watch(conversationRepositoryProvider)
       .watchConversationsByWorkspace(
         request.workspaceId,
