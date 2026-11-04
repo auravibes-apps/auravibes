@@ -54,6 +54,7 @@ void main() {
   ) async {
     const workspaceId = '019a1e91-0000-7000-8000-000000001692';
     const size = Size(960, 900);
+    const sizeLimitFailure = WorkspaceAssetException(.sizeLimitExceeded);
     final file = _OversizedFile(
       size: ChatAttachmentModality.maxChatAttachmentBytes + 1,
     );
@@ -79,23 +80,17 @@ void main() {
 
     const captureStage = String.fromEnvironment('UX_CAPTURE_STAGE');
     if (captureStage == 'before') {
-      expect(
-        find.text(
-          'Workspace Files must be 25 MiB or smaller. Choose a smaller file.',
-        ),
-        findsNothing,
-      );
+      // The capture baseline now runs against main, which already includes
+      // the typed size-limit error copy. Keep it valid when this test is used
+      // to capture the current base revision.
+      expect(find.text(sizeLimitFailure.localizationKey.tr()), findsOneWidget);
     } else if (captureStage == 'after') {
-      expect(
-        find.text(
-          'Workspace Files must be 25 MiB or smaller. Choose a smaller file.',
-        ),
-        findsOneWidget,
-      );
+      expect(find.text(sizeLimitFailure.localizationKey.tr()), findsOneWidget);
     } else {
       expect(find.byType(WorkspaceItemFailure), findsOneWidget);
+      expect(find.text(sizeLimitFailure.localizationKey.tr()), findsOneWidget);
     }
-    expect(file.bytesRead, captureStage == 'before');
+    expect(file.bytesRead, isFalse);
     expect(tester.takeException(), isNull);
 
     await _capture(

@@ -360,7 +360,7 @@ typedef _ChoiceRadioData<T> = ({
   ValueChanged<T?>? onChanged,
   AuraTint? tint,
   bool disabled,
-  String semanticLabel,
+  String? semanticLabel,
 });
 
 _ChoiceRadioData<T> _choiceRadioData<T>(_AuraChoicePickerOption<T> source) => (
@@ -369,7 +369,7 @@ _ChoiceRadioData<T> _choiceRadioData<T>(_AuraChoicePickerOption<T> source) => (
   onChanged: source._isInteractive ? (_) => source._handleChange() : null,
   tint: source.picker.tint,
   disabled: source.option.disabled,
-  semanticLabel: source.option.semanticLabel ?? 'Choice',
+  semanticLabel: source.option.semanticLabel,
 );
 
 class const _AuraChoicePickerChipContent<T>({
@@ -555,7 +555,7 @@ class const _AuraChoicePickerCheckbox<T>({
     onChanged: source._isInteractive ? (_) => source._handleChange() : null,
     tint: source.picker.tint,
     disabled: source.option.disabled,
-    semanticLabel: source.option.semanticLabel ?? 'Choice',
+    semanticLabel: source.option.semanticLabel,
   );
 }
 

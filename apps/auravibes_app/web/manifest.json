@@ -1,11 +1,11 @@
 {
-    "name": "auravibes",
-    "short_name": "auravibes",
+    "name": "AuraVibes",
+    "short_name": "AuraVibes",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#AD83FF",
     "theme_color": "#AD83FF",
-    "description": "A new Flutter project.",
+    "description": "AuraVibes",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

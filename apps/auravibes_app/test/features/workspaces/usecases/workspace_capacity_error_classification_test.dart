@@ -10,9 +10,33 @@ import 'package:auravibes_app/features/workspaces/models/workspace_table.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_view.dart';
 import 'package:auravibes_app/features/workspaces/usecases/query_workspace_records_usecase.dart';
 import 'package:auravibes_app/features/workspaces/usecases/workspace_view_validation.dart';
+import 'package:auravibes_app/i18n/locale_keys.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('maps capacity failures to their own localized copy', () {
+    expect(
+      const WorkspaceTableException(limitKind: .columns).localizationKey,
+      LocaleKeys.workspace_items_limit_columns,
+    );
+    expect(
+      const WorkspaceTableException(limitKind: .queryPageSize).localizationKey,
+      LocaleKeys.workspace_items_limit_query_page,
+    );
+    expect(
+      const WorkspaceTableException(limitKind: .summaryColumns).localizationKey,
+      LocaleKeys.workspace_items_limit_summary_columns,
+    );
+    expect(
+      const WorkspaceTableException(limitKind: .recordBatch).localizationKey,
+      LocaleKeys.workspace_items_limit_record_batch,
+    );
+    expect(
+      const WorkspaceAssetException(.sizeLimitExceeded).localizationKey,
+      LocaleKeys.workspace_assets_size_limit_exceeded,
+    );
+  });
+
   test('classifies a table column overflow', () {
     final columns = _columns(101);
 

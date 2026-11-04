@@ -164,14 +164,62 @@ class const _AuraLinearProgressDeterminate({
   );
 }
 
-class const _AuraLinearProgressIndeterminate({required final Color color})
-    extends StatelessWidget {
+class _AuraLinearProgressIndeterminate extends StatefulWidget {
+  const new({required this.color});
+
+  final Color color;
+
   @override
-  Widget build(BuildContext context) => Align(
-    alignment: AlignmentDirectional.centerStart,
-    child: FractionallySizedBox(
-      widthFactor: 0.35,
-      child: ColoredBox(color: color),
-    ),
+  State<_AuraLinearProgressIndeterminate> createState() =>
+      _AuraLinearProgressIndeterminateState();
+}
+
+class _AuraLinearProgressIndeterminateState
+    extends State<_AuraLinearProgressIndeterminate>
+    with SingleTickerProviderStateMixin {
+  static const _center = 0.5;
+
+  late final AnimationController _controller = .new(
+    value: _center,
+    duration: const Duration(milliseconds: 1200),
+    vsync: this,
   );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_reducedMotion(context)) {
+      _controller
+        ..stop()
+        ..value = _center;
+    } else if (!_controller.isAnimating) {
+      final _ = _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _controller,
+    builder: (context, child) => FractionallySizedBox(
+      alignment: AlignmentDirectional(_controller.value * 2 - 1, 0),
+      widthFactor: 0.35,
+      heightFactor: 1,
+      child: child,
+    ),
+    child: ColoredBox(color: widget.color),
+  );
+}
+
+bool _reducedMotion(BuildContext context) {
+  final media = MediaQuery.maybeOf(context);
+
+  return media?.disableAnimations == true ||
+      media?.accessibleNavigation == true ||
+      !TickerMode.valuesOf(context).enabled;
 }

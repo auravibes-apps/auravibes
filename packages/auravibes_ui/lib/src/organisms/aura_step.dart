@@ -7,6 +7,7 @@ class AuraStep {
     required this.title,
     this.description,
     this.state = AuraStepState.pending,
+    this.semanticLabel,
   });
 
   /// Caller-localized title.
@@ -17,6 +18,9 @@ class AuraStep {
 
   /// Display state.
   final AuraStepState state;
+
+  /// Optional caller-provided description of the step's state.
+  final String? semanticLabel;
 
   /// Whether this step has supporting text.
   bool hasDescription() => description != null;

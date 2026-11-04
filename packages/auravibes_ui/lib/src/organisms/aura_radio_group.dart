@@ -337,11 +337,11 @@ class _AuraRadioOptionSemantics<T> extends StatelessWidget {
   new({required _AuraRadioOptionInteractiveData<T> data})
     : _child = Semantics(
         child: _AuraRadioOptionGesture<T>(data: data),
-        excludeSemantics: true,
+        excludeSemantics: data.option.semanticLabel != null,
         enabled: data.onTap() != null,
         checked: data.option.value == data.groupValue,
         inMutuallyExclusiveGroup: true,
-        label: data.option.semanticLabel ?? 'Radio button',
+        label: data.option.semanticLabel,
         onTap: data.onTap(),
       );
 

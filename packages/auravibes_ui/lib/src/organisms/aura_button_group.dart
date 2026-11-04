@@ -552,7 +552,7 @@ class const _AuraButtonGroupSemanticsContainer<T>({
   Widget build(BuildContext context) => Semantics.fromProperties(
     child: child,
     container: true,
-    excludeSemantics: true,
+    excludeSemantics: data.item._item.semanticLabel != null,
     properties: _buttonSemanticsProperties(data),
   );
 }
@@ -567,7 +567,7 @@ SemanticsProperties _itemSemanticsProperties(
   enabled: !item._disabled && !item._isLoading,
   selected: item._isSelected,
   button: item._mode == _ButtonGroupMode.action,
-  label: item._item._accessibleLabel(),
+  label: item._item.semanticLabel,
   onTap: item._onTap,
 );
 
@@ -695,8 +695,6 @@ class AuraButtonGroupItem<T> {
 
   @override
   String toString() => 'AuraButtonGroupItem<$T>(value: $value)';
-
-  String _accessibleLabel() => semanticLabel ?? 'Button';
 }
 
 /// The size of an [AuraButtonGroup].

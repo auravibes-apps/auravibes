@@ -108,8 +108,8 @@ void main() {
       );
       final _ = await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
-      expect(find.text('Samples'), findsNWidgets(2));
-      expect(find.text('Comparison'), findsNWidgets(2));
+      expect(find.text('Samples: A 2, B -1, C 4'), findsNWidgets(2));
+      expect(find.text('Comparison: A 1, B 3, C 2'), findsNWidgets(2));
       await expectLater(
         find.byKey(const ValueKey('dashboard')),
         matchesGoldenFile('$goldenDirectory/dashboard_${brightness.name}.png'),
