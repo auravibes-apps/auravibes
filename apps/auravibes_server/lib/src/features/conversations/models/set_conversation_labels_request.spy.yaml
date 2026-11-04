@@ -1,0 +1,6 @@
+class: SetConversationLabelsRequest
+fields:
+  workspaceId: int
+  requestId: String
+  conversationId: String
+  labelIds: List<String>

@@ -13,8 +13,17 @@ void main() {
     final definition = File(
       '${root.path}/migrations/20261029124845281-object-gateway/definition.sql',
     ).readAsStringSync();
+    final registry = File(
+      '${root.path}/migrations/migration_registry.txt',
+    ).readAsLinesSync();
+    final latestMigration = registry.lastWhere(
+      (version) => version.isNotEmpty && !version.startsWith('#'),
+    );
+    final latestDefinition = File(
+      '${root.path}/migrations/$latestMigration/definition.sql',
+    ).readAsStringSync();
 
-    for (final sql in [migration, definition]) {
+    for (final sql in [migration, definition, latestDefinition]) {
       expect(sql, contains('CREATE SCHEMA IF NOT EXISTS object_gateway'));
       expect(sql, contains('CREATE TABLE'));
       expect(sql, contains('object_gateway.keys'));

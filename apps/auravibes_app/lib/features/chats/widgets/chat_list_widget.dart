@@ -12,6 +12,7 @@ import 'package:auravibes_app/features/chats/providers/bulk_conversation_actions
 import 'package:auravibes_app/features/chats/providers/cloud_conversation_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_archive_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_archive_state_provider.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_labels_provider.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/usecases/bulk_conversation_actions_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/fork_conversation_usecase.dart';
@@ -19,6 +20,8 @@ import 'package:auravibes_app/features/chats/widgets/active_sub_agent_status_wid
 import 'package:auravibes_app/features/chats/widgets/conversation_archive_export_review_dialog.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_archive_feedback.dart';
 import 'package:auravibes_app/features/chats/widgets/conversation_draft_badge.dart';
+import 'package:auravibes_app/features/chats/widgets/conversation_label_badges.dart';
+import 'package:auravibes_app/features/chats/widgets/conversation_labels_toolbar.dart';
 import 'package:auravibes_app/features/chats/widgets/delete_conversation_confirm_dialog.dart';
 import 'package:auravibes_app/features/chats/widgets/rename_conversation_dialog.dart';
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
@@ -55,6 +58,7 @@ typedef _ChatListPaginationState = ({
   ValueNotifier<List<ConversationEntity>> loadedChats,
   ValueNotifier<bool> hasMore,
   ValueNotifier<bool> isLoadingMore,
+  Set<String> labelIds,
 });
 
 class _ChatListViewState {
@@ -73,6 +77,7 @@ class _ChatListViewState {
        onSearchChanged = actions.callbacks.onSearchChanged,
        searchController = actions.input.searchController,
        searchQuery = actions.input.searchText.value,
+       selectedLabelIds = actions.input.selectedLabelIds,
        showSearchInput = data.hasSearchInput,
        selectedChats = actions.results.selectedChats,
        isBulkActionRunning = actions.results.isBulkActionRunning,
@@ -92,6 +97,7 @@ class _ChatListViewState {
   final ValueChanged<String> onSearchChanged;
   final TextEditingController searchController;
   final String searchQuery;
+  final ValueNotifier<Set<String>> selectedLabelIds;
   final bool showSearchInput;
   final ValueNotifier<Map<String, ConversationEntity>> selectedChats;
   final ValueNotifier<bool> isBulkActionRunning;
@@ -111,6 +117,7 @@ typedef _ChatListHookState = ({
 typedef _ChatListInputState = ({
   TextEditingController searchController,
   ValueNotifier<String> searchText,
+  ValueNotifier<Set<String>> selectedLabelIds,
   ValueNotifier<bool> showSearchInput,
 });
 
@@ -169,13 +176,18 @@ typedef _ChatTileSelectionCallbacks = ({
 });
 
 typedef _ChatTileCallbacks = ({
+  _ChatTileActionCallbacks actions,
+  VoidCallback onMenuToggle,
+  _ChatTileSelectionCallbacks selection,
+});
+
+typedef _ChatTileActionCallbacks = ({
   VoidCallback onFork,
   VoidCallback onDelete,
   VoidCallback onArchiveStateChange,
   VoidCallback onTogglePin,
   VoidCallback onRename,
-  VoidCallback onMenuToggle,
-  _ChatTileSelectionCallbacks selection,
+  VoidCallback onAssignLabels,
 });
 
 typedef _ChatTileSelectionState = ({
@@ -185,8 +197,10 @@ typedef _ChatTileSelectionState = ({
   ValueChanged<bool> onSelectionChanged,
 });
 
-Dispose? _resetSearchEffect(ValueNotifier<bool> hasMore) {
-  hasMore.value = false;
+Dispose? _resetSearchEffect(_ChatListResultsState results) {
+  results.hasMore.value = false;
+  results.loadedChats.value = [];
+  results.isLoadingMore.value = false;
 
   return null;
 }
@@ -249,6 +263,7 @@ ConversationsStreamProvider _nextConversationPageProvider(
 ) => conversationsStreamProvider((
   workspaceId: state.workspaceId,
   search: state.search,
+  labelIds: state.labelIds,
   scope: state.scope,
   pagination: (
     limit: _conversationPageSize + 1,
@@ -308,7 +323,7 @@ _ChatListHookState _useChatListHookState(
   final query = _useChatListQueryState((
     ref: ref,
     workspaceId: workspaceId,
-    searchText: input.searchText,
+    input: input,
     scope: scope,
   ));
 
@@ -330,6 +345,7 @@ _ChatListHookState _createChatListHookState(
 _ChatListInputState _useChatListInputState() => (
   searchController: useTextEditingController(),
   searchText: useState(''),
+  selectedLabelIds: useState(<String>{}),
   showSearchInput: useState(false),
 );
 
@@ -359,11 +375,10 @@ typedef _ChatListQueryState = ({
   String? debouncedSearch,
   AsyncValue<List<ConversationEntity>> chatListAsync,
 });
-
 typedef _ChatListQueryRequest = ({
   WidgetRef ref,
   String workspaceId,
-  ValueNotifier<String> searchText,
+  _ChatListInputState input,
   ConversationListScope scope,
 });
 
@@ -371,22 +386,16 @@ typedef _ChatListPageRequest = ({
   String workspaceId,
   String search,
   ConversationListScope scope,
+  Set<String> labelIds,
 });
 
 _ChatListQueryState _useChatListQueryState(_ChatListQueryRequest request) {
-  final normalizedSearch = request.searchText.value.trim();
+  final normalizedSearch = request.input.searchText.value.trim();
   final debouncedSearch = useDebounced(
     normalizedSearch,
     _conversationSearchDebounce,
   );
-  final databaseSearch = debouncedSearch ?? '';
-  final chatListAsync = request.ref.watch(
-    _chatListPageProvider((
-      workspaceId: request.workspaceId,
-      search: databaseSearch,
-      scope: request.scope,
-    )),
-  );
+  final chatListAsync = _watchChatListPage(request, debouncedSearch ?? '');
 
   return (
     normalizedSearch: normalizedSearch,
@@ -395,11 +404,35 @@ _ChatListQueryState _useChatListQueryState(_ChatListQueryRequest request) {
   );
 }
 
+AsyncValue<List<ConversationEntity>> _watchChatListPage(
+  _ChatListQueryRequest request,
+  String search,
+) => request.ref.watch(
+  _chatListPageProvider(_chatListPageRequest(request, search)),
+);
+
+_ChatListPageRequest _chatListPageRequest(
+  _ChatListQueryRequest request,
+  String search,
+) => (
+  workspaceId: request.workspaceId,
+  search: search,
+  scope: request.scope,
+  labelIds: _chatListLabelIds(request),
+);
+
+Set<String> _chatListLabelIds(_ChatListQueryRequest request) {
+  final selectedLabelIds = request.input.selectedLabelIds.value;
+
+  return selectedLabelIds.isEmpty ? const {} : selectedLabelIds;
+}
+
 ConversationsStreamProvider _chatListPageProvider(
   _ChatListPageRequest request,
 ) => conversationsStreamProvider((
   workspaceId: request.workspaceId,
   search: request.search,
+  labelIds: request.labelIds,
   scope: request.scope,
   pagination: (limit: _conversationPageSize + 1, offset: 0),
 ));
@@ -436,12 +469,21 @@ _ChatListSearchData _chatListSearchData(
   return (
     databaseSearch: debouncedSearch ?? '',
     isDebouncing: _isSearchDebouncing(hooks.normalizedSearch, debouncedSearch),
-    hasSearchInput:
-        hooks.input.showSearchInput.value || fetchedChats?.isNotEmpty == true,
-    fetchedHasMore:
-        fetchedChats != null && fetchedChats.length > _conversationPageSize,
+    hasSearchInput: _hasChatSearchInput(hooks, fetchedChats),
+    fetchedHasMore: _fetchedChatPageHasMore(fetchedChats),
   );
 }
+
+bool _hasChatSearchInput(
+  _ChatListHookState hooks,
+  List<ConversationEntity>? fetchedChats,
+) =>
+    hooks.input.showSearchInput.value ||
+    hooks.input.selectedLabelIds.value.isNotEmpty ||
+    fetchedChats?.isNotEmpty == true;
+
+bool _fetchedChatPageHasMore(List<ConversationEntity>? fetchedChats) =>
+    fetchedChats != null && fetchedChats.length > _conversationPageSize;
 
 _ChatListViewState _useChatListState(
   BuildContext context,
@@ -468,7 +510,11 @@ void _useChatListEffects(_ChatListHookState hooks) {
 
 void _useChatListSearchEffect(_ChatListHookState hooks) {
   final databaseSearch = hooks.debouncedSearch ?? '';
-  useEffect(() => _resetSearchEffect(hooks.results.hasMore), [databaseSearch]);
+  final labelKey = hooks.input.selectedLabelIds.value.toList()..sort();
+  useEffect(() => _resetSearchEffect(hooks.results), [
+    databaseSearch,
+    labelKey.join('\u0000'),
+  ]);
 }
 
 void _useChatListFirstPageEffect(_ChatListHookState hooks) {
@@ -573,6 +619,7 @@ _ChatListPaginationState _chatListPaginationState(
     loadedChats: results.loadedChats,
     hasMore: results.hasMore,
     isLoadingMore: results.isLoadingMore,
+    labelIds: runtime.hooks.input.selectedLabelIds.value,
   );
 }
 
@@ -744,13 +791,18 @@ extension on _ChatTileState {
   );
 
   _ChatTileCallbacks _tileCallbacks(BuildContext context) => (
+    actions: _tileActionCallbacks(context),
+    onMenuToggle: _menuController.toggle,
+    selection: _tileSelectionCallbacks(context),
+  );
+
+  _ChatTileActionCallbacks _tileActionCallbacks(BuildContext context) => (
     onFork: () => _handleFork(context),
     onDelete: () => _handleDelete(context),
     onArchiveStateChange: () => _setArchivedState(context),
     onTogglePin: () => _togglePin(widget.chat),
     onRename: () => _handleRename(context),
-    onMenuToggle: _menuController.toggle,
-    selection: _tileSelectionCallbacks(context),
+    onAssignLabels: () => _handleAssignLabels(context),
   );
 
   _ChatTileSelectionCallbacks _tileSelectionCallbacks(BuildContext context) => (
@@ -774,6 +826,15 @@ extension on _ChatTileState {
 }
 
 extension on _ChatTileState {
+  Future<void> _handleAssignLabels(BuildContext context) async {
+    final _ = await ConversationLabelDialogs.showAssignment(
+      context,
+      workspaceId: widget.workspaceId,
+      conversation: widget.chat,
+      actions: ref.read(conversationLabelActionsProvider),
+    );
+  }
+
   Future<void> _handleRename(BuildContext context) async {
     final title = await RenameConversationDialog.show(
       context,
@@ -935,6 +996,7 @@ extension on _ChatTileState {
     conversationsStreamProvider((
       workspaceId: workspaceId,
       search: '',
+      labelIds: const {},
       scope: .active,
       pagination: (limit: null, offset: 0),
     )),
@@ -1081,14 +1143,39 @@ class const _ChatListLoaded({required final _ChatListViewState state})
   Widget build(BuildContext _) {
     final viewState = state;
     if (!viewState.showSearchInput) {
-      return _ChatListEmptyState(
-        workspaceId: viewState.workspaceId,
-        scope: viewState.scope,
-      );
+      return _ChatListNoSearchState(state: viewState);
     }
 
     return _ChatListLoadedBody(state: viewState);
   }
+}
+
+class const _ChatListNoSearchState({required final _ChatListViewState state})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => Column(
+    children: [
+      _ChatListLabelToolbar(state: state),
+      Expanded(
+        child: _ChatListEmptyState(
+          workspaceId: state.workspaceId,
+          scope: state.scope,
+        ),
+      ),
+    ],
+  );
+}
+
+class const _ChatListLabelToolbar({required final _ChatListViewState state})
+    extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => ConversationLabelsToolbar(
+    workspaceId: state.workspaceId,
+    selectedLabelIds: state.selectedLabelIds.value,
+    onSelectedLabelIdsChanged: (labelIds) {
+      state.selectedLabelIds.value = labelIds;
+    },
+  );
 }
 
 class const _ChatListLoadedBody({required final _ChatListViewState state})
@@ -1115,6 +1202,7 @@ class const _ChatListLoadedHeader({required final _ChatListViewState state})
           selectedChats: state.selectedChats,
           isBulkActionRunning: state.isBulkActionRunning,
         ),
+      _ChatListLabelToolbar(state: state),
       _ChatListSearchInput(state: state),
     ],
   );
@@ -1362,6 +1450,7 @@ extension on _ChatListBulkActionsState {
       conversationsStreamProvider((
         workspaceId: widget.workspaceId,
         search: '',
+        labelIds: const {},
         scope: .active,
         pagination: (limit: null, offset: 0),
       )),
@@ -1662,9 +1751,34 @@ class const _ChatListResults({required final _ChatListViewState state})
 class const _ChatListEmptyResults({required final _ChatListViewState state})
     extends StatelessWidget {
   @override
-  Widget build(BuildContext _) => state.searchQuery.trim().isEmpty
-      ? _ChatListEmptyState(workspaceId: state.workspaceId, scope: state.scope)
-      : const _ChatListSearchEmptyState();
+  Widget build(BuildContext _) {
+    if (state.searchQuery.trim().isNotEmpty) {
+      return const _ChatListSearchEmptyState();
+    }
+    if (state.selectedLabelIds.value.isNotEmpty) {
+      return const _ChatListNoLabelMatchesState();
+    }
+
+    return _ChatListEmptyState(
+      workspaceId: state.workspaceId,
+      scope: state.scope,
+    );
+  }
+}
+
+class const _ChatListNoLabelMatchesState() extends StatelessWidget {
+  @override
+  Widget build(BuildContext _) => const Center(
+    child: Padding(
+      padding: EdgeInsets.all(32),
+      child: AuraText(
+        child: TextLocale(
+          LocaleKeys.chats_screens_conversation_labels_no_matches,
+        ),
+        textAlign: .center,
+      ),
+    ),
+  );
 }
 
 class const _ChatListConversationList({required final _ChatListViewState state})
@@ -1904,6 +2018,10 @@ class const _ChatTileInfo({
       _ChatTileTitleRow(chat: chat, title: title),
       const SizedBox(height: 4),
       _ChatTileMetadata(chat: chat, title: title),
+      if (chat.labels.isNotEmpty) ...[
+        const SizedBox(height: 6),
+        ConversationLabelBadges(labels: chat.labels),
+      ],
     ],
     crossAxisAlignment: .start,
   );
@@ -2005,22 +2123,39 @@ extension on _ChatTileMenu {
     controller: controller,
   );
 
-  List<AuraPopupMenuItem> _menuItems() => [
-    _chatTilePinItem(chat, callbacks.onTogglePin),
-    AuraPopupMenuItem(
-      title: const TextLocale(LocaleKeys.chats_screens_chat_conversation_fork),
-      onTap: callbacks.onFork,
-      leading: const AuraIcon(Icons.call_split_outlined),
-    ),
-    _chatTileArchiveStateItem(scope, callbacks.onArchiveStateChange),
-    if (onArchiveExport case final onArchiveExport?)
-      _chatTileBackupItem(onArchiveExport),
-    ..._chatTileMenuItems(
-      onRename: callbacks.onRename,
-      onDelete: callbacks.onDelete,
-    ),
-  ];
+  List<AuraPopupMenuItem> _menuItems() {
+    final actions = callbacks.actions;
+
+    return [
+      _chatTilePinItem(chat, actions.onTogglePin),
+      ..._chatTileConversationItems(callbacks),
+      _chatTileArchiveStateItem(scope, actions.onArchiveStateChange),
+      if (onArchiveExport case final onArchiveExport?)
+        _chatTileBackupItem(onArchiveExport),
+      ..._chatTileMenuItems(
+        onRename: actions.onRename,
+        onDelete: actions.onDelete,
+      ),
+    ];
+  }
 }
+
+List<AuraPopupMenuItem> _chatTileConversationItems(
+  _ChatTileCallbacks callbacks,
+) => [
+  AuraPopupMenuItem(
+    title: const TextLocale(LocaleKeys.chats_screens_chat_conversation_fork),
+    onTap: callbacks.actions.onFork,
+    leading: const AuraIcon(Icons.call_split_outlined),
+  ),
+  AuraPopupMenuItem(
+    title: const TextLocale(
+      LocaleKeys.chats_screens_conversation_labels_assignment_title,
+    ),
+    onTap: callbacks.actions.onAssignLabels,
+    leading: const AuraIcon(Icons.label_outline),
+  ),
+];
 
 AuraPopupMenuItem _chatTilePinItem(
   ConversationEntity chat,

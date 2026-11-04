@@ -6,6 +6,7 @@ typedef ConversationStreamPagination = ({int? limit, int offset});
 typedef ConversationStreamRequest = ({
   String workspaceId,
   String search,
+  Set<String> labelIds,
   ConversationListScope scope,
   ConversationStreamPagination pagination,
 });

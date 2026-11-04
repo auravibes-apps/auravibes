@@ -5,3 +5,4 @@ fields:
   cursor: String?
   search: String?
   offset: int?
+  labelIds: List<String>?

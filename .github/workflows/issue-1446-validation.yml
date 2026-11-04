@@ -1,0 +1,260 @@
+name: Issue 1446 conversation label validation
+
+on:
+  push:
+    branches: [codex/issue-1446-conversation-labels]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: issue-1446-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  focused-validation:
+    name: local and cloud label behavior
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    env:
+      POSTGRES_PASSWORD: issue-1446-ci-password
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Install matching Serverpod CLI
+        run: |
+          version="$(ruby -ryaml -e 'puts YAML.load_file("pubspec.lock").fetch("packages").fetch("serverpod").fetch("version")')"
+          dart pub global activate serverpod_cli "$version"
+
+      - name: Generate app and Serverpod code
+        run: |
+          python3 tool/validation_lease.py --label issue-1446-generate-app -- dart run melos run generate
+          python3 tool/validation_lease.py --label issue-1446-generate-localization -- dart run melos run generate:localization
+          python3 tool/validation_lease.py --label issue-1446-generate-serverpod -- dart run melos run generate:serverpod
+          cd apps/auravibes_server
+          python3 ../../tool/validation_lease.py --label issue-1446-create-serverpod-migration -- serverpod create-migration --tag issue-1446-labels --force
+          cd ../..
+          mapfile -t generated_dart_files < <(
+            { git diff --name-only --diff-filter=ACMRT; git ls-files --others --exclude-standard; } \
+              | sort -u | grep '\.dart$' || true
+          )
+          if [[ ${#generated_dart_files[@]} -gt 0 ]]; then
+            python3 tool/validation_lease.py --label issue-1446-format-generated -- \
+              dart format --line-length 80 "${generated_dart_files[@]}"
+          fi
+
+      - name: Format changed branch Dart files
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          base_sha="$(git merge-base HEAD refs/remotes/origin/main)"
+          mapfile -t changed_dart_files < <(git diff --name-only "$base_sha"...HEAD | grep '\.dart$' || true)
+          if [[ ${#changed_dart_files[@]} -gt 0 ]]; then
+            python3 tool/validation_lease.py --label issue-1446-format-branch -- \
+              dart format --line-length 80 "${changed_dart_files[@]}"
+          fi
+
+      - name: Export generated output patch
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/issue-1446-generated"
+          git ls-files -z --others --exclude-standard | xargs -0 -r git add -N --
+          git diff --binary > "$RUNNER_TEMP/issue-1446-generated/generated.patch"
+          git status --short --untracked-files=all > "$RUNNER_TEMP/issue-1446-generated/status.txt"
+
+      - name: Upload generated output patch
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: issue-1446-generated-${{ github.sha }}
+          path: ${{ runner.temp }}/issue-1446-generated/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Run local label persistence tests
+        id: local-tests
+        continue-on-error: true
+        working-directory: apps/auravibes_app
+        run: python3 ../../tool/validation_lease.py --label issue-1446-local-labels -- flutter test test/data/repositories/conversation_labels_test.dart test/features/chats/widgets/conversation_labels_widgets_test.dart --no-pub
+
+      - name: Configure disposable test database credentials
+        working-directory: apps/auravibes_server
+        shell: bash
+        run: |
+          set -euo pipefail
+          awk -v database_password="$POSTGRES_PASSWORD" '
+            /^test:$/ { in_test = 1; print; next }
+            /^[^[:space:]]/ { in_test = 0 }
+            in_test && /^  database:/ {
+              printf "  database: \"%s\"\n", database_password
+              replaced = 1
+              next
+            }
+            { print }
+            END { if (!replaced) exit 1 }
+          ' config/passwords.example.yaml > config/passwords.yaml
+
+      - name: Start PostgreSQL test service
+        working-directory: apps/auravibes_server
+        run: docker compose up -d --remove-orphans postgres_test
+
+      - name: Wait for PostgreSQL
+        working-directory: apps/auravibes_server
+        shell: bash
+        run: |
+          set -euo pipefail
+          for _ in {1..60}; do
+            if docker compose exec -T postgres_test pg_isready \
+              -U postgres -d auravibes_server_test; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker compose logs postgres_test
+          exit 1
+
+      - name: Run cloud label endpoint tests
+        id: cloud-tests
+        continue-on-error: true
+        working-directory: apps/auravibes_server
+        run: python3 ../../tool/validation_lease.py --label issue-1446-cloud-labels -- dart test test/integration/features/conversations/conversation_labels_endpoint_test.dart --reporter=compact
+
+      - name: Capture current-main ChatsRoute baseline
+        id: capture-baseline
+        if: ${{ steps.local-tests.outcome == 'success' && steps.cloud-tests.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          evidence_directory="$RUNNER_TEMP/issue-1446-screenshots"
+          main_worktree="$RUNNER_TEMP/issue-1446-main"
+          mkdir -p "$evidence_directory/before"
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          baseline_sha="$(git merge-base HEAD refs/remotes/origin/main)"
+          git worktree add --detach "$main_worktree" "$baseline_sha"
+          printf '%s\n' "$baseline_sha" > "$evidence_directory/baseline-sha.txt"
+          test "$(git -C "$main_worktree" rev-parse HEAD)" = "$baseline_sha"
+          cmp .fvmrc "$main_worktree/.fvmrc"
+          mkdir -p "$main_worktree/.fvm"
+          ln -sfn "$FLUTTER_ROOT" "$main_worktree/.fvm/flutter_sdk"
+          cp apps/auravibes_app/test/features/chats/widgets/conversation_labels_capture_test.dart \
+            "$main_worktree/apps/auravibes_app/test/features/chats/widgets/"
+          cd "$main_worktree"
+          python3 tool/validation_lease.py --label issue-1446-capture-baseline-bootstrap -- melos bootstrap
+          cd apps/auravibes_app
+          python3 ../../tool/validation_lease.py --label issue-1446-capture-baseline -- flutter test \
+            test/features/chats/widgets/conversation_labels_capture_test.dart \
+            --no-pub \
+            --dart-define="UX_CAPTURE_DIR=$evidence_directory/before" \
+            --dart-define="UX_CAPTURE_STAGE=before" \
+            --dart-define="UX_SOURCE_FINGERPRINT=$(cat "$evidence_directory/baseline-sha.txt")" \
+            --dart-define="UX_FLUTTER_VERSION=$FLUTTER_VERSION"
+
+      - name: Capture feature ChatsRoute
+        id: capture-feature
+        if: ${{ steps.local-tests.outcome == 'success' && steps.cloud-tests.outcome == 'success' && steps.capture-baseline.outcome == 'success' }}
+        working-directory: apps/auravibes_app
+        run: |
+          set -euo pipefail
+          evidence_directory="$RUNNER_TEMP/issue-1446-screenshots"
+          mkdir -p "$evidence_directory/after"
+          python3 ../../tool/validation_lease.py --label issue-1446-capture-feature -- flutter test \
+            test/features/chats/widgets/conversation_labels_capture_test.dart \
+            --no-pub \
+            --dart-define="UX_CAPTURE_DIR=$evidence_directory/after" \
+            --dart-define="UX_CAPTURE_STAGE=after" \
+            --dart-define="UX_SOURCE_FINGERPRINT=$(git rev-parse HEAD)" \
+            --dart-define="UX_FLUTTER_VERSION=$FLUTTER_VERSION"
+
+      - name: Write screenshot provenance manifest
+        if: always()
+        env:
+          BASELINE_OUTCOME: ${{ steps.capture-baseline.outcome }}
+          FEATURE_OUTCOME: ${{ steps.capture-feature.outcome }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, json, os, platform
+
+          root = Path(os.environ['RUNNER_TEMP']) / 'issue-1446-screenshots'
+          root.mkdir(parents=True, exist_ok=True)
+          sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+          captures = []
+          expected = {
+              'before': (root / 'baseline-sha.txt').read_text().strip()
+              if (root / 'baseline-sha.txt').is_file() else None,
+              'after': os.environ['GITHUB_SHA'],
+          }
+          for phase in ('before', 'after'):
+              for png in sorted((root / phase).glob('*.png')):
+                  sidecar = png.with_suffix('.json')
+                  if not sidecar.is_file():
+                      raise SystemExit('Screenshot has no provenance sidecar: ' + png.name)
+                  metadata = json.loads(sidecar.read_text())
+                  if metadata.get('stage') != phase or metadata.get('sourceFingerprint') != expected[phase]:
+                      raise SystemExit('Screenshot provenance mismatch: ' + png.name)
+                  captures.append({
+                      'stage': phase,
+                      'sourceSha': expected[phase],
+                      'png': str(png.relative_to(root)),
+                      'pngSha256': sha(png),
+                      'sidecar': str(sidecar.relative_to(root)),
+                      'sidecarSha256': sha(sidecar),
+                      'render': metadata,
+                  })
+          if os.environ['BASELINE_OUTCOME'] == 'success' and os.environ['FEATURE_OUTCOME'] == 'success' and len(captures) != 2:
+              raise SystemExit(f'Expected before and after captures, found {len(captures)}')
+          manifest = {
+              'baselineSha': expected['before'],
+              'featureSha': expected['after'],
+              'flutterVersion': os.environ.get('FLUTTER_VERSION'),
+              'host': platform.platform(),
+              'imageOS': os.environ.get('ImageOS'),
+              'imageVersion': os.environ.get('ImageVersion'),
+              'captureOutcomes': {
+                  'before': os.environ['BASELINE_OUTCOME'],
+                  'after': os.environ['FEATURE_OUTCOME'],
+              },
+              'captures': captures,
+          }
+          (root / 'capture-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+          PY
+
+      - name: Upload before/after screenshots and provenance
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: issue-1446-screenshot-evidence-${{ github.sha }}
+          path: ${{ runner.temp }}/issue-1446-screenshots/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Remove temporary baseline worktree
+        if: always()
+        run: |
+          if git worktree list --porcelain | grep -F "$RUNNER_TEMP/issue-1446-main" >/dev/null; then
+            git worktree remove --force "$RUNNER_TEMP/issue-1446-main"
+          fi
+
+      - name: Stop PostgreSQL test service
+        if: always()
+        working-directory: apps/auravibes_server
+        run: docker compose down -v --remove-orphans
+
+      - name: Require both focused suites to pass
+        if: always()
+        env:
+          LOCAL_TEST_OUTCOME: ${{ steps.local-tests.outcome }}
+          CLOUD_TEST_OUTCOME: ${{ steps.cloud-tests.outcome }}
+        run: |
+          if [[ "$LOCAL_TEST_OUTCOME" != success || "$CLOUD_TEST_OUTCOME" != success ]]; then
+            echo "Local label tests: $LOCAL_TEST_OUTCOME"
+            echo "Cloud label tests: $CLOUD_TEST_OUTCOME"
+            exit 1
+          fi

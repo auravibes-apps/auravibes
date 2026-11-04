@@ -5,6 +5,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:auravibes_app/domain/entities/workspace_entity.dart';
+import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_repository_providers.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
@@ -404,6 +405,9 @@ void main() {
     child: Builder(
       builder: (context) => TestProviderScope(
         overrides: [
+          conversationsStreamProvider.overrideWith(
+            (ref, args) => Stream.value([]),
+          ),
           conversationRepositoryProvider.overrideWithValue(repository),
           allWorkspacesProvider.overrideWith(
             (ref) => Stream.value([

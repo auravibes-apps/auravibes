@@ -1757,6 +1757,7 @@ Future<void> _forkMessage(
       conversationsStreamProvider((
         workspaceId: workspaceId,
         search: '',
+        labelIds: const {},
         scope: .active,
         pagination: (limit: null, offset: 0),
       )),

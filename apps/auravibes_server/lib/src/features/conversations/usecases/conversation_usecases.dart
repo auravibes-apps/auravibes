@@ -111,6 +111,8 @@ class ConversationUseCases {
   };
   static const _cancelledMessageMetadata = '{"errorCode":"cancelled"}';
   static const _subAgentCancelledMessage = 'Sub-agent cancelled.';
+  static const _maxConversationLabelNameLength = 40;
+  static const _maxSelectedConversationLabels = 100;
   final conversation_repo.ConversationRepository _repository;
   final ConversationJobPublisher _publishConversationJob;
 
@@ -351,6 +353,231 @@ class ConversationUseCases {
       userId: userId,
       read: (transaction) =>
           _page(session, request: request, transaction: transaction),
+    );
+  }
+
+  Future<List<ConversationLabelSummary>> listLabels(
+    Session session, {
+    required String userId,
+    required ListConversationLabelsRequest request,
+  }) => _withActiveWorkspaceRead(
+    session,
+    workspaceId: request.workspaceId,
+    userId: userId,
+    read: (transaction) async {
+      final labels = await ConversationLabel.db.find(
+        session,
+        where: (table) => table.workspaceId.equals(request.workspaceId),
+        orderBy: (table) => table.normalizedName,
+        transaction: transaction,
+      );
+      return labels.map(_labelSummary).toList();
+    },
+  );
+
+  Future<ConversationLabelSummary> createLabel(
+    Session session, {
+    required String userId,
+    required CreateConversationLabelRequest request,
+  }) => _mutate(
+    session,
+    userId: userId,
+    workspaceId: request.workspaceId,
+    endpoint: 'conversation.createLabel',
+    requestId: request.requestId,
+    requestBody: request.toJson(),
+    decode: ConversationLabelSummary.fromJson,
+    run: (transaction, now) async {
+      _requireId(request.requestId);
+      _requireId(request.labelId);
+      final name = _normalizedConversationLabelName(request.name);
+      final normalizedName = name.toLowerCase();
+      final existing = await ConversationLabel.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(request.workspaceId) &
+            table.normalizedName.equals(normalizedName),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (existing != null) _fail(ConversationErrorCode.validationFailed);
+      final existingId = await ConversationLabel.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(request.workspaceId) &
+            table.stableId.equals(request.labelId),
+        transaction: transaction,
+      );
+      if (existingId != null) _fail(ConversationErrorCode.idempotencyConflict);
+      final label = await ConversationLabel.db.insertRow(
+        session,
+        ConversationLabel(
+          workspaceId: request.workspaceId,
+          stableId: request.labelId,
+          name: name,
+          normalizedName: normalizedName,
+          createdAt: now,
+          updatedAt: now,
+        ),
+        transaction: transaction,
+      );
+      final summary = _labelSummary(label);
+      return _Mutation(summary, 'labelCreated', summary.id);
+    },
+  );
+
+  Future<ConversationLabelSummary> renameLabel(
+    Session session, {
+    required String userId,
+    required RenameConversationLabelRequest request,
+  }) => _mutate(
+    session,
+    userId: userId,
+    workspaceId: request.workspaceId,
+    endpoint: 'conversation.renameLabel',
+    requestId: request.requestId,
+    requestBody: request.toJson(),
+    decode: ConversationLabelSummary.fromJson,
+    run: (transaction, now) async {
+      _requireId(request.requestId);
+      _requireId(request.labelId);
+      final label = await ConversationLabel.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(request.workspaceId) &
+            table.stableId.equals(request.labelId),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (label == null) _fail(ConversationErrorCode.notFound);
+      final name = _normalizedConversationLabelName(request.name);
+      final normalizedName = name.toLowerCase();
+      final duplicate = await ConversationLabel.db.findFirstRow(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(request.workspaceId) &
+            table.normalizedName.equals(normalizedName) &
+            table.id.notEquals(label.id!),
+        transaction: transaction,
+        lockMode: LockMode.forUpdate,
+      );
+      if (duplicate != null) _fail(ConversationErrorCode.validationFailed);
+      final updated = await ConversationLabel.db.updateRow(
+        session,
+        label.copyWith(
+          name: name,
+          normalizedName: normalizedName,
+          updatedAt: now,
+        ),
+        transaction: transaction,
+      );
+      final summary = _labelSummary(updated);
+      return _Mutation(summary, 'labelRenamed', summary.id);
+    },
+  );
+
+  Future<void> deleteLabel(
+    Session session, {
+    required String userId,
+    required DeleteConversationLabelRequest request,
+  }) async {
+    await _mutate<void>(
+      session,
+      userId: userId,
+      workspaceId: request.workspaceId,
+      endpoint: 'conversation.deleteLabel',
+      requestId: request.requestId,
+      requestBody: request.toJson(),
+      decode: (_) {},
+      run: (transaction, _) async {
+        _requireId(request.requestId);
+        _requireId(request.labelId);
+        final label = await ConversationLabel.db.findFirstRow(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(request.workspaceId) &
+              table.stableId.equals(request.labelId),
+          transaction: transaction,
+          lockMode: LockMode.forUpdate,
+        );
+        if (label == null) _fail(ConversationErrorCode.notFound);
+        await ConversationLabel.db.deleteRow(
+          session,
+          label,
+          transaction: transaction,
+        );
+        return _Mutation<void>(null, 'labelDeleted', request.labelId);
+      },
+    );
+  }
+
+  Future<void> setConversationLabels(
+    Session session, {
+    required String userId,
+    required SetConversationLabelsRequest request,
+  }) async {
+    await _mutate<void>(
+      session,
+      userId: userId,
+      workspaceId: request.workspaceId,
+      endpoint: 'conversation.setLabels',
+      requestId: request.requestId,
+      requestBody: request.toJson(),
+      decode: (_) {},
+      run: (transaction, _) async {
+        _requireId(request.requestId);
+        _requireId(request.conversationId);
+        final labelIds = request.labelIds.toSet();
+        if (labelIds.length > _maxSelectedConversationLabels) {
+          _fail(ConversationErrorCode.validationFailed);
+        }
+        final conversation = await _repository.findConversationByStableId(
+          session,
+          workspaceId: request.workspaceId,
+          conversationId: request.conversationId,
+          transaction: transaction,
+          lock: true,
+        );
+        if (conversation == null) _fail(ConversationErrorCode.notFound);
+        final labels = labelIds.isEmpty
+            ? const <ConversationLabel>[]
+            : await ConversationLabel.db.find(
+                session,
+                where: (table) =>
+                    table.workspaceId.equals(request.workspaceId) &
+                    table.stableId.inSet(labelIds),
+                transaction: transaction,
+                lockMode: LockMode.forUpdate,
+              );
+        if (labels.length != labelIds.length) {
+          _fail(ConversationErrorCode.notFound);
+        }
+        await ConversationLabelAssignment.db.deleteWhere(
+          session,
+          where: (table) =>
+              table.workspaceId.equals(request.workspaceId) &
+              table.conversationId.equals(conversation.id!),
+          transaction: transaction,
+        );
+        for (final label in labels) {
+          await ConversationLabelAssignment.db.insertRow(
+            session,
+            ConversationLabelAssignment(
+              workspaceId: request.workspaceId,
+              labelId: label.id!,
+              conversationId: conversation.id!,
+              createdAt: DateTime.now().toUtc(),
+            ),
+            transaction: transaction,
+          );
+        }
+        return _Mutation<void>(
+          null,
+          'labelsUpdated',
+          request.conversationId,
+          affectedConversationIds: [request.conversationId],
+        );
+      },
     );
   }
 
@@ -4648,10 +4875,26 @@ class ConversationUseCases {
     required ListConversationsRequest request,
     Transaction? transaction,
   }) async {
+    final selectedLabelIds = request.labelIds?.toSet() ?? const <String>{};
+    if (selectedLabelIds.length > _maxSelectedConversationLabels) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+    final matchingConversationIds = selectedLabelIds.isEmpty
+        ? null
+        : await _repository.conversationIdsForLabels(
+            session,
+            workspaceId: request.workspaceId,
+            labelStableIds: selectedLabelIds,
+            transaction: transaction,
+          );
+    if (matchingConversationIds?.isEmpty == true) {
+      return ConversationPage(conversations: const [], nextCursor: null);
+    }
     final cursor = _decodeCursor(request.cursor);
     final conversations = await _repository.listConversations(
       session,
       workspaceId: request.workspaceId,
+      conversationIds: matchingConversationIds,
       search: request.search,
       beforeIsPinned: cursor?.isPinned,
       beforeUpdatedAt: cursor?.updatedAt,
@@ -4662,10 +4905,60 @@ class ConversationUseCases {
     );
     final hasMore = conversations.length > request.limit;
     final page = conversations.take(request.limit).toList();
+    final labelsByConversationId = await _conversationLabelsForPage(
+      session,
+      workspaceId: request.workspaceId,
+      conversations: page,
+      transaction: transaction,
+    );
     return ConversationPage(
-      conversations: page.map(_summary).toList(),
+      conversations: page
+          .map(
+            (conversation) => _summary(
+              conversation,
+              labels: labelsByConversationId[conversation.id] ?? const [],
+            ),
+          )
+          .toList(),
       nextCursor: hasMore && page.isNotEmpty ? _encodeCursor(page.last) : null,
     );
+  }
+
+  Future<Map<int, List<ConversationLabelSummary>>> _conversationLabelsForPage(
+    Session session, {
+    required int workspaceId,
+    required List<Conversation> conversations,
+    required Transaction? transaction,
+  }) async {
+    if (conversations.isEmpty) return const {};
+    final assignments = await ConversationLabelAssignment.db.find(
+      session,
+      where: (table) =>
+          table.workspaceId.equals(workspaceId) &
+          table.conversationId.inSet(
+            conversations.map((conversation) => conversation.id!).toSet(),
+          ),
+      transaction: transaction,
+    );
+    if (assignments.isEmpty) return const {};
+    final labelsById = {
+      for (final label in await ConversationLabel.db.find(
+        session,
+        where: (table) =>
+            table.workspaceId.equals(workspaceId) &
+            table.id.inSet(assignments.map((row) => row.labelId).toSet()),
+        orderBy: (table) => table.normalizedName,
+        transaction: transaction,
+      ))
+        label.id!: _labelSummary(label),
+    };
+    final result = <int, List<ConversationLabelSummary>>{};
+    for (final assignment in assignments) {
+      final label = labelsById[assignment.labelId];
+      if (label == null) continue;
+      result.putIfAbsent(assignment.conversationId, () => []).add(label);
+    }
+    return result;
   }
 
   _ConversationCursor? _decodeCursor(String? value) {
@@ -6116,26 +6409,38 @@ class ConversationUseCases {
     return decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
   }
 
-  ConversationSummary _summary(Conversation conversation) =>
-      ConversationSummary(
-        id: conversation.stableId,
-        title: conversation.title ?? '',
-        isPinned: conversation.isPinned,
-        toolAccessMode: conversation.toolAccessMode,
-        modelId: conversation.modelId,
-        agentId: conversation.agentId,
-        reasoningConfigJson: conversation.reasoningConfigJson,
-        taskBrief: conversation.taskBrief,
-        parentConversationId: conversation.parentConversationStableId,
-        forkSourceConversationId: conversation.forkSourceConversationId,
-        forkSourceTitle: conversation.forkSourceTitle,
-        forkThroughMessageId: conversation.forkThroughMessageId,
-        forkMaterializedAt: conversation.forkMaterializedAt,
-        revision: conversation.revision,
-        activeCompactionCheckpointId: conversation.activeCompactionCheckpointId,
-        createdAt: conversation.createdAt,
-        updatedAt: conversation.updatedAt,
+  ConversationLabelSummary _labelSummary(ConversationLabel label) =>
+      ConversationLabelSummary(
+        id: label.stableId,
+        workspaceId: label.workspaceId,
+        name: label.name,
+        createdAt: label.createdAt,
+        updatedAt: label.updatedAt,
       );
+
+  ConversationSummary _summary(
+    Conversation conversation, {
+    List<ConversationLabelSummary> labels = const [],
+  }) => ConversationSummary(
+    id: conversation.stableId,
+    title: conversation.title ?? '',
+    isPinned: conversation.isPinned,
+    toolAccessMode: conversation.toolAccessMode,
+    modelId: conversation.modelId,
+    agentId: conversation.agentId,
+    reasoningConfigJson: conversation.reasoningConfigJson,
+    taskBrief: conversation.taskBrief,
+    parentConversationId: conversation.parentConversationStableId,
+    forkSourceConversationId: conversation.forkSourceConversationId,
+    forkSourceTitle: conversation.forkSourceTitle,
+    forkThroughMessageId: conversation.forkThroughMessageId,
+    forkMaterializedAt: conversation.forkMaterializedAt,
+    revision: conversation.revision,
+    activeCompactionCheckpointId: conversation.activeCompactionCheckpointId,
+    createdAt: conversation.createdAt,
+    updatedAt: conversation.updatedAt,
+    labels: labels,
+  );
 
   ConversationMessageView _messageView(
     ConversationMessage message,
@@ -6576,6 +6881,15 @@ class ConversationUseCases {
     } on FormatException {
       _fail(ConversationErrorCode.validationFailed);
     }
+  }
+
+  String _normalizedConversationLabelName(String name) {
+    final normalized = name.trim();
+    if (normalized.isEmpty ||
+        normalized.length > _maxConversationLabelNameLength) {
+      _fail(ConversationErrorCode.validationFailed);
+    }
+    return normalized;
   }
 
   Never _fail(ConversationErrorCode code) =>

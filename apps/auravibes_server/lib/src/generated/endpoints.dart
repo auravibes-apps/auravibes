@@ -30,8 +30,12 @@ import 'package:auravibes_server/src/generated/features/conversations/models/con
     as _io8jb8cg;
 import 'package:auravibes_server/src/generated/features/conversations/models/conversation_subscribe_request.dart'
     as _iwkyl6n9;
+import 'package:auravibes_server/src/generated/features/conversations/models/create_conversation_label_request.dart'
+    as _i3ikkixl;
 import 'package:auravibes_server/src/generated/features/conversations/models/create_conversation_request.dart'
     as _ish3zj9o;
+import 'package:auravibes_server/src/generated/features/conversations/models/delete_conversation_label_request.dart'
+    as _ibro4unb;
 import 'package:auravibes_server/src/generated/features/conversations/models/delete_conversation_request.dart'
     as _il5llor3;
 import 'package:auravibes_server/src/generated/features/conversations/models/detach_tool_call_request.dart'
@@ -46,6 +50,8 @@ import 'package:auravibes_server/src/generated/features/conversations/models/get
     as _iaqawmcu;
 import 'package:auravibes_server/src/generated/features/conversations/models/list_background_works_request.dart'
     as _i2euehas;
+import 'package:auravibes_server/src/generated/features/conversations/models/list_conversation_labels_request.dart'
+    as _isec1dw6;
 import 'package:auravibes_server/src/generated/features/conversations/models/list_conversation_messages_request.dart'
     as _i5dqxctc;
 import 'package:auravibes_server/src/generated/features/conversations/models/list_conversations_request.dart'
@@ -56,12 +62,16 @@ import 'package:auravibes_server/src/generated/features/conversations/models/que
     as _i605rjdx;
 import 'package:auravibes_server/src/generated/features/conversations/models/remove_pending_conversation_message_request.dart'
     as _irlsykk6;
+import 'package:auravibes_server/src/generated/features/conversations/models/rename_conversation_label_request.dart'
+    as _ieqg2cyv;
 import 'package:auravibes_server/src/generated/features/conversations/models/reorder_pending_conversation_message_request.dart'
     as _ilmuzuyl;
 import 'package:auravibes_server/src/generated/features/conversations/models/restore_conversation_checkpoint_request.dart'
     as _if7qtxue;
 import 'package:auravibes_server/src/generated/features/conversations/models/search_conversation_messages_request.dart'
     as _i71vvsjf;
+import 'package:auravibes_server/src/generated/features/conversations/models/set_conversation_labels_request.dart'
+    as _ipzswz3u;
 import 'package:auravibes_server/src/generated/features/conversations/models/start_turn_request.dart'
     as _ijasfsbp;
 import 'package:auravibes_server/src/generated/features/conversations/models/stop_background_work_request.dart'
@@ -766,6 +776,106 @@ class Endpoints extends _is.EndpointDispatch {
               ) async =>
                   (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
                       .listPage(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'listLabels': _is.MethodConnector(
+          name: 'listLabels',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_isec1dw6.ListConversationLabelsRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .listLabels(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'createLabel': _is.MethodConnector(
+          name: 'createLabel',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_i3ikkixl.CreateConversationLabelRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .createLabel(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'renameLabel': _is.MethodConnector(
+          name: 'renameLabel',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_ieqg2cyv.RenameConversationLabelRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .renameLabel(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'deleteLabel': _is.MethodConnector(
+          name: 'deleteLabel',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_ibro4unb.DeleteConversationLabelRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .deleteLabel(
+                        session,
+                        params['request'],
+                      ),
+        ),
+        'setConversationLabels': _is.MethodConnector(
+          name: 'setConversationLabels',
+          params: {
+            'request': _is.ParameterDescription(
+              name: 'request',
+              type: _is.getType<_ipzswz3u.SetConversationLabelsRequest>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['conversation'] as _ie3ymqip.ConversationEndpoint)
+                      .setConversationLabels(
                         session,
                         params['request'],
                       ),

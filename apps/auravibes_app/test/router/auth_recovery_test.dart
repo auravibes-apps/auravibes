@@ -159,12 +159,14 @@ void main() {
               conversationsStreamProvider((
                 workspaceId: workspace,
                 search: '',
+                labelIds: const {},
                 scope: .active,
                 pagination: (limit: 10, offset: 0),
               )).overrideWith((_) => Stream.value([])),
               conversationsStreamProvider((
                 workspaceId: workspace,
                 search: '',
+                labelIds: const {},
                 scope: .active,
                 pagination: (limit: 21, offset: 0),
               )).overrideWith((_) => Stream.value([])),
@@ -309,6 +311,7 @@ void main() {
           conversationsStreamProvider((
             workspaceId: workspace,
             search: '',
+            labelIds: const {},
             scope: .active,
             pagination: (limit: 10, offset: 0),
           )).overrideWith((_) => Stream.value([])),
@@ -348,6 +351,7 @@ void main() {
           conversationsStreamProvider((
             workspaceId: workspace,
             search: '',
+            labelIds: const {},
             scope: .active,
             pagination: (limit: 10, offset: 0),
           )).overrideWith((_) => Stream.value([])),
@@ -533,6 +537,7 @@ void main() {
           conversationsStreamProvider((
             workspaceId: workspace,
             search: '',
+            labelIds: const {},
             scope: .active,
             pagination: (limit: 10, offset: 0),
           )).overrideWith((_) => Stream.value([])),
@@ -589,6 +594,7 @@ void main() {
           conversationsStreamProvider((
             workspaceId: workspace,
             search: '',
+            labelIds: const {},
             scope: .active,
             pagination: (limit: 10, offset: 0),
           )).overrideWith((_) => Stream.value([])),

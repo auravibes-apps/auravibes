@@ -80,6 +80,7 @@ class const _SidebarConversationsData({
           conversationsStreamProvider((
             workspaceId: workspaceId,
             search: '',
+            labelIds: const {},
             scope: .active,
             pagination: (limit: limit, offset: 0),
           )),
@@ -796,6 +797,7 @@ void _invalidateDeletedConversation(WidgetRef ref, ConversationEntity chat) {
     conversationsStreamProvider((
       workspaceId: chat.workspaceId,
       search: '',
+      labelIds: const {},
       scope: .active,
       pagination: (limit: null, offset: 0),
     )),
@@ -834,6 +836,7 @@ void _navigateToSidebarFork(
     conversationsStreamProvider((
       workspaceId: chat.workspaceId,
       search: '',
+      labelIds: const {},
       scope: .active,
       pagination: (limit: null, offset: 0),
     )),
@@ -888,6 +891,7 @@ Future<bool> _hasSidebarPinnedCapacity(
     conversationsStreamProvider((
       workspaceId: workspaceId,
       search: '',
+      labelIds: const {},
       scope: .active,
       pagination: (limit: null, offset: 0),
     )).future,
@@ -912,6 +916,7 @@ Future<bool> _toggleSidebarCloudPin(
       conversationsStreamProvider((
         workspaceId: chat.workspaceId,
         search: '',
+        labelIds: const {},
         scope: .active,
         pagination: (limit: null, offset: 0),
       )),

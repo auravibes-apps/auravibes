@@ -42,6 +42,7 @@ void main() {
         conversationsStreamProvider((
           workspaceId: 'available',
           search: '',
+          labelIds: const {},
           scope: .active,
           pagination: (limit: 10, offset: 0),
         )).overrideWith(

@@ -52,6 +52,66 @@ class ConversationEndpoint extends Endpoint {
     );
   }
 
+  Future<List<ConversationLabelSummary>> listLabels(
+    Session session,
+    ListConversationLabelsRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.listLabels(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
+  Future<ConversationLabelSummary> createLabel(
+    Session session,
+    CreateConversationLabelRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.createLabel(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
+  Future<ConversationLabelSummary> renameLabel(
+    Session session,
+    RenameConversationLabelRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.renameLabel(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
+  Future<void> deleteLabel(
+    Session session,
+    DeleteConversationLabelRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.deleteLabel(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
+  Future<void> setConversationLabels(
+    Session session,
+    SetConversationLabelsRequest request,
+  ) async {
+    final account = await const AuthenticatedAccountResolver()(session);
+    return _useCases.setConversationLabels(
+      session,
+      userId: account.userId,
+      request: request,
+    );
+  }
+
   Future<ConversationSummary> get(
     Session session,
     GetConversationRequest request,
