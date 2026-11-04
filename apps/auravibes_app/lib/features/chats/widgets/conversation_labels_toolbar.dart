@@ -216,7 +216,7 @@ class _ConversationLabelFilterDialogState
             selectedLabelIds: _selected,
             enabled: true,
             maxHeight: 320,
-          onChanged: _toggleLabel,
+            onChanged: _toggleLabel,
           ),
         ],
       ),
@@ -253,7 +253,8 @@ class const _ConversationLabelCheckboxList({
   required final void Function({
     required String labelId,
     required bool selected,
-  }) onChanged,
+  })
+  onChanged,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -271,10 +272,8 @@ class const _ConversationLabelCheckboxList({
             label: label,
             selected: selectedLabelIds.contains(label.id),
             enabled: enabled,
-            onChanged: (selected) => onChanged(
-              labelId: label.id,
-              selected: selected,
-            ),
+            onChanged: (selected) =>
+                onChanged(labelId: label.id, selected: selected),
           );
         },
         itemCount: labels.length,
@@ -756,7 +755,8 @@ class const _ConversationLabelAssignmentList({
   required final void Function({
     required String labelId,
     required bool selected,
-  }) onChanged,
+  })
+  onChanged,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => switch (labels) {
