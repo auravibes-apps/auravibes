@@ -65,7 +65,7 @@ Map<String, _Builder> _builders(IconData Function(String?) icon) => {
     semanticLabel: _nullableString(data['semanticLabel']),
     onPressed: switch (_httpsUri(data['href'])) {
       final uri? => () => unawaited(
-        openChatExternalLink(context.buildContext, uri.toString()),
+        ChatExternalLink.open(context.buildContext, uri.toString()),
       ),
       null => null,
     },

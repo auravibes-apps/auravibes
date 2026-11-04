@@ -9,7 +9,7 @@ void main() {
     final firstTeardown = Completer<void>();
     final secondTeardown = Completer<void>();
     final collapse = Completer<void>();
-    final teardown = runAfterMcpAppToolResultsTeardown(
+    final teardown = McpAppToolResultTeardown.runAfter(
       controllers: [
         McpAppToolResultController()
           ..teardownHandler = () => firstTeardown.future,
@@ -36,10 +36,10 @@ void main() {
       ..teardownHandler = () => teardown.future;
     var expandedToolIds = <String>{'tool-1'};
 
-    Future<void> collapse() => runAfterMcpAppToolResultsTeardown(
+    Future<void> collapse() => McpAppToolResultTeardown.runAfter(
       controllers: [controller],
       action: () {
-        expandedToolIds = updateActivityRunExpandedIds(
+        expandedToolIds = ActivityRunExpansionNotifier.updateExpandedIds(
           expandedIds: expandedToolIds,
           id: 'tool-1',
           isExpanded: false,

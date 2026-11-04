@@ -27,9 +27,13 @@ abstract interface class AgentLifecycleHookRuntime {
   );
 }
 
-const int maxAgentLifecycleHookInputBytes = 8 * 1024;
-const int maxAgentLifecycleHookExecutableBytes = 32 * 1024 * 1024;
-const int maxAgentLifecycleHookTrustedSourceBytes = 64 * 1024 * 1024;
+abstract final class AgentLifecycleHookRuntimeLimits {
+  static const int maxAgentLifecycleHookInputBytes = 8 * 1024;
+  static const int maxAgentLifecycleHookExecutableBytes = 32 * 1024 * 1024;
+  static const int maxAgentLifecycleHookTrustedSourceBytes = 64 * 1024 * 1024;
+  static const agentLifecycleHookTimeout = Duration(seconds: 5);
+  static const maxAgentLifecycleHookOutputBytes = 8192;
+}
 
 class const AgentLifecycleHookSourceSnapshot({
   required final String canonicalPath,
@@ -44,5 +48,7 @@ class const AgentLifecycleHookInvocationResult({
   final String? stdout,
 });
 
-AgentLifecycleHookRuntime createAgentLifecycleHookRuntime() =>
-    platform.createAgentLifecycleHookRuntime();
+abstract final class AgentLifecycleHookRuntimeFactory {
+  static AgentLifecycleHookRuntime create() =>
+      platform.AgentLifecycleHookRuntimeFactory.create();
+}

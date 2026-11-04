@@ -806,13 +806,15 @@ void _requireLocalMcp(McpConnectionNotifier notifier) {
 }
 
 void _requireDeclaredMcpAppResource(McpToolInfo tool, String resourceUri) {
-  if (parseMcpAppToolMetadata(tool.metadata).resourceUri != resourceUri) {
+  if (McpAppToolMetadata.parse(tool.metadata).resourceUri != resourceUri) {
     throw ArgumentError.value(resourceUri, 'resourceUri');
   }
 }
 
 void _requireAppVisibleTool(McpToolInfo tool, String toolIdentifier) {
-  if (!isMcpAppToolVisibleToApp(parseMcpAppToolMetadata(tool.metadata))) {
+  if (!McpAppToolMetadata.isVisibleToApp(
+    McpAppToolMetadata.parse(tool.metadata),
+  )) {
     throw Exception('MCP tool is not visible to the app: $toolIdentifier');
   }
 }
@@ -830,7 +832,7 @@ McpManagerClient _readyMcpClient(
 }
 
 bool _hasMcpAppResource(McpToolInfo tool) =>
-    parseMcpAppToolMetadata(tool.metadata).resourceUri != null;
+    McpAppToolMetadata.parse(tool.metadata).resourceUri != null;
 
 extension _McpConnectionLookupOperations on McpConnectionNotifier {
   ToolSpec? _toolSpec(McpConnectionState? connection, String toolName) {
@@ -849,8 +851,8 @@ extension _McpConnectionLookupOperations on McpConnectionNotifier {
         (tool) => tool.toolName == toolName,
       )) {
         final tool?
-            when isMcpAppToolVisibleToModel(
-              parseMcpAppToolMetadata(tool.metadata),
+            when McpAppToolMetadata.isVisibleToModel(
+              McpAppToolMetadata.parse(tool.metadata),
             ) =>
           tool._spec(connection.server),
         _ => null,
@@ -865,7 +867,9 @@ extension _McpConnectionLookupOperations on McpConnectionNotifier {
       throw Exception('MCP server not connected: $mcpServerId');
     }
     final tool = _requiredToolInfo(connection, mcpServerId, toolIdentifier);
-    if (!isMcpAppToolVisibleToModel(parseMcpAppToolMetadata(tool.metadata))) {
+    if (!McpAppToolMetadata.isVisibleToModel(
+      McpAppToolMetadata.parse(tool.metadata),
+    )) {
       throw Exception('MCP tool is not visible to the model: $toolIdentifier');
     }
 

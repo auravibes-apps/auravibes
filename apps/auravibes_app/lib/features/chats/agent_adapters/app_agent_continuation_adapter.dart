@@ -219,7 +219,9 @@ List<ChatMessage> _conversationContextMessages(
     ChatMessage(
       role: .user,
       content: 'User-authored conversation brief:\n\n$brief',
-      metadata: const {'kind': _conversationTaskBriefMetadataKind},
+      metadata: AgentContextProvenance.userConversation.withMetadata({
+        'kind': _conversationTaskBriefMetadataKind,
+      }),
     ),
 ];
 
