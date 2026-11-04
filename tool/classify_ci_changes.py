@@ -127,6 +127,13 @@ def _requires_code_checks(path):
         return False
     if _is_skill_metadata(normalized):
         return False
+    if (
+        normalized.startswith("docs/audits/")
+        and "/assets/" not in normalized
+        and "/generated/" not in normalized
+        and filename.endswith(".json")
+    ):
+        return False
     if normalized == "renovate.json":
         return False
     if (
