@@ -11,6 +11,7 @@ import 'package:auravibes_app/features/models/providers/chat_model_connections_p
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/models/widgets/add_model_provider_widget.dart';
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
+import 'package:auravibes_app/features/workspaces/providers/workspace_access_provider.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/providers/router_providers.dart';
@@ -291,6 +292,7 @@ Future<void> _pumpFirstChatApp({
   final _ = await container.read(
     workspaceSessionForRouteProvider(workspaceId).future,
   );
+  final _ = await container.read(workspaceAccessProvider(workspaceId).future);
   await tester.pumpWidget(_FirstChatApp(container: container, router: router));
 }
 
