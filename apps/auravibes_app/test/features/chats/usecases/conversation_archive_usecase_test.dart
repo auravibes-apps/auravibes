@@ -86,10 +86,10 @@ void main() {
     final workspace = await database.workspaceDao.insertWorkspace(
       .insert(name: 'Archive preview test', type: .local),
     );
-    final repository = ConversationRepository(database);
-    final conversation = await repository.createConversation(
-      .new(title: 'Research notes', workspaceId: workspace.id),
-    );
+    final conversation = await ConversationRepository(database)
+        .createConversation(
+          .new(title: 'Research notes', workspaceId: workspace.id),
+        );
     final message = await database.messageDao.insertMessage(
       .insert(
         conversationId: conversation.id,
@@ -174,17 +174,17 @@ void main() {
       archives.map((archive) => archive.title),
       ['First chat', 'Second chat'],
     );
-    expect(archives.every((archive) => archive.messages.isEmpty), isTrue);
+    expect(archives.map((archive) => archive.messages), [[], []]);
   });
 
   test('rejects an export when attachments changed after review', () async {
     final workspace = await database.workspaceDao.insertWorkspace(
       .insert(name: 'Stale archive preview', type: .local),
     );
-    final repository = ConversationRepository(database);
-    final conversation = await repository.createConversation(
-      .new(title: 'Reviewed notes', workspaceId: workspace.id),
-    );
+    final conversation = await ConversationRepository(database)
+        .createConversation(
+          .new(title: 'Reviewed notes', workspaceId: workspace.id),
+        );
     final message = await database.messageDao.insertMessage(
       .insert(
         conversationId: conversation.id,

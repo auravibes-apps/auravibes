@@ -162,7 +162,10 @@ void main() {
 
       await tester.tap(find.text('Open review'));
       final _ = await tester.pumpAndSettle();
-      expect(find.textContaining('Revisa el archivo de'), findsOneWidget);
+      expect(
+        find.text('Revisa la copia de seguridad de tu conversación'),
+        findsOneWidget,
+      );
       expect(find.text('informe.pdf'), findsOneWidget);
       expect(find.text('Tipo: application/pdf'), findsOneWidget);
       final checkbox = find.byKey(
