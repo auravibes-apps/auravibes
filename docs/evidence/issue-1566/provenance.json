@@ -1,0 +1,24 @@
+{
+  "workflow_run_id": 41522020768,
+  "workflow_run_url": "https://github.com/auravibes-apps/auravibes/actions/runs/41522020768",
+  "artifact_id": 13178936672,
+  "artifact_name": "conversation-archive-ux-41522020768-1",
+  "artifact_sha256": "96e7b0bb9ccbce54d289d1aa734092078ffb1493a825c8ba1c535cd5b4434370",
+  "source_sha": "171ae3a7b5a891f6e1a85a5455cbdb70743253dc",
+  "capture_test_path": "apps/auravibes_app/test/widgets/ux_validation_layout_test.dart",
+  "capture_test_sha256": "1d7894d67ddac36c97c87d6f38c6c4888f32c0611cba568bbb7ed6718209c16c",
+  "fixture_scope": "Production chats route with a persisted local workspace and seeded conversation; archive state remains local and no remote access occurs.",
+  "renderer": "Flutter widget-test Skia on Linux",
+  "viewport": [
+    960,
+    1400
+  ],
+  "locale": "en",
+  "theme": "light",
+  "text_scale": 1,
+  "captures": {
+    "before/001-conversation-archive-before.png": "84d94c8d0f96a6c193e6831a1f649c8c02b870b54c5681dd0a59fc03b87d22c9",
+    "after/002-conversation-archive-after.png": "1d9e6d885b7ad0f2e22f599e492ccc352d9684cc9e26e4aba98e41b46338c93d"
+  },
+  "validation": "Hosted workflow completed successfully. The capture test verified the active action menu, archived-list route, and visible archived conversation. Both PNGs and their source sidecars were visually inspected and preserved from the downloaded artifact."
+}

@@ -5,6 +5,7 @@ import 'package:auravibes_app/data/database/drift/daos/api_model_providers_dao.d
 import 'package:auravibes_app/data/database/drift/daos/api_models_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/app_skill_workspace_settings_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/background_works_dao.dart';
+import 'package:auravibes_app/data/database/drift/daos/conversation_archive_state_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_skills_dao.dart';
 import 'package:auravibes_app/data/database/drift/daos/conversation_tools_dao.dart';
@@ -28,6 +29,7 @@ import 'package:auravibes_app/data/database/drift/tables/api_models.dart';
 import 'package:auravibes_app/data/database/drift/tables/app_skill_workspace_settings.dart';
 import 'package:auravibes_app/data/database/drift/tables/background_works.dart';
 import 'package:auravibes_app/data/database/drift/tables/connector_writes.dart';
+import 'package:auravibes_app/data/database/drift/tables/conversation_archive_states.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversation_skills.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversation_tools.dart';
 import 'package:auravibes_app/data/database/drift/tables/conversations.dart';
@@ -101,6 +103,7 @@ part 'app_database.g.dart';
     ApiModelProviders,
     ApiModels,
     Conversations,
+    ConversationArchiveStates,
     Agents,
     AgentSkills,
     AgentTools,
@@ -148,6 +151,7 @@ part 'app_database.g.dart';
     ApiModelProvidersDao,
     ApiModelsDao,
     ConversationDao,
+    ConversationArchiveStateDao,
     AgentsDao,
     AgentToolsDao,
     MessageDao,
@@ -250,7 +254,10 @@ class AppDatabase extends _$AppDatabase {
       _conversationTaskBriefSchemaVersion + 1;
   static const int _workspaceVerificationSchemaVersion =
       _workspaceAgentHookSettingsSchemaVersion + 1;
-  static const int _currentSchemaVersion = _workspaceVerificationSchemaVersion;
+  static const int _conversationArchiveStateSchemaVersion =
+      _workspaceVerificationSchemaVersion + 1;
+  static const int _currentSchemaVersion =
+      _conversationArchiveStateSchemaVersion;
 
   /// Creates a new [AppDatabase] instance.
   ///
@@ -290,17 +297,37 @@ extension on AppDatabase {
   }
 
   Future<void> _runUpgrades(Migrator m, int from, int _) async {
+    await _runApiAndCoreUpgrades(m, from);
+    await _runToolAndBookmarkUpgrades(m, from);
+    await _runWorkspaceUpgrades(m, from);
+    await _upgradeConversationArchiveStateSchema(m, from);
+  }
+
+  Future<void> _runApiAndCoreUpgrades(Migrator m, int from) async {
     await _upgradeApiModelModalitiesSchema(from);
     await _runCoreUpgrades(m, from);
     await _upgradeLegacyStreamingStatuses(from);
     await _runSkillUpgrades(m, from);
     await _upgradeModelSchemas(m);
+  }
+
+  Future<void> _runToolAndBookmarkUpgrades(Migrator m, int from) async {
     await _upgradeToolAccessModeSchema(m);
     await _upgradeToolCallAttachmentSchema(m, from);
     await _upgradeMessageBookmarkSchemas(m, from);
     await _upgradeConnectorSkillToolReferencesSchema(m, from);
     await _retireSkillOwnedStorage(from);
-    await _runWorkspaceUpgrades(m, from);
+  }
+
+  Future<void> _upgradeConversationArchiveStateSchema(
+    Migrator m,
+    int from,
+  ) async {
+    if (from >= AppDatabase._conversationArchiveStateSchemaVersion ||
+        await _tableExists('conversation_archive_states')) {
+      return;
+    }
+    await m.createTable(conversationArchiveStates);
   }
 
   Future<void> _runWorkspaceUpgrades(Migrator m, int from) async {
