@@ -717,13 +717,7 @@ class const _ConversationTestScope({
 }
 
 class _ConversationTestScopeState extends State<_ConversationTestScope> {
-  late final AppDatabase labelsDatabase;
-
-  @override
-  void initState() {
-    super.initState();
-    labelsDatabase = .new(connection: NativeDatabase.memory());
-  }
+  final AppDatabase labelsDatabase = .new(connection: NativeDatabase.memory());
 
   @override
   void dispose() {
