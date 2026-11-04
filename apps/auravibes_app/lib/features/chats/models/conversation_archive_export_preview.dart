@@ -16,6 +16,7 @@ final class ConversationArchiveExportPreview({
     for (final conversation in conversations) {
       total += conversation.attachments.length;
     }
+
     return total;
   }
 }
