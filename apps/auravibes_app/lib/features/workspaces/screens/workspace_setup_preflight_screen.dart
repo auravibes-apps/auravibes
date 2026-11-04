@@ -59,27 +59,30 @@ class const _PreflightContent({
 
     return ListView(
       padding: const EdgeInsets.all(16),
-      children: _contentChildren(
-        workspaceId: workspaceId,
-        result: result,
-        isCloud: isCloud,
-      ),
+      children: [
+        _PreflightSummaryCard(
+          workspaceId: workspaceId,
+          result: result,
+          isCloud: isCloud,
+        ),
+        _PreflightCheckCards(workspaceId: workspaceId, result: result),
+      ],
     );
   }
+}
 
-  static List<Widget> _contentChildren({
-    required String workspaceId,
-    required WorkspaceSetupPreflight result,
-    required bool isCloud,
-  }) => [
-    _PreflightSummaryCard(
-      workspaceId: workspaceId,
-      result: result,
-      isCloud: isCloud,
-    ),
-    for (final id in WorkspaceSetupPreflightCheckId.values)
-      _PreflightCheckCard(workspaceId: workspaceId, check: result.check(id)),
-  ];
+class const _PreflightCheckCards({
+  required final String workspaceId,
+  required final WorkspaceSetupPreflight result,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: .min,
+    children: [
+      for (final id in WorkspaceSetupPreflightCheckId.values)
+        _PreflightCheckCard(workspaceId: workspaceId, check: result.check(id)),
+    ],
+  );
 }
 
 class const _PreflightSummaryCard({
