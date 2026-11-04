@@ -31,9 +31,8 @@ void main() {
       conversationId: 'conversation-1',
     );
 
-    final archivedIds = await repository.getArchivedConversationIds(
-      workspace.id,
-    );
+    final archivedIds =
+        await repository.getArchivedConversationIds(workspace.id);
     expect(archivedIds, isEmpty);
   });
 }
