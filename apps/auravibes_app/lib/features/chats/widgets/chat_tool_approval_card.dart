@@ -19,6 +19,7 @@ import 'package:auravibes_app/features/chats/usecases/cloud_turn_usecase.dart';
 import 'package:auravibes_app/features/chats/widgets/connector_write_approval_preview.dart';
 import 'package:auravibes_app/features/workspaces/services/cloud_app_exception.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
+import 'package:auravibes_app/utils/localization_context.dart';
 import 'package:auravibes_app/utils/number_formatter.dart';
 import 'package:auravibes_app/utils/tool_metadata_decoder.dart';
 import 'package:auravibes_app/utils/tool_name_formatter.dart';
@@ -1217,10 +1218,24 @@ class const _NavButton({
   Widget build(BuildContext context) => AuraIconButton(
     icon: icon,
     onPressed: onPressed,
+    tooltip: _tooltip(context),
     disabled: onPressed == null,
     size: .small,
     identifier: selectorId,
   );
+
+  String _tooltip(BuildContext context) {
+    final previous = selectorId == 'tool_approval_previous';
+    if (!LocalizationContext.hasAppLocalizations(context)) {
+      final material = MaterialLocalizations.of(context);
+
+      return previous ? material.previousPageTooltip : material.nextPageTooltip;
+    }
+
+    return previous
+        ? LocaleKeys.tool_approval_previous.tr(context: context)
+        : LocaleKeys.tool_approval_next.tr(context: context);
+  }
 }
 
 class const _ToolCallInfo({

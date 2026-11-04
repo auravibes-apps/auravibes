@@ -15,7 +15,7 @@ class AuraFieldLabel extends StatelessWidget {
     this.isRequired = false,
     this.style,
     this.semanticLabel,
-    this.requiredLabel = 'required',
+    this.requiredLabel,
   });
 
   /// The label text to display.
@@ -31,7 +31,7 @@ class AuraFieldLabel extends StatelessWidget {
   final String? semanticLabel;
 
   /// The semantic label appended to the required-field indicator.
-  final String requiredLabel;
+  final String? requiredLabel;
 
   @override
   Widget build(BuildContext context) => _AuraFieldLabelRow.fromValues(
@@ -50,7 +50,7 @@ class const _AuraFieldLabelRow({required final List<Widget> children})
     required bool isRequired,
     required AuraTextStyle? style,
     required String? semanticLabel,
-    required String requiredLabel,
+    required String? requiredLabel,
   }) : this(
          children: [
            _AuraFieldLabelText(
@@ -105,7 +105,7 @@ class const _AuraFieldLabelSemantics({
 
 class const _AuraRequiredFieldIndicator({
   required final AuraTextStyle? style,
-  required final String label,
+  required final String? label,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraText(

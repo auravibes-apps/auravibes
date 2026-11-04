@@ -319,10 +319,24 @@ class _AuraSidebarItemButton extends StatelessWidget {
          child: AuraPressable(
            child: ExcludeSemantics(
              excluding: item.semanticLabel != null,
-             child: _AuraSidebarItemContent(
-               icon: item.icon,
-               label: isExpanded ? item.label : const SizedBox.shrink(),
-               selected: selected,
+             child: Stack(
+               children: [
+                 _AuraSidebarItemContent(
+                   icon: item.icon,
+                   label: isExpanded ? item.label : const SizedBox.shrink(),
+                   selected: selected,
+                 ),
+                 if (!isExpanded && item.semanticLabel == null)
+                   Positioned.fill(
+                     child: IgnorePointer(
+                       child: Opacity(
+                         opacity: 0,
+                         alwaysIncludeSemantics: true,
+                         child: item.label,
+                       ),
+                     ),
+                   ),
+               ],
              ),
            ),
            color: colors.primary,
@@ -335,7 +349,7 @@ class _AuraSidebarItemButton extends StatelessWidget {
              borderRadius: BorderRadius.all(.circular(borderRadius)),
            ),
            onPressed: onTap,
-           semanticLabel: item.semanticLabel ?? 'Navigation item',
+           semanticLabel: item.semanticLabel,
          ),
          selected: selected,
        );

@@ -147,7 +147,7 @@ class _AuraLoadingOverlayLayer extends StatelessWidget {
          ),
          container: true,
          liveRegion: true,
-         label: semanticLabel ?? message ?? 'Loading',
+         label: semanticLabel ?? message,
        );
 
   final Widget _child;

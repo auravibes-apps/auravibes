@@ -509,19 +509,29 @@ class const _ServiceConnectionCreateAppBar({
   @override
   Widget build(BuildContext context) {
     return AuraAppBarWithDrawer(
-      title: TextLocale(
-        form.contextual
-            ? switch (form.type) {
-                .modelProvider => 'connection_setup.connect_ai',
-                .connector => 'connection_setup.add_access',
-              }
-            : LocaleKeys.service_connections_create_title,
-      ),
+      title: _ConnectionCreateTitle(form: form),
       leading: AuraIconButton(
         icon: Icons.arrow_back,
+        tooltip: MaterialLocalizations.of(context).backButtonTooltip,
         onPressed: () => unawaited(form.routeExitGuard.pop(context)),
       ),
     );
+  }
+}
+
+class const _ConnectionCreateTitle({
+  required final _ServiceConnectionCreateForm form,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    if (!form.contextual) {
+      return const TextLocale(LocaleKeys.service_connections_create_title);
+    }
+
+    return switch (form.type) {
+      .modelProvider => const TextLocale('connection_setup.connect_ai'),
+      .connector => const TextLocale('connection_setup.add_access'),
+    };
   }
 }
 

@@ -20,7 +20,8 @@ class AuraModal extends StatefulWidget {
     required this.barrierLabel,
     super.key,
     this.barrierDismissible = true,
-    this.semanticLabel = 'Open modal',
+    this.semanticLabel,
+    this.triggerSemanticLabel,
     this.title,
     this.closeLabel,
     this.size = AuraModalSize.medium,
@@ -40,6 +41,9 @@ class AuraModal extends StatefulWidget {
 
   /// An optional accessibility label for the modal route.
   final String? semanticLabel;
+
+  /// Optional caller-provided name for the control that opens the modal.
+  final String? triggerSemanticLabel;
 
   /// Optional title shown above the modal content.
   final Widget? title;
@@ -158,9 +162,10 @@ class const _AuraModalDisabledEntry({required final AuraModal widget})
   Widget build(BuildContext context) => Semantics(
     child: IgnorePointer(child: widget.entryPointChild),
     container: true,
+    excludeSemantics: widget.triggerSemanticLabel != null,
     enabled: false,
     button: true,
-    label: widget.semanticLabel ?? 'Open modal',
+    label: widget.triggerSemanticLabel,
   );
 }
 
@@ -238,10 +243,10 @@ class const _AuraModalEntrySemantics({
         child: widget.entryPointChild,
       ),
       container: true,
-      excludeSemantics: true,
+      excludeSemantics: widget.triggerSemanticLabel != null,
       enabled: true,
       button: true,
-      label: 'Open modal',
+      label: widget.triggerSemanticLabel,
       onTap: onShow,
     );
   }

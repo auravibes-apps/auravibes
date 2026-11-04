@@ -131,6 +131,7 @@ class const _WorkspaceManagementAppBar()
       leading: Navigator.of(context).canPop()
           ? AuraIconButton(
               icon: Icons.arrow_back,
+              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
               onPressed: () => Navigator.of(context).maybePop(),
               identifier: 'workspace_management_back',
             )

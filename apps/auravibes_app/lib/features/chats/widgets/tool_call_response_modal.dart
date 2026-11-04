@@ -143,11 +143,17 @@ class const _ToolCallResponseModalHeaderRow({required final String toolName})
       Expanded(
         child: AuraText(child: Text(toolName), style: .heading6),
       ),
-      AuraIconButton(
-        icon: Icons.close,
-        onPressed: () => Navigator.of(context).pop(),
-      ),
+      const _ToolCallResponseCloseIcon(),
     ],
+  );
+}
+
+class const _ToolCallResponseCloseIcon() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraIconButton(
+    icon: Icons.close,
+    tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+    onPressed: () => Navigator.of(context).pop(),
   );
 }
 

@@ -68,6 +68,7 @@ class const _RefreshTableButton({
   @override
   Widget build(BuildContext context, WidgetRef ref) => AuraIconButton(
     icon: Icons.refresh,
+    tooltip: MaterialLocalizations.of(context).refreshIndicatorSemanticLabel,
     onPressed: draftOpen.value
         ? null
         : () => _TableNavigationActions.refresh(

@@ -51,6 +51,7 @@ class AuraChartStory extends Story<AuraChart, AuraChartArgs> {
                yAxisTitle: args.yAxisTitle,
                unit: args.unit,
                palette: args.palette,
+               valueFormatter: args.valueFormatter,
              ),
        );
 }
@@ -69,6 +70,7 @@ class AuraChartArgs extends StoryArgs<AuraChart> {
     Arg<String?>? yAxisTitle,
     Arg<String?>? unit,
     Arg<List<AuraTint>>? palette,
+    Arg<String Function(double)?>? valueFormatter,
   }) : this.labelsArg = $initArg('labels', labels, null)!,
        this.seriesArg = $initArg('series', series, null)!,
        this.semanticLabelArg = $initArg(
@@ -99,7 +101,12 @@ class AuraChartArgs extends StoryArgs<AuraChart> {
          NullableStringArg(null),
        )!,
        this.unitArg = $initArg('unit', unit, NullableStringArg(null))!,
-       this.paletteArg = $initArg('palette', palette, ConstArg(const []))!;
+       this.paletteArg = $initArg('palette', palette, ConstArg(const []))!,
+       this.valueFormatterArg = $initArg(
+         'valueFormatter',
+         valueFormatter,
+         null,
+       );
 
   AuraChartArgs.fixed({
     required List<String> labels,
@@ -114,6 +121,7 @@ class AuraChartArgs extends StoryArgs<AuraChart> {
     String? yAxisTitle = null,
     String? unit = null,
     List<AuraTint> palette = const [],
+    String Function(double)? valueFormatter,
   }) : this.labelsArg = $initArg('labels', Arg.fixed(labels), null)!,
        this.seriesArg = $initArg('series', Arg.fixed(series), null)!,
        this.semanticLabelArg = $initArg(
@@ -149,7 +157,12 @@ class AuraChartArgs extends StoryArgs<AuraChart> {
          unit == null ? null : Arg.fixed(unit),
          null,
        ),
-       this.paletteArg = $initArg('palette', Arg.fixed(palette), null)!;
+       this.paletteArg = $initArg('palette', Arg.fixed(palette), null)!,
+       this.valueFormatterArg = $initArg(
+         'valueFormatter',
+         valueFormatter == null ? null : Arg.fixed(valueFormatter),
+         null,
+       );
 
   final Arg<List<String>> labelsArg;
 
@@ -175,6 +188,8 @@ class AuraChartArgs extends StoryArgs<AuraChart> {
 
   final Arg<List<AuraTint>> paletteArg;
 
+  final Arg<String Function(double)?>? valueFormatterArg;
+
   List<String> get labels => labelsArg.value;
 
   List<AuraChartSeries> get series => seriesArg.value;
@@ -199,6 +214,8 @@ class AuraChartArgs extends StoryArgs<AuraChart> {
 
   List<AuraTint> get palette => paletteArg.value;
 
+  String Function(double)? get valueFormatter => valueFormatterArg?.value;
+
   @override
   List<Arg?> get list => [
     labelsArg,
@@ -213,5 +230,6 @@ class AuraChartArgs extends StoryArgs<AuraChart> {
     yAxisTitleArg,
     unitArg,
     paletteArg,
+    valueFormatterArg,
   ];
 }

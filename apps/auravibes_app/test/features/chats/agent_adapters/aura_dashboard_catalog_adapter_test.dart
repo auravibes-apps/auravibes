@@ -7,6 +7,36 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 
 void main() {
+  testWidgets('charts retain units and localized exact values', (tester) async {
+    await tester.pumpWidget(
+      AuraThemeScope(
+        theme: .light,
+        child: MaterialApp(
+          locale: const Locale('es'),
+          supportedLocales: const [Locale('es')],
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          builder: (_, child) =>
+              AuraLegacyMaterialBridge(child: child ?? const SizedBox.shrink()),
+          home: SingleChildScrollView(
+            child: ChatA2uiSurfaceHost.historical(
+              messageId: 'chart-locale',
+              payloads: _fixture(
+                form: false,
+                chartValues: const [1.25, 2, 3],
+                unit: 'puntos',
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    final chart = tester.widget<AuraChart>(find.byType(AuraChart));
+    expect(chart.semanticLabel, contains('puntos'));
+    expect(chart.semanticLabel, contains('1,25'));
+    expect(chart.valueFormatter?.call(1.25), '1,25');
+  });
+
   testWidgets('binding cannot resolve to another binding object', (
     tester,
   ) async {
@@ -206,7 +236,12 @@ void main() {
   }
 }
 
-List<String> _fixture({required bool form, Object progress = 0.87}) {
+List<String> _fixture({
+  required bool form,
+  Object progress = 0.87,
+  List<double> chartValues = const [10, 8, 5],
+  String? unit,
+}) {
   final mode = form ? 'requiresUserAction' : 'passive';
   String envelope(Map<String, Object?> message) {
     final wireMessage = {'version': a2uiChatWireVersion, ...message};
@@ -298,13 +333,10 @@ List<String> _fixture({required bool form, Object progress = 0.87}) {
             'id': 'chart',
             'component': 'Chart',
             'label': 'Burndown',
+            'unit': ?unit,
             'labels': ['Mon', 'Tue', 'Wed'],
             'series': [
-              {
-                'label': 'Actual',
-                'values': [10, 8, 5],
-                'tone': 'primary',
-              },
+              {'label': 'Actual', 'values': chartValues, 'tone': 'primary'},
               {
                 'label': 'Expected',
                 'values': [10, 7, 4],
