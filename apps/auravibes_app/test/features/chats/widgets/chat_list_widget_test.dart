@@ -674,7 +674,7 @@ void main() {
           )
           .container;
 
-      Future<void> waitForSearchResult(bool isVisible) async {
+      Future<void> waitForSearchResult({required bool isVisible}) async {
         for (var attempt = 0; attempt < 30; attempt++) {
           await tester.pump(const Duration(milliseconds: 100));
           final isSearching = find
@@ -753,12 +753,12 @@ void main() {
       expect(find.text('Delete selected'), findsNothing);
       await tester.enterText(find.byType(EditableText), 'missing');
       await tester.pump(const Duration(milliseconds: 301));
-      await waitForSearchResult(false);
+      await waitForSearchResult(isVisible: false);
       expect(find.text('Project research'), findsNothing);
 
       await tester.enterText(find.byType(EditableText), 'Project');
       await tester.pump(const Duration(milliseconds: 301));
-      await waitForSearchResult(true);
+      await waitForSearchResult(isVisible: true);
       expect(find.text('Project research'), findsOneWidget);
       await tester.tap(find.byIcon(Icons.more_vert));
       for (var attempt = 0; attempt < 5; attempt++) {
@@ -776,7 +776,7 @@ void main() {
         ),
         isEmpty,
       );
-      await waitForSearchResult(false);
+      await waitForSearchResult(isVisible: false);
       expect(find.text('Project research'), findsNothing);
     });
 
