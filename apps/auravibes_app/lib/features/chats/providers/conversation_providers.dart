@@ -162,13 +162,16 @@ Stream<List<ConversationEntity>> _localConversationsWithLabels(
 
   return request.ref
       .watch(conversationLabelsRepositoryProvider)
-      .watchConversationsByWorkspace((
-        workspaceId: request.workspaceId,
-        search: options.search,
-        limit: options.pagination.limit,
-        offset: options.pagination.offset,
-        labelIds: options.labelIds,
-      ), archivedOnly: options.scope == ConversationListScope.archived);
+      .watchConversationsByWorkspace(
+        (
+          workspaceId: request.workspaceId,
+          search: options.search,
+          limit: options.pagination.limit,
+          offset: options.pagination.offset,
+          labelIds: options.labelIds,
+        ),
+        archivedOnly: options.scope == ConversationListScope.archived,
+      );
 }
 
 Stream<List<ConversationEntity>> _localConversationsWithAllLabels(

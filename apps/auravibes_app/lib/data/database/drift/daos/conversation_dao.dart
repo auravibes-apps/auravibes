@@ -442,13 +442,17 @@ List<Variable> _conversationPageVariables(
   return variables;
 }
 
-List<String> _baseConversationPredicates(_ConversationLabelQuery query) => [
-  'c.workspace_id = ?',
-  'c.parent_conversation_id IS NULL',
-  'c.id ${query.archivedOnly ? 'IN' : 'NOT IN'} '
+List<String> _baseConversationPredicates(_ConversationLabelQuery query) {
+  final archivePredicate = 'c.id ${query.archivedOnly ? 'IN' : 'NOT IN'} '
       '(SELECT conversation_id FROM conversation_archive_states '
-      'WHERE workspace_id = ?)',
-];
+      'WHERE workspace_id = ?)';
+
+  return [
+    'c.workspace_id = ?',
+    'c.parent_conversation_id IS NULL',
+    archivePredicate,
+  ];
+}
 
 List<Variable> _baseConversationVariables(_ConversationLabelQuery query) => [
   Variable<String>(query.workspaceId),
