@@ -443,7 +443,8 @@ List<Variable> _conversationPageVariables(
 }
 
 List<String> _baseConversationPredicates(_ConversationLabelQuery query) {
-  final archivePredicate = 'c.id ${query.archivedOnly ? 'IN' : 'NOT IN'} '
+  final archivePredicate =
+      'c.id ${query.archivedOnly ? 'IN' : 'NOT IN'} '
       '(SELECT conversation_id FROM conversation_archive_states '
       'WHERE workspace_id = ?)';
 
