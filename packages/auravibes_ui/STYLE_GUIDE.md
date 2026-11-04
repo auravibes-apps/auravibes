@@ -9,7 +9,9 @@ Shared components and tokens follow the [visual blacklist](../../.agents/skills/
 `AuraCardStyle.glass` is a compatibility alias for the bordered surface. Input
 height tokens are 48, 56, and 64 logical pixels. Components accept optional
 semantic labels from callers; applications supply localized labels when the
-visible child does not describe a control or status.
+visible child does not describe a control or status. Date/time picker and dialog
+labels use host-provided Material localizations when an override is omitted;
+callers can override individual labels to describe their task.
 
 ## Core Principle
 

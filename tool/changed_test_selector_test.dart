@@ -366,6 +366,36 @@ void main() {
     },
   );
 
+  test('classifies global changes before loading the workspace', () async {
+    final root = await Directory.systemTemp.createTemp('selector-global-');
+    addTearDown(() => root.delete(recursive: true));
+    final _ = await _git(root, ['init', '--quiet']);
+    final _ = await _git(root, [
+      '-c',
+      'user.name=Fixture',
+      '-c',
+      'user.email=fixture@example.invalid',
+      '-c',
+      'commit.gpgsign=false',
+      'commit',
+      '--quiet',
+      '--allow-empty',
+      '-m',
+      'base',
+    ]);
+    final _ = await File('${root.path}/pubspec.yaml').writeAsString('invalid');
+
+    final result = await selectRepository(
+      rootPath: root.path,
+      base: 'HEAD',
+      head: 'HEAD',
+      includeWorkingTree: true,
+    );
+
+    expect(result.mode, SelectionMode.full);
+    expect(result.reason, 'Global or ambiguous test input.');
+  });
+
   test(
     'repository selector reports snapshot failures as full fallback',
     () async {

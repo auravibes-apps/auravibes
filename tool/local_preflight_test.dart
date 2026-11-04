@@ -7,16 +7,26 @@ void main() {
     final root = await Directory.systemTemp.createTemp('local-preflight-');
     addTearDown(() => root.delete(recursive: true));
     final package = Directory('${root.path}/packages/core');
+    final other = Directory('${root.path}/packages/other');
     final _ = await Directory('${package.path}/lib').create(recursive: true);
     final _ = await Directory('${package.path}/test').create(recursive: true);
+    final _ = await Directory('${other.path}/lib').create(recursive: true);
     final _ = await File('${root.path}/pubspec.yaml').writeAsString('''
 name: fixture
 workspace:
   - packages/core
+  - packages/other
 ''');
     final _ = await File('${package.path}/pubspec.yaml').writeAsString('''
 name: core
 ''');
+    final _ = await File('${other.path}/pubspec.yaml').writeAsString('''
+name: other
+''');
+    final _ = await File('${package.path}/analysis_options.yaml')
+        .writeAsString('');
+    final _ = await File('${other.path}/analysis_options.yaml')
+        .writeAsString('');
     final _ = await _git(root, ['init', '--quiet']);
     final _ = await _git(root, ['config', 'user.name', 'Fixture']);
     final _ = await _git(root, [
@@ -29,6 +39,8 @@ name: core
     final base = await _git(root, ['rev-parse', 'HEAD']);
     final _ = await File('${package.path}/lib/changed.dart')
         .writeAsString('class Changed {}\n');
+    final _ = await File('${other.path}/lib/changed.dart')
+        .writeAsString('class Other {}\n');
     final _ = await File('${package.path}/test/changed_test.dart')
         .writeAsString('void main() {}\n');
 
@@ -46,6 +58,16 @@ name: core
     expect(output, contains('fvm dart analyze --fatal-infos --fatal-warnings'));
     expect(output, contains('packages/core/lib/changed.dart'));
     expect(output, contains('packages/core/test/changed_test.dart'));
+    expect(
+      RegExp('fvm dart analyze --fatal-infos --fatal-warnings')
+          .allMatches(output),
+      hasLength(2),
+    );
+    expect(output, contains('packages/other/lib/changed.dart'));
+    expect(
+      output,
+      isNot(contains('Changed paths considered for this selection')),
+    );
   });
 }
 
