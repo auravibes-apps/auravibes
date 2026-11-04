@@ -145,17 +145,22 @@ void main() {
       .insert(name: 'Bulk archive export', type: .local),
     );
     final repository = ConversationRepository(database);
-    final conversations = [
-      await repository.createConversation(
-        .new(title: 'First chat', workspaceId: workspace.id),
+    final first = await repository.createConversation(
+      .new(
+        title: 'First chat',
+        workspaceId: workspace.id,
       ),
-      await repository.createConversation(
-        .new(title: 'Second chat', workspaceId: workspace.id),
+    );
+    final second = await repository.createConversation(
+      .new(
+        title: 'Second chat',
+        workspaceId: workspace.id,
       ),
+    );
+    final conversationIds = [
+      first.id,
+      second.id,
     ];
-    final conversationIds = conversations
-        .map((conversation) => conversation.id)
-        .toList();
     final usecase = _usecase(database);
     final preview = await usecase.previewConversations(
       workspaceId: workspace.id,
