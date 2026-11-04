@@ -1289,6 +1289,8 @@
   },
   "tool_approval": {
     "pending_count": "Tool approval {} of {}",
+    "previous": "Previous approval",
+    "next": "Next approval",
     "pending_loading": "Loading pending tool approvals…",
     "pending_refreshing": "Refreshing pending tool approvals…",
     "pending_load_error": "Could not load pending tool approvals.",
@@ -1321,6 +1323,14 @@
     "pending": "Awaiting confirmation"
   },
   "common": {
+    "enable_named": "Enable {}",
+    "enable_all_tools_named": "Enable all tools in {}",
+    "message_status_sending": "Message is being sent",
+    "message_status_unfinished": "Message was interrupted before completion",
+    "message_status_sent": "Message sent successfully",
+    "message_status_delivered": "Message delivered",
+    "message_status_read": "Message read by recipient",
+    "message_status_error": "Message failed to send",
     "back": "Back",
     "cancel": "Cancel",
     "remove": "Remove",
@@ -1534,6 +1544,14 @@
     "install_error": "Could not connect this service. Retry.",
     "missing_fields": "Complete all required fields.",
     "unsupported_option": "This option is unavailable in this workspace."
+  },
+  "aura_ui": {
+    "day": "Day {}",
+    "rating": "{} of {}",
+    "step_pending": "Pending",
+    "step_current": "Current",
+    "step_complete": "Completed",
+    "step_error": "Error"
   },
   "mcp_apps": {
     "loading": "Loading interactive result…",
@@ -2159,6 +2177,7 @@
     "save": "Save a copy",
     "unavailable": "This file is unavailable. Check your connection or access and retry.",
     "invalid": "This file is unsupported, invalid, or exceeds the upload size limit.",
+    "size_limit_exceeded": "Workspace Files must be 25 MiB or smaller. Choose a smaller file.",
     "referenced": "This asset still has retained uses.",
     "download_only": "Save a copy to open this file with another app.",
     "text_truncated": "Preview shortened. Save a copy for the full file.",
@@ -2235,6 +2254,10 @@
     "no_records": "No records to show.",
     "save_record": "Save record",
     "invalid_table": "Choose an available table and enter valid column names and values.",
+    "limit_columns": "A table can have up to 100 columns.",
+    "limit_query_page": "A query can return up to 100 records per page.",
+    "limit_record_batch": "A single edit can change up to 50 records at a time.",
+    "limit_summary_columns": "A view summary can include up to 50 columns.",
     "create_column": "Add column",
     "column_name": "Column name",
     "column_type": "Column type",

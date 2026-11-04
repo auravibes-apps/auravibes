@@ -19,6 +19,7 @@ import 'package:auravibes_app/features/chats/providers/chatbot_service_provider.
 import 'package:auravibes_app/features/chats/providers/compaction_execution_runtime.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_repository_provider.dart';
 import 'package:auravibes_app/features/chats/providers/model_usage_provider.dart';
+import 'package:auravibes_app/features/chats/services/chatbot/build_prompt_chat_messages.dart';
 import 'package:auravibes_app/features/chats/services/chatbot/chatbot_service.dart';
 import 'package:auravibes_app/features/chats/usecases/compact_conversation_usecase.dart';
 import 'package:auravibes_app/features/chats/usecases/record_model_usage_usecase.dart';
@@ -27,7 +28,8 @@ import 'package:auravibes_app/features/models/providers/model_connection_reposit
 import 'package:auravibes_app/features/workspaces/models/workspace_ref.dart';
 import 'package:auravibes_app/features/workspaces/providers/workspace_session_provider.dart';
 import 'package:auravibes_app/i18n/locale_keys.dart';
-import 'package:auravibes_engine/auravibes_engine.dart';
+import 'package:auravibes_engine/auravibes_engine.dart'
+    hide BuildPromptChatMessages;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart';
 import 'package:mocktail/mocktail.dart';
@@ -819,7 +821,7 @@ void main() {
     });
 
     test(
-      'sends required context through the fork boundary with tool pairs intact',
+      'keeps tool results external and resumed summaries as model data',
       () async {
         final transcript = CompactionContextFixture();
 
@@ -900,8 +902,39 @@ void main() {
         expect(captured[toolCallIndex].toolCalls, hasLength(1));
         expect(captured[toolResultIndex].role, ChatMessageRole.tool);
         expect(
+          captured.firstOrNull?.metadata[agentContextProvenanceMetadataKey],
+          {'origin': 'applicationPrompt', 'trust': 'appControlled'},
+        );
+        expect(
+          captured[toolResultIndex].metadata[agentContextProvenanceMetadataKey],
+          {'origin': 'toolResult', 'trust': 'externalUntrusted'},
+        );
+        expect(
           captured[toolResultIndex].parts.whereType<ToolResponsePart>(),
           hasLength(1),
+        );
+
+        final persistedSummary = verify(
+          () => fixture.mockMessageRepo.createMessage(captureAny()),
+        ).captured.cast<MessageToCreate>().single;
+        final summaryMetadata = MessageMetadataEntity.fromJsonString(
+          persistedSummary.metadata,
+        );
+        expect(summaryMetadata?.isCompactionSummary, isTrue);
+        final resumedSummary = await const BuildPromptChatMessages().call([
+          _makeMessage(
+            id: 'summary',
+            isUser: false,
+            messageType: .system,
+            content: persistedSummary.content,
+            metadata: summaryMetadata,
+          ),
+        ]);
+
+        expect(resumedSummary.single.role, ChatMessageRole.model);
+        expect(
+          resumedSummary.single.metadata[agentContextProvenanceMetadataKey],
+          {'origin': 'compactionSummary', 'trust': 'externalUntrusted'},
         );
       },
     );

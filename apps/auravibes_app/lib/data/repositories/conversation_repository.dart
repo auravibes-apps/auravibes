@@ -10,7 +10,7 @@ import 'package:auravibes_app/data/repositories/conversation_table_mapper.dart';
 import 'package:auravibes_app/data/repositories/local_workspace_asset_mutation.dart';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/domain/entities/message_tool_call_entity.dart';
-import 'package:auravibes_app/domain/entities/sanitize_workspace_tool_result.dart';
+import 'package:auravibes_app/domain/entities/workspace_tool_result_sanitizer.dart';
 import 'package:drift/drift.dart';
 import 'package:uuid/v7.dart';
 
@@ -908,7 +908,9 @@ extension on ConversationRepository {
     if (raw == null) return null;
     final metadata = MessageMetadataEntity.fromJsonString(raw);
     if (metadata == null) return raw;
-    final redacted = redactInheritedWorkspaceToolMetadata(metadata);
+    final redacted = WorkspaceToolResultSanitizer.redactInheritedMetadata(
+      metadata,
+    );
 
     return identical(redacted, metadata) ? raw : jsonEncode(redacted.toJson());
   }

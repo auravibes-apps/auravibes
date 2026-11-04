@@ -24,26 +24,34 @@ void main() {
       final flower = _SearchItem('flower', '${ligatureFl}ower Garden');
       final index = _index([cafe, flower]);
 
-      expect(index.matching(normalizeWorkspaceSearch('cafe')).map(_name), [
-        'Caf$eAcute Local',
-      ]);
-      expect(index.matching(normalizeWorkspaceSearch('flower')).map(_name), [
-        '${ligatureFl}ower Garden',
-      ]);
+      expect(
+        index.matching(WorkspaceSearchIndex.normalize('cafe')).map(_name),
+        ['Caf$eAcute Local'],
+      );
+      expect(
+        index.matching(WorkspaceSearchIndex.normalize('flower')).map(_name),
+        ['${ligatureFl}ower Garden'],
+      );
     });
 
     test('rebuilds after a workspace is renamed', () {
       final eAcute = String.fromCharCode(0xe9);
       final workspace = _SearchItem('workspace', 'Caf$eAcute Local');
       var index = _index([workspace]);
-      expect(index.matching(normalizeWorkspaceSearch('cafe')), hasLength(1));
+      expect(
+        index.matching(WorkspaceSearchIndex.normalize('cafe')),
+        hasLength(1),
+      );
 
       workspace.name = 'Bakery Local';
       expect(index.hasSameItems([workspace]), isFalse);
       index = _index([workspace]);
 
-      expect(index.matching(normalizeWorkspaceSearch('cafe')), isEmpty);
-      expect(index.matching(normalizeWorkspaceSearch('bakery')), hasLength(1));
+      expect(index.matching(WorkspaceSearchIndex.normalize('cafe')), isEmpty);
+      expect(
+        index.matching(WorkspaceSearchIndex.normalize('bakery')),
+        hasLength(1),
+      );
     });
 
     test(
@@ -62,7 +70,10 @@ void main() {
         final loaded = _SearchItem('third', 'Gamma Local');
         final refreshed = _index([first, second, loaded]);
         expect(
-          refreshed.matching(normalizeWorkspaceSearch('gamma')).single.item,
+          refreshed
+              .matching(WorkspaceSearchIndex.normalize('gamma'))
+              .single
+              .item,
           loaded,
         );
       },

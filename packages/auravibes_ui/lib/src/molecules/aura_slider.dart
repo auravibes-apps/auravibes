@@ -91,6 +91,7 @@ class AuraSlider extends StatefulWidget {
     this.precision = _defaultPrecision,
     this.enabled = true,
     this.semanticLabel,
+    this.valueFormatter,
     this.tint = AuraTint.primary,
   }) : assert(min <= max, 'min must be less than or equal to max'),
        assert(step > 0, 'step must be greater than zero'),
@@ -120,6 +121,9 @@ class AuraSlider extends StatefulWidget {
 
   /// Accessible label announced for the slider.
   final String? semanticLabel;
+
+  /// Formats values announced by assistive technologies.
+  final String Function(double value)? valueFormatter;
 
   /// Aura tint used for the active track and thumb.
   final AuraTint tint;
@@ -183,6 +187,7 @@ class const _AuraSliderStateView({
     child: _AuraSliderInteractionView(state: state, values: values),
     enabled: values.enabled,
     label: state.widget.semanticLabel,
+    formatter: state.widget.valueFormatter,
     value: values.value,
     increasedValue: values.increasedValue,
     decreasedValue: values.decreasedValue,
@@ -216,6 +221,7 @@ class const _AuraSliderSemantics({
   required final Widget child,
   required final bool enabled,
   required final String? label,
+  required final String Function(double)? formatter,
   required final double value,
   required final double increasedValue,
   required final double decreasedValue,
@@ -228,12 +234,14 @@ class const _AuraSliderSemantics({
     enabled: enabled,
     slider: true,
     label: label,
-    value: value.toString(),
-    increasedValue: enabled ? increasedValue.toString() : null,
-    decreasedValue: enabled ? decreasedValue.toString() : null,
+    value: _format(value),
+    increasedValue: enabled ? _format(increasedValue) : null,
+    decreasedValue: enabled ? _format(decreasedValue) : null,
     onIncrease: enabled ? onIncrease : null,
     onDecrease: enabled ? onDecrease : null,
   );
+
+  String _format(double value) => formatter?.call(value) ?? value.toString();
 }
 
 class const _AuraSliderInteraction({

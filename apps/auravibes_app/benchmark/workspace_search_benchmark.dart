@@ -162,7 +162,7 @@ int _baselineNormalizeAll(List<_CatalogItem> catalog) {
 int _indexedNormalizeAll(List<_CatalogItem> catalog) {
   var normalizedLength = 0;
   for (final item in catalog) {
-    normalizedLength += normalizeWorkspaceSearch(item.name).length;
+    normalizedLength += WorkspaceSearchIndex.normalize(item.name).length;
   }
 
   return normalizedLength;

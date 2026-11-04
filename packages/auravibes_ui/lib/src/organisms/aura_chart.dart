@@ -16,6 +16,7 @@ const _barWidthFactor = 0.6;
 const _barOffsetFactor = 0.3;
 const _lineStrokeWidth = 2.0;
 const _fullCircleMultiplier = 2.0;
+const _legendSwatchSize = 8.0;
 
 /// A static chart rendered with Flutter drawing primitives and a text legend.
 class AuraChart extends StatelessWidget {
@@ -33,6 +34,7 @@ class AuraChart extends StatelessWidget {
     this.yAxisTitle,
     this.unit,
     this.palette = const [],
+    this.valueFormatter,
   });
 
   /// Caller-localized labels, in reading order.
@@ -67,6 +69,9 @@ class AuraChart extends StatelessWidget {
 
   /// Allowlisted semantic colors used for category slices or series.
   final List<AuraTint> palette;
+
+  /// Optional caller-provided formatting for visible data values.
+  final String Function(double value)? valueFormatter;
 
   @override
   Widget build(BuildContext context) {
@@ -128,8 +133,9 @@ class const _AuraChartBottom({required final AuraChart chart})
 class _AuraChartBottomColumn extends StatelessWidget {
   new({required this.chart})
     : _children = [
-        if (chart.labels.isNotEmpty) _AuraChartLabels(labels: chart.labels),
-        _AuraChartLegend(series: chart.series, unit: chart.unit),
+        if (chart.labels.isNotEmpty && !_isPieChart(chart.type))
+          _AuraChartLabels(labels: chart.labels),
+        _AuraChartLegend(chart: chart),
         if (chart.xAxisTitle case final title?)
           _AuraChartAxisTitle(title: title, centered: true),
       ];
@@ -197,26 +203,114 @@ class const _AuraChartLabels({required final List<String> labels})
   );
 }
 
-class const _AuraChartLegend({
-  required final List<AuraChartSeries> series,
-  required final String? unit,
-}) extends StatelessWidget {
+class const _AuraChartLegend({required final AuraChart chart})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Wrap(
     spacing: context.auraTheme.spacing.md,
+    runSpacing: context.auraTheme.spacing.xs,
     children: [
-      for (final item in series)
-        AuraText(child: Text(_chartLegendLabel(item, unit)), tint: item.tint),
+      for (final entry in _chartLegendEntries(chart))
+        _AuraChartLegendItem(label: entry.label, tint: entry.tint),
     ],
   );
 }
 
-List<Color> _chartColors(BuildContext context, AuraChart chart) {
-  final tints = chart.palette.isEmpty
-      ? chart.series.map((item) => item.tint)
-      : chart.palette;
+typedef _ChartLegendEntry = ({String label, AuraTint tint});
 
-  return [for (final tint in tints) context.auraColors.colorFor(tint)];
+List<_ChartLegendEntry> _chartLegendEntries(AuraChart chart) {
+  final tints = _chartTints(chart);
+
+  return _isPieChart(chart.type)
+      ? _pieLegendEntries(chart, tints)
+      : _seriesLegendEntries(chart, tints);
+}
+
+List<_ChartLegendEntry> _pieLegendEntries(
+  AuraChart chart,
+  List<AuraTint> tints,
+) => [
+  for (final (index, label) in chart.labels.indexed)
+    (
+      label: _chartPieLabel(chart, index, label),
+      tint: tints[index % tints.length],
+    ),
+];
+
+List<_ChartLegendEntry> _seriesLegendEntries(
+  AuraChart chart,
+  List<AuraTint> tints,
+) => [
+  for (final (index, item) in chart.series.indexed)
+    (label: _chartSeriesLabel(chart, item), tint: tints[index % tints.length]),
+];
+
+String _chartPieLabel(AuraChart chart, int index, String label) {
+  final value = _formatChartValue(chart, chart.series.single.values[index]);
+  final unit = chart.unit;
+
+  return '$label: $value${unit == null ? '' : ' $unit'}';
+}
+
+String _chartSeriesLabel(AuraChart chart, AuraChartSeries item) {
+  final values = [
+    for (final (index, value) in item.values.indexed)
+      '${chart.labels[index]} ${_formatChartValue(chart, value)}',
+  ];
+
+  return '${_chartLegendLabel(item, chart.unit)}: ${values.join(', ')}';
+}
+
+class const _AuraChartLegendItem({
+  required final String label,
+  required final AuraTint tint,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: .min,
+    children: [
+      SizedBox(
+        width: _legendSwatchSize,
+        height: _legendSwatchSize,
+        child: ColoredBox(color: context.auraColors.colorFor(tint)),
+      ),
+      SizedBox(width: context.auraTheme.spacing.xs),
+      Flexible(
+        child: AuraText(child: Text(label), style: .caption),
+      ),
+    ],
+  );
+}
+
+String _formatChartValue(AuraChart chart, double value) {
+  final formatted = chart.valueFormatter?.call(value);
+  if (formatted != null) return formatted;
+  final raw = value.toString();
+
+  return raw.endsWith('.0') ? raw.replaceFirst('.0', '') : raw;
+}
+
+List<AuraTint> _chartTints(AuraChart chart) {
+  if (chart.palette.isNotEmpty) return chart.palette;
+  if (_isPieChart(chart.type)) {
+    return const [
+      AuraTint.primary,
+      AuraTint.success,
+      AuraTint.warning,
+      AuraTint.info,
+      AuraTint.error,
+      AuraTint.secondary,
+      AuraTint.tertiary,
+    ];
+  }
+
+  return [for (final item in chart.series) item.tint];
+}
+
+List<Color> _chartColors(BuildContext context, AuraChart chart) {
+  return [
+    for (final tint in _chartTints(chart)) context.auraColors.colorFor(tint),
+  ];
 }
 
 void _validateChart(AuraChart chart) {

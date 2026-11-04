@@ -15,7 +15,7 @@ class AuraRadioListTile<T> extends StatelessWidget {
     this.subtitle,
     this.tint,
     this.disabled = false,
-    this.semanticLabel = 'Radio button',
+    this.semanticLabel,
   });
 
   /// The value represented by this tile.
@@ -102,11 +102,11 @@ class _AuraRadioListTileSemanticsData<T> {
            onTap: _radioListTileOnTap(disabled, onChanged, value),
          ),
          container: true,
-         excludeSemantics: true,
+         excludeSemantics: semanticLabel != null,
          enabled: !disabled,
          checked: value == groupValue,
          inMutuallyExclusiveGroup: true,
-         label: semanticLabel ?? 'Radio button',
+         label: semanticLabel,
          onTap: _radioListTileOnTap(disabled, onChanged, value),
        );
 

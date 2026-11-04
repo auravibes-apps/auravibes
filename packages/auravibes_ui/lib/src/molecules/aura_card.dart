@@ -9,9 +9,6 @@ import 'package:flutter/material.dart';
 /// corners,
 /// and padding variants for content organization.
 class AuraCard extends StatelessWidget {
-  static const _borderWidth = 1.5;
-  static const _glassBlurSigma = 18.0;
-
   /// Creates a Aura card.
   const new({
     required this.child,
@@ -125,10 +122,6 @@ class const _AuraCardVariant({required final _AuraCardVariantData data})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    if (data.card.style == AuraCardStyle.glass) {
-      return _AuraGlassCard(data: data);
-    }
-
     return _AuraSolidCard(
       appearance: .new(
         colors: data.colors,
@@ -138,53 +131,6 @@ class const _AuraCardVariant({required final _AuraCardVariantData data})
       data: data,
     );
   }
-}
-
-class const _AuraGlassCard({required final _AuraCardVariantData data})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => ClipRRect(
-    borderRadius: BorderRadius.all(.circular(data.radius)),
-    child: BackdropFilter(
-      filter: .blur(
-        sigmaX: AuraCard._glassBlurSigma,
-        sigmaY: AuraCard._glassBlurSigma,
-      ),
-      child: _AuraGlassPressable(data: data),
-    ),
-  );
-}
-
-class const _AuraGlassPressable({required final _AuraCardVariantData data})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => AuraPressable(
-    child: data.content,
-    color: data.colors.onBackground,
-    decoration: _decoration(data.colors, data.radius),
-    onPressed: data.onTap,
-  );
-
-  Decoration _decoration(AuraColorScheme colors, double radius) =>
-      BoxDecoration(
-        border: _border(colors),
-        borderRadius: BorderRadius.all(.circular(radius)),
-        gradient: _gradient(colors),
-      );
-
-  Border _border(AuraColorScheme colors) => Border.all(
-    color: colors.background.withValues(alpha: 0.05),
-    width: AuraCard._borderWidth,
-  );
-
-  Gradient _gradient(AuraColorScheme colors) => LinearGradient(
-    begin: .topLeft,
-    end: .bottomCenter,
-    colors: [
-      colors.onBackground.withValues(alpha: 0.07),
-      colors.onBackground.withValues(alpha: 0.03),
-    ],
-  );
 }
 
 class const _AuraSolidCard({
@@ -211,8 +157,7 @@ class const _AuraSolidCard({
 class _AuraCardAppearance {
   new({required this.colors, required this.style, required this.tint})
     : _shadows = switch (style) {
-        .glass => [DesignShadows.glass],
-        .border => const [],
+        .glass || .border => const [],
         .elevated => [
           BoxShadow(
             color: colors.shadow.withValues(alpha: 0.06),
@@ -232,23 +177,10 @@ class _AuraCardAppearance {
   final AuraTint? tint;
   final List<BoxShadow> _shadows;
 
-  bool get _isGlass => style == AuraCardStyle.glass;
-
-  bool get _isBorder => style == AuraCardStyle.border;
-
-  Color get _backgroundColor {
-    if (_isGlass) return colors.surface.withValues(alpha: 0.1);
-
-    return _defaultBackgroundColor;
-  }
+  bool get _isBorder =>
+      style == AuraCardStyle.border || style == AuraCardStyle.glass;
 
   BoxBorder? get _border {
-    if (_isGlass) {
-      return Border.all(
-        color: colors.surfaceVariant.withValues(alpha: 0.2),
-        width: AuraCard._borderWidth,
-      );
-    }
     if (_isBorder) {
       return Border.fromBorderSide(.new(color: colors.outlineVariant));
     }
@@ -266,7 +198,7 @@ class _AuraCardAppearance {
     );
   }
 
-  Color surfaceColor() => _backgroundColor;
+  Color surfaceColor() => _defaultBackgroundColor;
 
   @override
   String toString() => 'AuraCardAppearance(style: $style, tint: $tint)';
@@ -277,7 +209,7 @@ enum AuraCardStyle {
   /// Card With border.
   border,
 
-  /// Card with glass effect.
+  /// Legacy alias for the bordered card style.
   glass,
 
   /// Card with elevation.

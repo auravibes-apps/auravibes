@@ -1904,6 +1904,7 @@ class const _SkillTileActions({
           value: skill.isEnabled,
           onChanged: isDeleting ? null : onChanged,
           disabled: isDeleting,
+          semanticLabel: _skillEnabledLabel(context, skill),
         ),
         if (skill.source == SkillSource.user && !isDeleting)
           _SkillTileMenu(onOpen: onOpen, onDelete: onDelete),
@@ -1912,6 +1913,12 @@ class const _SkillTileActions({
     );
   }
 }
+
+String _skillEnabledLabel(BuildContext context, WorkspaceSkill skill) =>
+    LocaleKeys.common_enable_named.tr(
+      context: context,
+      args: [_localizedSkillTitle(context, skill)],
+    );
 
 class const _SkillTileMenu({
   required final VoidCallback onOpen,

@@ -1,3 +1,5 @@
+import 'package:auravibes_engine/src/context_provenance.dart';
+
 const conversationCompactionSystemPrompt =
     'You are a conversation compaction assistant. Your task is to create '
     'a comprehensive but concise summary of the conversation messages '
@@ -23,6 +25,7 @@ const conversationCompactionRequestPrompt =
 class const ConversationCompactionMessage({
   required final String role,
   required final String content,
+  final AgentContextProvenance provenance = AgentContextProvenance.unknown,
 });
 
 List<ConversationCompactionMessage> buildConversationCompactionMessages(
@@ -31,11 +34,20 @@ List<ConversationCompactionMessage> buildConversationCompactionMessages(
   const ConversationCompactionMessage(
     role: 'system',
     content: conversationCompactionSystemPrompt,
+    provenance: AgentContextProvenance.applicationPrompt,
   ),
-  ...history,
+  for (final message in history)
+    ConversationCompactionMessage(
+      role: message.role == 'system' && !message.provenance.mayUseSystemRole
+          ? 'user'
+          : message.role,
+      content: message.content,
+      provenance: message.provenance,
+    ),
   const ConversationCompactionMessage(
     role: 'user',
     content: conversationCompactionRequestPrompt,
+    provenance: AgentContextProvenance.applicationPrompt,
   ),
 ];
 

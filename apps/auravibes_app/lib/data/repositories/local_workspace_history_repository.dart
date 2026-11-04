@@ -283,7 +283,7 @@ class const _HistoryStore(
   }
 
   Future<void> authorize(WorkspaceTrashTarget target) async {
-    validateWorkspaceTrashTarget(target);
+    WorkspaceTrashTarget.validate(target);
     await requireLocal();
     if (target.kind == .record) {
       final _ = await tables.record(_tableId(target), target.id);

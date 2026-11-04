@@ -49,7 +49,7 @@ void main() {
         ],
       ),
     );
-    final result = redactWorkspaceToolHistory([message]);
+    final result = WorkspaceHistoryRedaction.redactHistory([message]);
     final call = result.single.metadata?.toolCalls.single;
     expect(call?.responseRaw, workspaceContextUnavailable);
     expect(call?.argumentsRaw, isNot(contains('private-table')));

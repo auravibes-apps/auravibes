@@ -1289,6 +1289,8 @@
   },
   "tool_approval": {
     "pending_count": "Aprobación de herramienta {} de {}",
+    "previous": "Aprobación anterior",
+    "next": "Siguiente aprobación",
     "pending_loading": "Cargando las aprobaciones de herramientas pendientes…",
     "pending_refreshing": "Actualizando las aprobaciones de herramientas pendientes…",
     "pending_load_error": "No se pudieron cargar las aprobaciones de herramientas pendientes.",
@@ -1321,6 +1323,14 @@
     "pending": "Esperando confirmación"
   },
   "common": {
+    "enable_named": "Habilitar {}",
+    "enable_all_tools_named": "Habilitar todas las herramientas de {}",
+    "message_status_sending": "Se está enviando el mensaje",
+    "message_status_unfinished": "El mensaje se interrumpió antes de completarse",
+    "message_status_sent": "Mensaje enviado correctamente",
+    "message_status_delivered": "Mensaje entregado",
+    "message_status_read": "Mensaje leído por el destinatario",
+    "message_status_error": "No se pudo enviar el mensaje",
     "back": "Atrás",
     "cancel": "Cancelar",
     "remove": "Eliminar",
@@ -1534,6 +1544,14 @@
     "install_error": "No se pudo conectar este servicio. Inténtalo de nuevo.",
     "missing_fields": "Completa todos los campos obligatorios.",
     "unsupported_option": "Esta opción no está disponible en este espacio de trabajo."
+  },
+  "aura_ui": {
+    "day": "Día {}",
+    "rating": "{} de {}",
+    "step_pending": "Pendiente",
+    "step_current": "Actual",
+    "step_complete": "Completado",
+    "step_error": "Error"
   },
   "mcp_apps": {
     "loading": "Cargando resultado interactivo…",
@@ -2159,6 +2177,7 @@
     "save": "Guardar una copia",
     "unavailable": "Este archivo no está disponible. Revisa tu conexión o acceso y vuelve a intentarlo.",
     "invalid": "Este archivo no es compatible, no es válido o supera el límite de carga.",
+    "size_limit_exceeded": "Los archivos del espacio de trabajo deben tener 25 MiB o menos. Elige un archivo más pequeño.",
     "referenced": "Este recurso todavía tiene usos conservados.",
     "download_only": "Guarda una copia para abrir este archivo con otra aplicación.",
     "text_truncated": "Vista previa abreviada. Guarda una copia para ver el archivo completo.",
@@ -2235,6 +2254,10 @@
     "no_records": "No hay registros para mostrar.",
     "save_record": "Guardar registro",
     "invalid_table": "Elige una tabla disponible e introduce nombres de columna y valores válidos.",
+    "limit_columns": "Una tabla puede tener hasta 100 columnas.",
+    "limit_query_page": "Una consulta puede devolver hasta 100 registros por página.",
+    "limit_record_batch": "Una sola edición puede cambiar hasta 50 registros a la vez.",
+    "limit_summary_columns": "El resumen de una vista puede incluir hasta 50 columnas.",
     "create_column": "Añadir columna",
     "column_name": "Nombre de la columna",
     "column_type": "Tipo de columna",

@@ -110,6 +110,7 @@ class const _ResolvedDetail({
         leading: AuraIconButton(
           icon: Icons.arrow_back,
           onPressed: () => Navigator.of(context).maybePop(),
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
         ),
       ),
       child: switch (state) {

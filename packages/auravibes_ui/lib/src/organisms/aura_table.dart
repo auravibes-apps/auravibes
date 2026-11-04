@@ -1,4 +1,5 @@
 import 'package:auravibes_ui/src/atoms/aura_edgy.dart';
+import 'package:auravibes_ui/src/atoms/aura_pressable.dart';
 import 'package:auravibes_ui/src/atoms/aura_text.dart';
 import 'package:auravibes_ui/src/tokens/aura_theme.dart';
 import 'package:auravibes_ui/src/tokens/design_tokens.dart' show AuraTint;
@@ -17,7 +18,9 @@ class AuraTable extends StatefulWidget {
     this.sortableColumns = const [],
     this.rowTints = const [],
     this.emptyText,
-    this.noValueLabel = 'No value',
+    this.noValueLabel,
+    this.ascendingLabel,
+    this.descendingLabel,
   });
 
   /// Optional caller-localized caption above the table.
@@ -46,7 +49,13 @@ class AuraTable extends StatefulWidget {
   final String? emptyText;
 
   /// Localized semantic description for null cells.
-  final String noValueLabel;
+  final String? noValueLabel;
+
+  /// Optional caller-provided descriptions of the active sort direction.
+  final String? ascendingLabel;
+
+  /// Optional caller-provided description of descending order.
+  final String? descendingLabel;
 
   @override
   State<AuraTable> createState() => _AuraTableState();
@@ -123,6 +132,8 @@ typedef _TableCellFrameRequest = ({
   int columnIndex,
   Object? cell,
   ValueChanged<int> onSort,
+  int? sortIndex,
+  bool ascending,
 });
 
 typedef _TableCellData = ({
@@ -132,6 +143,7 @@ typedef _TableCellData = ({
   AuraTableValueFormat format,
   AuraTableAlignment alignment,
   VoidCallback? onSort,
+  String? sortIndicator,
 });
 
 void _validateRows(List<String> columns, List<List<Object?>> rows) {
@@ -380,18 +392,26 @@ class const _AuraTableCellFrame({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final data = _tableCellFrameData((
-      table: table,
-      isHeader: isHeader,
-      columnIndex: columnIndex,
-      cell: cell,
-      onSort: onSort,
-    ));
+    final data = _data(context);
 
     return _AuraTableCellSemantics(
       data: data,
       child: _AuraTableCellFrameContent(data: data),
     );
+  }
+
+  _TableCellFrameData _data(BuildContext context) {
+    final sortState = context.findAncestorStateOfType<_AuraTableState>();
+
+    return _tableCellFrameData((
+      table: table,
+      isHeader: isHeader,
+      columnIndex: columnIndex,
+      cell: cell,
+      onSort: onSort,
+      sortIndex: sortState?._sortIndex,
+      ascending: sortState?._ascending ?? true,
+    ));
   }
 }
 
@@ -402,6 +422,8 @@ typedef _TableCellFrameData = ({
   Object? cell,
   String? label,
   VoidCallback? onSort,
+  String? sortIndicator,
+  String? sortValue,
 });
 
 _TableCellFrameData _tableCellFrameData(_TableCellFrameRequest request) {
@@ -414,7 +436,34 @@ _TableCellFrameData _tableCellFrameData(_TableCellFrameRequest request) {
     cell: request.cell,
     label: _tableCellLabel(request),
     onSort: _tableCellSortCallback(request),
+    sortIndicator: _tableSortIndicator(request),
+    sortValue: _tableSortValue(request),
   );
+}
+
+String? _tableSortValue(_TableCellFrameRequest request) {
+  if (!request.isHeader || request.sortIndex != request.columnIndex) {
+    return null;
+  }
+
+  return request.ascending
+      ? request.table.ascendingLabel
+      : request.table.descendingLabel;
+}
+
+String? _tableSortIndicator(_TableCellFrameRequest request) {
+  if (!_isTableCellSortable(
+    request.table,
+    request.isHeader,
+    request.columnIndex,
+  )) {
+    return null;
+  }
+  if (request.sortIndex != request.columnIndex) {
+    return String.fromCharCode(0x2195);
+  }
+
+  return String.fromCharCode(request.ascending ? 0x2191 : 0x2193);
 }
 
 String? _tableCellLabel(_TableCellFrameRequest request) =>
@@ -444,8 +493,12 @@ class const _AuraTableCellSemantics({
   required final Widget child,
 }) extends StatelessWidget {
   @override
-  Widget build(BuildContext context) =>
-      Semantics(child: child, header: data.isHeader, label: data.label);
+  Widget build(BuildContext context) => Semantics(
+    child: child,
+    header: data.isHeader,
+    label: data.label,
+    value: data.sortValue,
+  );
 }
 
 class const _AuraTableCellFrameContent({
@@ -475,6 +528,7 @@ class const _AuraTableCellValue({required final _TableCellFrameData data})
       format: _tableColumnFormat(table, columnIndex),
       alignment: _tableColumnAlignment(table, columnIndex),
       onSort: data.onSort,
+      sortIndicator: data.sortIndicator,
     );
   }
 }
@@ -496,6 +550,7 @@ class const _AuraTableCell({
   required final AuraTableValueFormat format,
   required final AuraTableAlignment alignment,
   final VoidCallback? onSort,
+  final String? sortIndicator,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => _AuraTableCellBody(
@@ -506,6 +561,7 @@ class const _AuraTableCell({
       format: format,
       alignment: alignment,
       onSort: onSort,
+      sortIndicator: sortIndicator,
     ),
   );
 }
@@ -523,7 +579,16 @@ class const _AuraTableCellContent({required final _TableCellData data})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) => data.isHeader
-      ? AuraText(child: Text(data.header))
+      ? Row(
+          mainAxisSize: .min,
+          children: [
+            AuraText(child: Text(data.header)),
+            if (data.sortIndicator case final indicator?) ...[
+              const SizedBox(width: 4),
+              ExcludeSemantics(child: Text(indicator)),
+            ],
+          ],
+        )
       : _AuraTableValueCell(
           cell: data.cell,
           format: data.format,
@@ -539,18 +604,12 @@ class const _AuraTableCellInteraction({
   Widget build(BuildContext context) {
     final callback = onSort;
     if (callback == null) return content;
-    final targetSize = context.auraTheme.interactionSizes.minimumTargetSize;
 
-    return Semantics(
-      child: GestureDetector(
-        child: ConstrainedBox(
-          constraints: .new(minWidth: targetSize, minHeight: targetSize),
-          child: content,
-        ),
-        onTap: callback,
-        behavior: .opaque,
-      ),
-      button: true,
+    return AuraPressable(
+      child: content,
+      color: context.auraColors.primary,
+      onPressed: callback,
+      interaction: .localNavigation,
     );
   }
 }

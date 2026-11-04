@@ -1810,6 +1810,8 @@ abstract class LocaleKeys {
   static const tool_confirmation_skip = 'tool_confirmation.skip';
   static const tool_confirmation_stop_all = 'tool_confirmation.stop_all';
   static const tool_approval_pending_count = 'tool_approval.pending_count';
+  static const tool_approval_previous = 'tool_approval.previous';
+  static const tool_approval_next = 'tool_approval.next';
   static const tool_approval_pending_loading = 'tool_approval.pending_loading';
   static const tool_approval_pending_refreshing =
       'tool_approval.pending_refreshing';
@@ -1847,6 +1849,16 @@ abstract class LocaleKeys {
       'tool_call_status.execution_error';
   static const tool_call_status_running = 'tool_call_status.running';
   static const tool_call_status_pending = 'tool_call_status.pending';
+  static const common_enable_named = 'common.enable_named';
+  static const common_enable_all_tools_named = 'common.enable_all_tools_named';
+  static const common_message_status_sending = 'common.message_status_sending';
+  static const common_message_status_unfinished =
+      'common.message_status_unfinished';
+  static const common_message_status_sent = 'common.message_status_sent';
+  static const common_message_status_delivered =
+      'common.message_status_delivered';
+  static const common_message_status_read = 'common.message_status_read';
+  static const common_message_status_error = 'common.message_status_error';
   static const common_back = 'common.back';
   static const common_cancel = 'common.cancel';
   static const common_remove = 'common.remove';
@@ -2040,6 +2052,12 @@ abstract class LocaleKeys {
   static const mcp_catalog_missing_fields = 'mcp_catalog.missing_fields';
   static const mcp_catalog_unsupported_option =
       'mcp_catalog.unsupported_option';
+  static const aura_ui_day = 'aura_ui.day';
+  static const aura_ui_rating = 'aura_ui.rating';
+  static const aura_ui_step_pending = 'aura_ui.step_pending';
+  static const aura_ui_step_current = 'aura_ui.step_current';
+  static const aura_ui_step_complete = 'aura_ui.step_complete';
+  static const aura_ui_step_error = 'aura_ui.step_error';
   static const mcp_apps_loading = 'mcp_apps.loading';
   static const mcp_apps_unavailable = 'mcp_apps.unavailable';
   static const mcp_apps_retry = 'mcp_apps.retry';
@@ -2893,6 +2911,8 @@ abstract class LocaleKeys {
   static const workspace_assets_save = 'workspace_assets.save';
   static const workspace_assets_unavailable = 'workspace_assets.unavailable';
   static const workspace_assets_invalid = 'workspace_assets.invalid';
+  static const workspace_assets_size_limit_exceeded =
+      'workspace_assets.size_limit_exceeded';
   static const workspace_assets_referenced = 'workspace_assets.referenced';
   static const workspace_assets_download_only =
       'workspace_assets.download_only';
@@ -3004,6 +3024,13 @@ abstract class LocaleKeys {
   static const workspace_items_no_records = 'workspace_items.no_records';
   static const workspace_items_save_record = 'workspace_items.save_record';
   static const workspace_items_invalid_table = 'workspace_items.invalid_table';
+  static const workspace_items_limit_columns = 'workspace_items.limit_columns';
+  static const workspace_items_limit_query_page =
+      'workspace_items.limit_query_page';
+  static const workspace_items_limit_record_batch =
+      'workspace_items.limit_record_batch';
+  static const workspace_items_limit_summary_columns =
+      'workspace_items.limit_summary_columns';
   static const workspace_items_create_column = 'workspace_items.create_column';
   static const workspace_items_column_name = 'workspace_items.column_name';
   static const workspace_items_column_type = 'workspace_items.column_type';
