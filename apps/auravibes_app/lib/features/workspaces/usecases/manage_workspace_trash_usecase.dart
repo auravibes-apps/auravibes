@@ -12,7 +12,7 @@ class const ManageWorkspaceTrashUsecase(
   Future<List<WorkspaceTrashBatch>> list() => _repository.list();
 
   Future<WorkspaceTrashBatch> preview(WorkspaceTrashTarget target) {
-    validateWorkspaceTrashTarget(target);
+    WorkspaceTrashTarget.validate(target);
 
     return _repository.preview(target);
   }

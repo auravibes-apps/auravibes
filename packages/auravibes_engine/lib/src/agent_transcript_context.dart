@@ -1,3 +1,4 @@
+import 'package:auravibes_engine/src/context_provenance.dart';
 import 'package:auravibes_engine/src/tool_spec.dart';
 
 enum AgentContextMessageRole { system, skill }
@@ -6,6 +7,7 @@ class const AgentContextMessage({
   required final AgentContextMessageRole role,
   required final String content,
   final String? kind,
+  final AgentContextProvenance provenance = AgentContextProvenance.unknown,
 });
 
 /// One immutable change to the trusted prompt and model-visible tool catalog.
@@ -161,7 +163,8 @@ bool _sameMessages(
       (index) =>
           left[index].role == right[index].role &&
           left[index].content == right[index].content &&
-          left[index].kind == right[index].kind,
+          left[index].kind == right[index].kind &&
+          left[index].provenance == right[index].provenance,
     );
 
 bool _sameStrings(List<String> left, List<String> right) =>

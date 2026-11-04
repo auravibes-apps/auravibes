@@ -2,10 +2,6 @@ import 'package:unorm_dart/unorm_dart.dart';
 
 final _combiningMarks = RegExp(r'\p{M}', unicode: true);
 
-/// Folds accents and compatibility characters for workspace name matching.
-String normalizeWorkspaceSearch(String value) =>
-    nfkd(value).replaceAll(_combiningMarks, '').toLowerCase();
-
 /// A workspace-name snapshot that reuses normalized names across searches.
 class WorkspaceSearchIndex<T>(
   Iterable<T> items, {
@@ -20,6 +16,10 @@ class WorkspaceSearchIndex<T>(
         .new(item: item, name: nameOf(item), stableId: idOf(item)),
     ],
   );
+
+  /// Folds accents and compatibility characters for workspace name matching.
+  static String normalize(String value) =>
+      nfkd(value).replaceAll(_combiningMarks, '').toLowerCase();
 
   /// Returns whether [items] still match the exact snapshot indexed here.
   ///
@@ -42,7 +42,7 @@ class WorkspaceSearchIndex<T>(
   }
 
   /// Filters entries by a query already normalized with
-  /// [normalizeWorkspaceSearch].
+  /// [WorkspaceSearchIndex.normalize].
   List<WorkspaceSearchEntry<T>> matching(String normalizedQuery) => [
     for (final entry in _entries)
       if (normalizedQuery.isEmpty ||
@@ -103,6 +103,6 @@ class WorkspaceSearchEntry<T>({
   required final String stableId,
 }) {
   final String sourceName = name;
-  final String normalizedName = normalizeWorkspaceSearch(name);
+  final String normalizedName = WorkspaceSearchIndex.normalize(name);
   final String sortName = name.toLowerCase();
 }

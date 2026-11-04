@@ -49,6 +49,23 @@ class const WorkspaceRecordBrowser({
   final ValueChanged<WorkspaceColumnType>? onAddColumn,
   super.key,
 }) extends HookConsumerWidget {
+  static Future<void> createEmptyRecord(
+    WidgetRef ref, {
+    required String workspaceId,
+    required WorkspaceTable table,
+  }) async {
+    final usecase = await ref.read(
+      workspaceTableUsecaseProvider(workspaceId).future,
+    );
+    final _ = await usecase.createRecord(
+      table: table,
+      values: {for (final column in table.columns) column.id: null},
+    );
+    if (ref.context.mounted) {
+      ref.invalidate(workspaceRecordQueryUsecaseProvider(workspaceId));
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final draft = _Draft.use(selectionMode, draftOpen);
@@ -100,23 +117,6 @@ class _ColumnWidthLoad(
     if (_mounted) {
       draft.columnWidths.value = {...widths, ...draft.columnWidths.value};
     }
-  }
-}
-
-Future<void> createEmptyWorkspaceRecord(
-  WidgetRef ref, {
-  required String workspaceId,
-  required WorkspaceTable table,
-}) async {
-  final usecase = await ref.read(
-    workspaceTableUsecaseProvider(workspaceId).future,
-  );
-  final _ = await usecase.createRecord(
-    table: table,
-    values: {for (final column in table.columns) column.id: null},
-  );
-  if (ref.context.mounted) {
-    ref.invalidate(workspaceRecordQueryUsecaseProvider(workspaceId));
   }
 }
 
@@ -685,7 +685,7 @@ class const _AddEmptyRecord(final _Rows owner) extends HookConsumerWidget {
   }
 
   Future<void> _create(WidgetRef ref) async {
-    await createEmptyWorkspaceRecord(
+    await WorkspaceRecordBrowser.createEmptyRecord(
       ref,
       workspaceId: owner.browser.workspaceId,
       table: owner.table,

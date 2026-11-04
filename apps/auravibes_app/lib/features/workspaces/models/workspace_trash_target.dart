@@ -13,6 +13,14 @@ class const WorkspaceTrashTarget({
     tableId: data['tableId'] as String?,
   );
 
+  static void validate(WorkspaceTrashTarget target) {
+    if (target.id.isEmpty ||
+        target.revision < 1 ||
+        (target.kind == .record && (target.tableId?.isEmpty ?? true))) {
+      throw const WorkspaceTableException();
+    }
+  }
+
   Map<String, Object?> toJson() => {
     'kind': kind.name,
     'id': id,
@@ -57,14 +65,6 @@ abstract interface class WorkspaceTrashRepository {
     required String planToken,
   });
   Future<WorkspaceTrashRestoration> restore(String batchId);
-}
-
-void validateWorkspaceTrashTarget(WorkspaceTrashTarget target) {
-  if (target.id.isEmpty ||
-      target.revision < 1 ||
-      (target.kind == .record && (target.tableId?.isEmpty ?? true))) {
-    throw const WorkspaceTableException();
-  }
 }
 
 enum WorkspaceTrashKind { folder, table, record, view, file }

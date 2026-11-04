@@ -7,13 +7,15 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:material_ui/material_ui.dart';
 
-Future<void> openChatExternalLink(BuildContext context, String url) =>
-    ConfirmedExternalLink.open(
-      context: context,
-      url: url,
-      confirm: (uri) => _confirmChatExternalLink(context, uri),
-      onLaunchFailure: () => _showChatExternalLinkError(context),
-    );
+abstract final class ChatExternalLink {
+  static Future<void> open(BuildContext context, String url) =>
+      ConfirmedExternalLink.open(
+        context: context,
+        url: url,
+        confirm: (uri) => _confirmChatExternalLink(context, uri),
+        onLaunchFailure: () => _showChatExternalLinkError(context),
+      );
+}
 
 Future<bool?> _confirmChatExternalLink(BuildContext context, Uri uri) =>
     AuraDialogs.confirm(

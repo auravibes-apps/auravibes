@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:auravibes_app/features/chats/services/chatbot/app_open_ai_plugin.dart';
+import 'package:auravibes_engine/auravibes_engine.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:genkit/genkit.dart';
 import 'package:genkit_openai/genkit_openai.dart';
@@ -54,6 +55,45 @@ void main() {
       expect(originalClient.closeCount, 1);
     },
   );
+
+  test('serializes upstream user data without system promotion', () async {
+    final client = _client();
+    final message = Message(
+      role: .user,
+      content: [TextPart(text: 'UNTRUSTED_WIRE_SENTINEL')],
+      metadata: AgentContextProvenance.importedSkill.withMetadata(const {}),
+    );
+    final generated = await http.runWithClient(
+      () =>
+          Genkit(
+            plugins: [AppOpenAIPlugin(upstream: _upstream())],
+            isDevEnv: false,
+          ).generate<OpenAIChatOptions, Object?>(
+            model: modelRef<OpenAIChatOptions>('openai/contract-model'),
+            messages: [message],
+            config: OpenAIChatOptions(temperature: 0.25),
+            cancel: CancellationController().token,
+          ),
+      () => client,
+    );
+    expect(generated, isNotNull);
+
+    final body = client.requests.single.json;
+    final messages = body['messages'] as List<dynamic>;
+    final content =
+        (messages.single as Map<String, dynamic>)['content'] as List<dynamic>;
+
+    expect(messages, hasLength(1));
+    expect((messages.single as Map<String, dynamic>)['role'], 'user');
+    expect(content, [
+      {'type': 'text', 'text': 'UNTRUSTED_WIRE_SENTINEL'},
+    ]);
+    expect(jsonEncode(body), isNot(contains('"role":"system"')));
+    expect(
+      jsonEncode(body),
+      isNot(contains(agentContextProvenanceMetadataKey)),
+    );
+  });
 
   test('does not close an injected caller-owned client', () async {
     final client = _client();
