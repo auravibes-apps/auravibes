@@ -679,10 +679,7 @@ void main() {
         'UX_EXPECT_REORDER',
         defaultValue: true,
       );
-      expect(
-        firstActions,
-        expectReorder ? findsOneWidget : findsNothing,
-      );
+      expect(firstActions, expectReorder ? findsOneWidget : findsNothing);
       expect(
         tester.getTopLeft(find.text('Outline the plan')).dy,
         lessThan(tester.getTopLeft(find.text('Draft the summary')).dy),
