@@ -46,7 +46,7 @@ void main() {
       initialLocation: chat,
       initialExtra: const ChatDraft(text: starter),
     );
-    addTearDown(() => _closeFirstChatApp(tester: tester, router: router));
+    addTearDown(router.dispose);
 
     final overrides = [
       appDatabaseProvider.overrideWithValue(database),
@@ -88,6 +88,7 @@ void main() {
       isEmpty,
     );
     expect(tester.takeException(), isNull);
+    await _closeFirstChatApp(tester: tester, router: router);
   });
 
   testWidgets('new chat ignores route extras that are not drafts', (
@@ -107,7 +108,7 @@ void main() {
       initialLocation: chat,
       initialExtra: 'unrelated route state',
     );
-    addTearDown(() => _closeFirstChatApp(tester: tester, router: router));
+    addTearDown(router.dispose);
 
     final overrides = [
       appDatabaseProvider.overrideWithValue(database),
@@ -136,6 +137,7 @@ void main() {
         .first;
     expect(tester.widget<EditableText>(editable).controller.text, isEmpty);
     expect(tester.takeException(), isNull);
+    await _closeFirstChatApp(tester: tester, router: router);
   });
 
   for (final action in ['save', 'cancel']) {
@@ -161,7 +163,7 @@ void main() {
           routes: _firstChatRoutes(),
           initialLocation: direct ? setup.location : chat,
         );
-        addTearDown(() => _closeFirstChatApp(tester: tester, router: router));
+        addTearDown(router.dispose);
         final overrides = [
           appDatabaseProvider.overrideWithValue(database),
           routerProvider.overrideWithValue(router),
@@ -224,6 +226,7 @@ void main() {
         expect(find.text('Use the model selector below.'), findsOneWidget);
         expect(find.text('Continue to chat to choose a model.'), findsNothing);
         if (!direct) expect(find.text('Keep my draft'), findsOneWidget);
+        await _closeFirstChatApp(tester: tester, router: router);
       });
     }
   }
@@ -278,7 +281,7 @@ List<RouteBase> _firstChatRoutes() => [
   ...$appRoutes,
   GoRoute(
     path: '/test-only/first-chat-disposal',
-    builder: (context, state) => const SizedBox.shrink(),
+    builder: (_, _) => const SizedBox.shrink(),
   ),
 ];
 
@@ -286,16 +289,13 @@ Future<void> _closeFirstChatApp({
   required WidgetTester tester,
   required GoRouter router,
 }) async {
-  if (find.byType(TestableApp).evaluate().isNotEmpty) {
-    router.go('/test-only/first-chat-disposal');
+  router.go('/test-only/first-chat-disposal');
+  final _ = await tester.pumpAndSettle();
+  final discardChanges = find.text('Discard changes');
+  if (discardChanges.evaluate().isNotEmpty) {
+    await tester.tap(discardChanges);
     final _ = await tester.pumpAndSettle();
-    final discardChanges = find.text('Discard changes');
-    if (discardChanges.evaluate().isNotEmpty) {
-      await tester.tap(discardChanges);
-      final _ = await tester.pumpAndSettle();
-    }
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump(const Duration(milliseconds: 10));
   }
-  router.dispose();
+  await tester.pumpWidget(const SizedBox.shrink());
+  await tester.pump(const Duration(milliseconds: 10));
 }
