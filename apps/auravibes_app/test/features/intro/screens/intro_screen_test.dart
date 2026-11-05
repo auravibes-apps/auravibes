@@ -114,6 +114,7 @@ void main() {
       final conversations = await tester.runAsync(() {
         final query = fixture.database.select(fixture.database.conversations)
           ..where((row) => row.workspaceId.equals(workspace.id));
+
         return query.get().timeout(const Duration(seconds: 20));
       });
       if (conversations == null) {
