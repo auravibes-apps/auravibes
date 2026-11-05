@@ -156,9 +156,13 @@ void main() {
     addTearDown(fixture.dispose);
     var attempts = 0;
     final workspaceCreation = Completer<WorkspaceEntity>();
-    when(() => useCase.call(name: 'Personal work')).thenAnswer((_) async {
+    when(() => useCase.call(name: 'Personal work')).thenAnswer((_) {
       attempts++;
-      if (attempts == 1) throw StateError('storage unavailable');
+      if (attempts == 1) {
+        return Future<WorkspaceEntity>.error(
+          StateError('storage unavailable'),
+        );
+      }
 
       return workspaceCreation.future;
     });
