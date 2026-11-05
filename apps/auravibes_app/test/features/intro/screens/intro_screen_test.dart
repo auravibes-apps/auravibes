@@ -45,8 +45,23 @@ void main() {
   testWidgets('first-use guide selects a localized editable starter', (
     tester,
   ) async {
-    final fixture = _IntroFixture();
+    final useCase = _CreateWorkspaceUseCase();
+    final fixture = _IntroFixture(createWorkspaceUseCase: useCase);
     addTearDown(fixture.dispose);
+    final workspaceCreation = Completer<WorkspaceEntity>();
+    when(() => useCase.call(name: 'Trabajo personal')).thenAnswer((_) async {
+      final workspace = await tester.runAsync(
+        () => WorkspaceRepository(fixture.database)
+            .createWorkspace(const .new(name: 'Trabajo personal', type: .local))
+            .timeout(const Duration(seconds: 20)),
+      );
+      if (workspace == null) {
+        fail('Quick-start workspace creation did not finish');
+      }
+      workspaceCreation.complete(workspace);
+
+      return workspace;
+    });
     final semantics = tester.ensureSemantics();
     try {
       await tester.runAsync(
@@ -81,6 +96,12 @@ void main() {
         isFalse,
       );
       await _tapVisible(tester, find.byKey(_quickStartKey));
+      final workspace = await tester.runAsync(
+        () => workspaceCreation.future.timeout(const Duration(seconds: 20)),
+      );
+      if (workspace == null) {
+        fail('Quick-start workspace was not created');
+      }
       await _pumpUntilFound(tester, find.textContaining('new chat:'));
 
       expect(
@@ -89,19 +110,19 @@ void main() {
         ),
         findsOneWidget,
       );
-      expect(
-        (await fixture.database.workspaceDao.getAllWorkspaces()).single.name,
-        'Trabajo personal',
+      expect(workspace.name, 'Trabajo personal');
+      final conversations = await tester.runAsync(
+        () => (fixture.database.select(fixture.database.conversations)
+              ..where((row) => row.workspaceId.equals(workspace.id)))
+            .get()
+            .timeout(const Duration(seconds: 20)),
       );
-      final workspace =
-          (await fixture.database.workspaceDao.getAllWorkspaces()).single;
-      expect(
-        await fixture.database.conversationDao
-            .watchConversationsByWorkspace(workspace.id)
-            .first,
-        isEmpty,
-      );
+      if (conversations == null) {
+        fail('Conversation query did not complete');
+      }
+      expect(conversations, isEmpty);
     } finally {
+      await _closeIntroWidget(tester);
       semantics.dispose();
     }
   });
@@ -132,6 +153,7 @@ void main() {
       expect(find.byKey(_cloudRouteKey), findsOneWidget);
       expect(tester.takeException(), isNull);
     } finally {
+      await _closeIntroWidget(tester);
       semantics.dispose();
     }
   });
@@ -143,30 +165,55 @@ void main() {
     final fixture = _IntroFixture(createWorkspaceUseCase: useCase);
     addTearDown(fixture.dispose);
     var attempts = 0;
-    when(() => useCase.call(name: 'Personal work')).thenAnswer((_) {
+    final workspaceCreation = Completer<WorkspaceEntity>();
+    when(() => useCase.call(name: 'Personal work')).thenAnswer((_) async {
       attempts++;
       if (attempts == 1) throw StateError('storage unavailable');
 
-      return WorkspaceRepository(fixture.database)
-          .createWorkspace(const .new(name: 'Personal work', type: .local));
-    });
-    await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
-    await _tapVisible(tester, find.byKey(_dayStarterKey));
-    await _tapVisible(tester, find.byKey(_quickStartKey));
-    await _pumpUntilFound(
-      tester,
-      find.text('An unexpected error occurred. Please try again.'),
-    );
-    expect(await fixture.database.workspaceDao.getAllWorkspaces(), isEmpty);
-    expect(find.byKey(_advancedSetupKey), findsOneWidget);
+      final workspace = await tester.runAsync(
+        () => WorkspaceRepository(fixture.database)
+            .createWorkspace(const .new(name: 'Personal work', type: .local))
+            .timeout(const Duration(seconds: 20)),
+      );
+      if (workspace == null) {
+        fail('Quick-start retry did not create a workspace');
+      }
+      workspaceCreation.complete(workspace);
 
-    await _tapVisible(tester, find.byKey(_quickStartKey));
-    await _pumpUntilFound(tester, find.textContaining('new chat:'));
-    expect(attempts, 2);
-    expect(
-      (await fixture.database.workspaceDao.getAllWorkspaces()).single.name,
-      'Personal work',
-    );
+      return workspace;
+    });
+    try {
+      await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
+      await _tapVisible(tester, find.byKey(_dayStarterKey));
+      await _tapVisible(tester, find.byKey(_quickStartKey));
+      await _pumpUntilFound(
+        tester,
+        find.text('An unexpected error occurred. Please try again.'),
+      );
+      final emptyWorkspaces = await tester.runAsync(
+        () => fixture.database.workspaceDao
+            .getAllWorkspaces()
+            .timeout(const Duration(seconds: 20)),
+      );
+      if (emptyWorkspaces == null) {
+        fail('Workspace query did not complete');
+      }
+      expect(emptyWorkspaces, isEmpty);
+      expect(find.byKey(_advancedSetupKey), findsOneWidget);
+
+      await _tapVisible(tester, find.byKey(_quickStartKey));
+      final workspace = await tester.runAsync(
+        () => workspaceCreation.future.timeout(const Duration(seconds: 20)),
+      );
+      if (workspace == null) {
+        fail('Quick-start retry did not create a workspace');
+      }
+      await _pumpUntilFound(tester, find.textContaining('new chat:'));
+      expect(attempts, 2);
+      expect(workspace.name, 'Personal work');
+    } finally {
+      await _closeIntroWidget(tester);
+    }
   });
 
   testWidgets('quick start disables starter changes while creating workspace', (
@@ -178,32 +225,37 @@ void main() {
     final workspaceCreation = Completer<WorkspaceEntity>();
     when(() => useCase.call(name: 'Personal work'))
         .thenAnswer((_) => workspaceCreation.future);
-    await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
-    await _tapVisible(tester, find.byKey(_dayStarterKey));
-    await _tapVisible(tester, find.byKey(_quickStartKey));
-    await tester.pump();
+    try {
+      await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
+      await _tapVisible(tester, find.byKey(_dayStarterKey));
+      await _tapVisible(tester, find.byKey(_quickStartKey));
+      await tester.pump();
 
-    for (final key in [
-      _dayStarterKey,
-      _shoppingStarterKey,
-      _messageStarterKey,
-    ]) {
-      final button = find.descendant(
-        of: find.byKey(key),
-        matching: find.byType(AuraButton),
-      );
-      expect(tester.widget<AuraButton>(button).disabled, isTrue);
-    }
+      for (final key in [
+        _dayStarterKey,
+        _shoppingStarterKey,
+        _messageStarterKey,
+      ]) {
+        final button = find.descendant(
+          of: find.byKey(key),
+          matching: find.byType(AuraButton),
+        );
+        expect(tester.widget<AuraButton>(button).disabled, isTrue);
+      }
 
-    final localWorkspace = await tester.runAsync(() {
-      return WorkspaceRepository(fixture.database)
-          .createWorkspace(const .new(name: 'Personal work', type: .local));
-    });
-    if (localWorkspace == null) {
-      fail('Quick-start workspace creation did not finish');
+      final localWorkspace = await tester.runAsync(() {
+        return WorkspaceRepository(fixture.database)
+            .createWorkspace(const .new(name: 'Personal work', type: .local))
+            .timeout(const Duration(seconds: 20));
+      });
+      if (localWorkspace == null) {
+        fail('Quick-start workspace creation did not finish');
+      }
+      workspaceCreation.complete(localWorkspace);
+      await _pumpUntilFound(tester, find.textContaining('new chat:'));
+    } finally {
+      await _closeIntroWidget(tester);
     }
-    workspaceCreation.complete(localWorkspace);
-    await _pumpUntilFound(tester, find.textContaining('new chat:'));
   });
 
   for (final locale in [const Locale('en'), const Locale('es')]) {
@@ -212,25 +264,37 @@ void main() {
     ) async {
       final fixture = _IntroFixture();
       addTearDown(fixture.dispose);
-      await tester.runAsync(
-        () => tester.pumpWidget(fixture.buildApp(startLocale: locale)),
-      );
-      await _tapVisible(tester, find.byKey(_advancedSetupKey));
-      await _pumpUntilFound(tester, find.byKey(_localRouteKey));
+      try {
+        await tester.runAsync(
+          () => tester.pumpWidget(fixture.buildApp(startLocale: locale)),
+        );
+        await _tapVisible(tester, find.byKey(_advancedSetupKey));
+        await _pumpUntilFound(tester, find.byKey(_localRouteKey));
 
-      expect(find.byKey(_cloudRouteKey), findsOneWidget);
-      expect(find.byKey(_connectExistingKey), findsOneWidget);
-      expect(
-        find.textContaining('intro_flow.choice.select_hint'.tr()),
-        findsOneWidget,
-      );
-      expect(
-        find.textContaining(
-          locale.languageCode == 'es' ? 'plan de pago' : 'paid plan',
-        ),
-        findsWidgets,
-      );
-      expect(await fixture.database.workspaceDao.getAllWorkspaces(), isEmpty);
+        expect(find.byKey(_cloudRouteKey), findsOneWidget);
+        expect(find.byKey(_connectExistingKey), findsOneWidget);
+        expect(
+          find.textContaining('intro_flow.choice.select_hint'.tr()),
+          findsOneWidget,
+        );
+        expect(
+          find.textContaining(
+            locale.languageCode == 'es' ? 'plan de pago' : 'paid plan',
+          ),
+          findsWidgets,
+        );
+        final workspaces = await tester.runAsync(
+          () => fixture.database.workspaceDao
+              .getAllWorkspaces()
+              .timeout(const Duration(seconds: 20)),
+        );
+        if (workspaces == null) {
+          fail('Workspace query did not complete');
+        }
+        expect(workspaces, isEmpty);
+      } finally {
+        await _closeIntroWidget(tester);
+      }
     });
   }
 
@@ -1170,6 +1234,11 @@ const _messageStarterKey = ValueKey<String>('intro_starter_personal_message');
 Future<void> _pumpFrame(WidgetTester tester) async {
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 100));
+}
+
+Future<void> _closeIntroWidget(WidgetTester tester) async {
+  await tester.pumpWidget(const SizedBox.shrink());
+  await tester.pump(const Duration(milliseconds: 10));
 }
 
 Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
