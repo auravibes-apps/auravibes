@@ -220,6 +220,16 @@ jobs:
         id: check-format
         run: melos run format:check
 
+      - name: Show intro screen formatting diff
+        if: ${{ always() && github.event_name == 'pull_request' && steps.check-format.outcome == 'failure' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          target=apps/auravibes_app/test/features/intro/screens/intro_screen_test.dart
+          formatted="$RUNNER_TEMP/intro_screen_test.formatted.dart"
+          dart format --line-length 80 --output=show "$target" > "$formatted"
+          diff -u "$target" "$formatted" || true
+
       - name: Capture workspace capacity formatter output
         if: ${{ always() && github.event_name == 'pull_request' && steps.check-format.outcome == 'failure' }}
         shell: bash
