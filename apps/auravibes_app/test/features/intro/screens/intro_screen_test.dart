@@ -50,9 +50,7 @@ void main() {
     addTearDown(fixture.dispose);
     final workspace = await tester.runAsync(
       () => WorkspaceRepository(fixture.database)
-          .createWorkspace(
-            const .new(name: 'Trabajo personal', type: .local),
-          )
+          .createWorkspace(const .new(name: 'Trabajo personal', type: .local))
           .timeout(const Duration(seconds: 20)),
     );
     if (workspace == null) {
