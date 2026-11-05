@@ -42,11 +42,11 @@ void main() {
     const starter = 'Help me plan my day';
     final chat = NewChatRoute(workspaceId: workspace.id).location;
     final router = GoRouter(
-      routes: $appRoutes,
+      routes: _firstChatRoutes(),
       initialLocation: chat,
       initialExtra: const ChatDraft(text: starter),
     );
-    addTearDown(router.dispose);
+    addTearDown(() => _closeFirstChatApp(tester: tester, router: router));
 
     final overrides = [
       appDatabaseProvider.overrideWithValue(database),
@@ -103,11 +103,11 @@ void main() {
     );
     final chat = NewChatRoute(workspaceId: workspace.id).location;
     final router = GoRouter(
-      routes: $appRoutes,
+      routes: _firstChatRoutes(),
       initialLocation: chat,
       initialExtra: 'unrelated route state',
     );
-    addTearDown(router.dispose);
+    addTearDown(() => _closeFirstChatApp(tester: tester, router: router));
 
     final overrides = [
       appDatabaseProvider.overrideWithValue(database),
@@ -158,10 +158,10 @@ void main() {
           type: 'modelProvider',
         );
         final router = GoRouter(
-          routes: $appRoutes,
+          routes: _firstChatRoutes(),
           initialLocation: direct ? setup.location : chat,
         );
-        addTearDown(router.dispose);
+        addTearDown(() => _closeFirstChatApp(tester: tester, router: router));
         final overrides = [
           appDatabaseProvider.overrideWithValue(database),
           routerProvider.overrideWithValue(router),
@@ -272,4 +272,30 @@ Future<void> _pumpFirstChatApp({
   );
   await tester.pump();
   await tester.pump();
+}
+
+List<RouteBase> _firstChatRoutes() => [
+  ...$appRoutes,
+  GoRoute(
+    path: '/test-only/first-chat-disposal',
+    builder: (context, state) => const SizedBox.shrink(),
+  ),
+];
+
+Future<void> _closeFirstChatApp({
+  required WidgetTester tester,
+  required GoRouter router,
+}) async {
+  if (find.byType(TestableApp).evaluate().isNotEmpty) {
+    router.go('/test-only/first-chat-disposal');
+    final _ = await tester.pumpAndSettle();
+    final discardChanges = find.text('Discard changes');
+    if (discardChanges.evaluate().isNotEmpty) {
+      await tester.tap(discardChanges);
+      final _ = await tester.pumpAndSettle();
+    }
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(milliseconds: 10));
+  }
+  router.dispose();
 }
