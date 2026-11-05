@@ -52,9 +52,7 @@ void main() {
     when(() => useCase.call(name: 'Trabajo personal')).thenAnswer((_) async {
       final workspace = await tester.runAsync(
         () => WorkspaceRepository(fixture.database)
-            .createWorkspace(
-              const .new(name: 'Trabajo personal', type: .local),
-            )
+            .createWorkspace(const .new(name: 'Trabajo personal', type: .local))
             .timeout(const Duration(seconds: 20)),
       );
       if (workspace == null) {
@@ -173,9 +171,7 @@ void main() {
 
       final workspace = await tester.runAsync(
         () => WorkspaceRepository(fixture.database)
-            .createWorkspace(
-              const .new(name: 'Personal work', type: .local),
-            )
+            .createWorkspace(const .new(name: 'Personal work', type: .local))
             .timeout(const Duration(seconds: 20)),
       );
       if (workspace == null) {
@@ -194,9 +190,9 @@ void main() {
         find.text('An unexpected error occurred. Please try again.'),
       );
       final emptyWorkspaces = await tester.runAsync(
-        () => fixture.database.workspaceDao
-            .getAllWorkspaces()
-            .timeout(const Duration(seconds: 20)),
+        () => fixture.database.workspaceDao.getAllWorkspaces().timeout(
+          const Duration(seconds: 20),
+        ),
       );
       if (emptyWorkspaces == null) {
         fail('Workspace query did not complete');
@@ -248,9 +244,7 @@ void main() {
 
       final localWorkspace = await tester.runAsync(() {
         return WorkspaceRepository(fixture.database)
-            .createWorkspace(
-              const .new(name: 'Personal work', type: .local),
-            )
+            .createWorkspace(const .new(name: 'Personal work', type: .local))
             .timeout(const Duration(seconds: 20));
       });
       if (localWorkspace == null) {
@@ -289,9 +283,9 @@ void main() {
           findsWidgets,
         );
         final workspaces = await tester.runAsync(
-          () => fixture.database.workspaceDao
-              .getAllWorkspaces()
-              .timeout(const Duration(seconds: 20)),
+          () => fixture.database.workspaceDao.getAllWorkspaces().timeout(
+            const Duration(seconds: 20),
+          ),
         );
         if (workspaces == null) {
           fail('Workspace query did not complete');
