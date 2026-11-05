@@ -11,10 +11,19 @@ void _registerIntroJourneyCaptures() {
           locale,
           mobile: mobile,
         );
-        for (var page = 1; page <= 3; page++) {
-          await journey.capture('Welcome$page');
-          await journey.tapKey('intro_welcome_next_button');
-        }
+        await journey.capture('FirstChatGuide');
+        await journey.tapKey('intro_advanced_setup_button');
+        final chooserHeading = find.text('intro_flow.choice.title'.tr());
+        expect(chooserHeading, findsOneWidget);
+        expect(tester.getRect(chooserHeading).top, greaterThanOrEqualTo(0));
+        expect(
+          find.byKey(const Key('intro_route_local_button')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('intro_route_cloud_button')),
+          findsOneWidget,
+        );
         await journey.capture('Chooser');
         await journey.tapKey('intro_route_local_button');
         await journey.capture('LocalName');
@@ -146,7 +155,7 @@ void _registerIntroJourneyCaptures() {
           locale,
           mobile: mobile,
         );
-        await journey.tapKey('intro_welcome_skip_button');
+        await journey.tapKey('intro_advanced_setup_button');
         await journey.tapKey('intro_route_local_button');
         await tester.enterText(find.byType(AuraInput), 'Design studio');
         await journey.tapKey('intro_create_workspace_button');
@@ -176,7 +185,7 @@ void _registerIntroJourneyCaptures() {
         journey.container.invalidate(cloudAccountsProvider);
         final waiting = Completer<CloudWorkspaceViewState?>();
         journey.discoveryLoad = () => waiting.future;
-        await journey.tapKey('intro_welcome_skip_button');
+        await journey.tapKey('intro_advanced_setup_button');
         await journey.tapKey('intro_connect_existing_button');
         await journey.capture('DiscoveryWaiting');
         waiting.completeError(StateError('fixture offline'));
@@ -242,7 +251,7 @@ void _registerIntroJourneyCaptures() {
 
             return Future<void>.value();
           });
-          await invites.tapKey('intro_welcome_skip_button');
+          await invites.tapKey('intro_advanced_setup_button');
           await invites.tapKey('intro_connect_existing_button');
           await invites.capture('Invitation${accept ? 'Accept' : 'Decline'}');
           await invites.tapText(
@@ -265,7 +274,7 @@ void _registerIntroJourneyCaptures() {
             locale,
             mobile: mobile,
           );
-          await journey.tapKey('intro_welcome_skip_button');
+          await journey.tapKey('intro_advanced_setup_button');
           await journey.tapKey('intro_route_local_button');
           await tester.enterText(find.byType(AuraInput), 'Design studio');
           await journey.tapKey('intro_create_workspace_button');

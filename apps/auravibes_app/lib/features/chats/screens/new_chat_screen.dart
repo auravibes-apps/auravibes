@@ -37,6 +37,7 @@ final _logger = Logger('new_chat_screen');
 class const NewChatScreen({
   required final String workspaceId,
   final String? initialModelSelectionId,
+  final ChatDraft? initialDraft,
   super.key,
 }) extends StatelessWidget {
   @override
@@ -45,6 +46,7 @@ class const NewChatScreen({
     child: _NewChatHandoff(
       workspaceId: workspaceId,
       initialModelSelectionId: initialModelSelectionId,
+      initialDraft: initialDraft,
     ),
   );
 }
@@ -52,6 +54,7 @@ class const NewChatScreen({
 class const _NewChatHandoff({
   required final String workspaceId,
   final String? initialModelSelectionId,
+  final ChatDraft? initialDraft,
 }) extends ConsumerStatefulWidget {
   @override
   ConsumerState<_NewChatHandoff> createState() => _NewChatHandoffState();
@@ -60,6 +63,13 @@ class const _NewChatHandoff({
 class _NewChatHandoffState extends ConsumerState<_NewChatHandoff> {
   bool _applied = false;
   bool _applying = false;
+  ChatDraft? _draftToLoad;
+
+  @override
+  void initState() {
+    super.initState();
+    _draftToLoad = widget.initialDraft;
+  }
 
   @override
   void didUpdateWidget(covariant _NewChatHandoff oldWidget) {
@@ -68,6 +78,9 @@ class _NewChatHandoffState extends ConsumerState<_NewChatHandoff> {
         oldWidget.initialModelSelectionId != widget.initialModelSelectionId) {
       _applied = false;
       _applying = false;
+      _draftToLoad = widget.initialDraft;
+    } else if (oldWidget.initialDraft != widget.initialDraft) {
+      _draftToLoad = widget.initialDraft;
     }
   }
 
@@ -78,7 +91,16 @@ class _NewChatHandoffState extends ConsumerState<_NewChatHandoff> {
       if (_modelAvailable()) _scheduleHandoff();
     }
 
-    return _NewChatContent(workspaceId: widget.workspaceId);
+    return _NewChatContent(
+      workspaceId: widget.workspaceId,
+      draftToLoad: _draftToLoad,
+      onDraftLoaded: _clearDraftToLoad,
+    );
+  }
+
+  void _clearDraftToLoad() {
+    if (!mounted || _draftToLoad == null) return;
+    setState(() => _draftToLoad = null);
   }
 
   bool _modelAvailable() => _handoffModelAvailable(
@@ -135,31 +157,42 @@ bool _handoffMatches(
     model.modelConnection.workspaceId == workspaceId &&
     model.modelConnection.hasKey;
 
-class const _NewChatContent({required final String workspaceId})
-    extends ConsumerWidget {
+class const _NewChatContent({
+  required final String workspaceId,
+  required final ChatDraft? draftToLoad,
+  required final VoidCallback onDraftLoaded,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final availability = ref.watch(workspaceAvailabilityProvider(workspaceId));
     if (availability case AsyncData(value: WorkspaceAuthenticationRequired())) {
-      return _NewChatUnavailable(workspaceId: workspaceId);
+      return _NewChatUnavailable(
+        workspaceId: workspaceId,
+        draftToLoad: draftToLoad,
+        onDraftLoaded: onDraftLoaded,
+      );
     }
 
     return _NewChatAvailable(
       workspaceId: workspaceId,
+      draftToLoad: draftToLoad,
+      onDraftLoaded: onDraftLoaded,
       key: ValueKey<String>(workspaceId),
     );
   }
 }
 
-class const _NewChatAvailable({required final String workspaceId, super.key})
-    extends HookConsumerWidget {
+class const _NewChatAvailable({
+  required final String workspaceId,
+  required final ChatDraft? draftToLoad,
+  required final VoidCallback onDraftLoaded,
+  super.key,
+}) extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final draftStatus = useState(false);
     final guard = useMemoized(DraftExitGuard.new);
-    final data = _newChatBodyData(
-      _newChatBodyRequest(context, ref, workspaceId, draftStatus),
-    );
+    final data = _bodyData(context, ref, draftStatus);
     _bindNewChatGuard((
       guard: guard,
       ref: ref,
@@ -172,6 +205,19 @@ class const _NewChatAvailable({required final String workspaceId, super.key})
       child: _NewChatBody(data: data),
     );
   }
+
+  _NewChatBodyData _bodyData(
+    BuildContext context,
+    WidgetRef ref,
+    ValueNotifier<bool> draftStatus,
+  ) => _watchNewChatBodyData((
+    context: context,
+    ref: ref,
+    workspaceId: workspaceId,
+    draftStatus: draftStatus,
+    draftToLoad: draftToLoad,
+    onDraftLoaded: onDraftLoaded,
+  ));
 }
 
 typedef _NewChatBodyRequest = ({
@@ -180,20 +226,18 @@ typedef _NewChatBodyRequest = ({
   String workspaceId,
   NewChatState state,
   ValueNotifier<bool> draftStatus,
+  ChatDraft? draftToLoad,
+  VoidCallback onDraftLoaded,
 });
 
-_NewChatBodyRequest _newChatBodyRequest(
+typedef _NewChatAvailabilityRequest = ({
   BuildContext context,
   WidgetRef ref,
   String workspaceId,
   ValueNotifier<bool> draftStatus,
-) => (
-  context: context,
-  ref: ref,
-  workspaceId: workspaceId,
-  state: ref.watch(newChatProvider(workspaceId)),
-  draftStatus: draftStatus,
-);
+  ChatDraft? draftToLoad,
+  VoidCallback onDraftLoaded,
+});
 
 typedef _NewChatGuardRequest = ({
   DraftExitGuard guard,
@@ -207,6 +251,8 @@ _NewChatBodyData _newChatBodyData(_NewChatBodyRequest request) =>
       workspaceId: request.workspaceId,
       state: request.state,
       draftStatus: request.draftStatus,
+      draftToLoad: request.draftToLoad,
+      onDraftLoaded: request.onDraftLoaded,
       actions: .new(
         context: request.context,
         ref: request.ref,
@@ -214,6 +260,17 @@ _NewChatBodyData _newChatBodyData(_NewChatBodyRequest request) =>
         draftStatus: request.draftStatus,
       ),
     );
+
+_NewChatBodyData _watchNewChatBodyData(_NewChatAvailabilityRequest request) =>
+    _newChatBodyData((
+      context: request.context,
+      ref: request.ref,
+      workspaceId: request.workspaceId,
+      state: request.ref.watch(newChatProvider(request.workspaceId)),
+      draftStatus: request.draftStatus,
+      draftToLoad: request.draftToLoad,
+      onDraftLoaded: request.onDraftLoaded,
+    ));
 
 void _bindNewChatGuard(_NewChatGuardRequest request) {
   request.guard.bind(
@@ -375,6 +432,8 @@ class _NewChatBodyData({
   required final String workspaceId,
   required final NewChatState state,
   required final ValueNotifier<bool> draftStatus,
+  required final ChatDraft? draftToLoad,
+  required final VoidCallback onDraftLoaded,
   required final _NewChatActions actions,
 });
 
@@ -536,6 +595,7 @@ class const _NewChatInput({required final Widget child})
                _NewChatAgentCompactControl(data: data, onCompactTap: onPressed),
            onDraftStatusChanged: (hasDraft) =>
                data.draftStatus.value = hasDraft,
+           onDraftLoaded: data.onDraftLoaded,
            autofocus: true,
            toolAccessMode: data.state.toolAccessMode,
            onToolAccessModeChanged: (mode) =>
@@ -550,6 +610,7 @@ class const _NewChatInput({required final Widget child})
                    onChanged: data.actions.setReasoningConfiguration,
                  )
                : null,
+           draftToLoad: data.draftToLoad,
            modalitiesInput: modalitiesInput,
            disabledHint:
                data.state.modelId == null &&
@@ -618,24 +679,38 @@ class const _NewChatAgentCompactControl({
   );
 }
 
-class const _NewChatUnavailable({required final String workspaceId})
-    extends StatelessWidget {
+class const _NewChatUnavailable({
+  required final String workspaceId,
+  required final ChatDraft? draftToLoad,
+  required final VoidCallback onDraftLoaded,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AppScreen(
-    child: _NewChatUnavailableBody(workspaceId: workspaceId),
+    child: _NewChatUnavailableBody(
+      workspaceId: workspaceId,
+      draftToLoad: draftToLoad,
+      onDraftLoaded: onDraftLoaded,
+    ),
     appBar: const AuraAppBarWithDrawer(
       title: TextLocale(LocaleKeys.menu_new_chat),
     ),
   );
 }
 
-class const _NewChatUnavailableBody({required final String workspaceId})
-    extends StatelessWidget {
+class const _NewChatUnavailableBody({
+  required final String workspaceId,
+  required final ChatDraft? draftToLoad,
+  required final VoidCallback onDraftLoaded,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
       const Expanded(child: _UnavailableMessage()),
-      _UnavailableChatInput(workspaceId: workspaceId),
+      _UnavailableChatInput(
+        workspaceId: workspaceId,
+        draftToLoad: draftToLoad,
+        onDraftLoaded: onDraftLoaded,
+      ),
     ],
   );
 }
@@ -654,8 +729,11 @@ class const _UnavailableMessage() extends StatelessWidget {
   );
 }
 
-class const _UnavailableChatInput({required final String workspaceId})
-    extends StatelessWidget {
+class const _UnavailableChatInput({
+  required final String workspaceId,
+  required final ChatDraft? draftToLoad,
+  required final VoidCallback onDraftLoaded,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ChatInputWidget(
     workspaceId: workspaceId,
@@ -669,6 +747,8 @@ class const _UnavailableChatInput({required final String workspaceId})
     agentSheetControl: const SizedBox.shrink(),
     modelCompactControl: (_) => const SizedBox.shrink(),
     agentCompactControl: (_) => const SizedBox.shrink(),
+    onDraftLoaded: onDraftLoaded,
+    draftToLoad: draftToLoad,
     disabled: true,
   );
 }

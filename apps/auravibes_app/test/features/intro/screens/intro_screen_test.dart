@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:auravibes_app/data/database/drift/app_database.dart';
+import 'package:auravibes_app/data/repositories/workspace_repository.dart';
+import 'package:auravibes_app/domain/entities/workspace_entity.dart';
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/cloud_accounts/data/serverpod_auth_store.dart';
 import 'package:auravibes_app/features/cloud_accounts/providers/serverpod_client_provider.dart';
 import 'package:auravibes_app/features/cloud_accounts/widgets/cloud_account_auth_content.dart';
@@ -13,6 +16,7 @@ import 'package:auravibes_app/features/models/providers/chat_model_connections_p
 import 'package:auravibes_app/features/models/providers/workspace_model_selections_providers.dart';
 import 'package:auravibes_app/features/workspaces/notifiers/workspace_creation_draft_notifier.dart';
 import 'package:auravibes_app/features/workspaces/screens/create_workspace_screen.dart';
+import 'package:auravibes_app/features/workspaces/usecases/create_workspace_use_case.dart';
 import 'package:auravibes_app/providers/app_providers.dart';
 import 'package:auravibes_app/widgets/aura_legacy_material_bridge.dart';
 import 'package:auravibes_app/widgets/draft_exit_scope.dart';
@@ -21,6 +25,8 @@ import 'package:auravibes_ui/ui.dart';
 import 'package:drift/native.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'
+    as sdk_localizations;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -36,6 +42,250 @@ void main() {
     await EasyLocalization.ensureInitialized();
   });
 
+  testWidgets('first-use guide selects a localized editable starter', (
+    tester,
+  ) async {
+    final useCase = _CreateWorkspaceUseCase();
+    final fixture = _IntroFixture(createWorkspaceUseCase: useCase);
+    addTearDown(fixture.dispose);
+    final workspace = await tester.runAsync(
+      () => WorkspaceRepository(fixture.database)
+          .createWorkspace(const .new(name: 'Trabajo personal', type: .local))
+          .timeout(const Duration(seconds: 20)),
+    );
+    if (workspace == null) {
+      fail('Quick-start workspace creation did not finish');
+    }
+    when(() => useCase.call(name: 'Trabajo personal'))
+        .thenAnswer((_) async => workspace);
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.runAsync(
+        () => tester.pumpWidget(
+          fixture.buildApp(startLocale: const Locale('es')),
+        ),
+      );
+      await _pumpUntilFound(tester, find.byKey(_quickStartKey));
+
+      expect(find.text('intro_flow.welcome.title'.tr()), findsOneWidget);
+      expect(
+        find.text('intro_flow.welcome.local_storage'.tr()),
+        findsOneWidget,
+      );
+      expect(find.byKey(_dayStarterKey), findsOneWidget);
+      expect(find.byKey(_shoppingStarterKey), findsOneWidget);
+      expect(find.byKey(_messageStarterKey), findsOneWidget);
+      expect(find.byKey(_advancedSetupKey), findsOneWidget);
+      expect(
+        tester.widget<AuraButton>(find.byKey(_quickStartKey)).disabled,
+        isTrue,
+      );
+
+      await _tapVisible(tester, find.byKey(_shoppingStarterKey));
+      final selected = find.byKey(_shoppingStarterKey);
+      expect(
+        tester.getSemantics(selected).flagsCollection.isSelected,
+        ui.Tristate.isTrue,
+      );
+      expect(
+        tester.widget<AuraButton>(find.byKey(_quickStartKey)).disabled,
+        isFalse,
+      );
+      await _tapVisible(tester, find.byKey(_quickStartKey));
+      await _pumpUntilFound(tester, find.textContaining('new chat:'));
+
+      expect(
+        find.textContaining(
+          'draft: Prepara una lista de compras para una cena sencilla',
+        ),
+        findsOneWidget,
+      );
+      expect(workspace.name, 'Trabajo personal');
+      final conversations = await tester.runAsync(() {
+        final query = fixture.database.select(fixture.database.conversations)
+          ..where((row) => row.workspaceId.equals(workspace.id));
+
+        return query.get().timeout(const Duration(seconds: 20));
+      });
+      if (conversations == null) {
+        fail('Conversation query did not complete');
+      }
+      expect(conversations, isEmpty);
+    } finally {
+      await _closeIntroWidget(tester);
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('keyboard can select a task and reach advanced setup', (
+    tester,
+  ) async {
+    final fixture = _IntroFixture();
+    addTearDown(fixture.dispose);
+    final semantics = tester.ensureSemantics();
+    try {
+      await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
+      await _pumpUntilFound(tester, find.byKey(_quickStartKey));
+
+      final _ = await tester.sendKeyEvent(.tab);
+      await tester.pump();
+      final _ = await tester.sendKeyEvent(.enter);
+      await tester.pump();
+      final selectedSemantics = tester.getSemantics(find.byKey(_dayStarterKey));
+      expect(selectedSemantics.flagsCollection.isSelected, ui.Tristate.isTrue);
+
+      for (var index = 0; index < 4; index++) {
+        final _ = await tester.sendKeyEvent(.tab);
+        await tester.pump();
+      }
+      final _ = await tester.sendKeyEvent(.enter);
+      await _pumpUntilFound(tester, find.byKey(_localRouteKey));
+      expect(find.byKey(_cloudRouteKey), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    } finally {
+      await _closeIntroWidget(tester);
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('quick start keeps the guide available after a storage failure', (
+    tester,
+  ) async {
+    final useCase = _CreateWorkspaceUseCase();
+    final fixture = _IntroFixture(createWorkspaceUseCase: useCase);
+    addTearDown(fixture.dispose);
+    var attempts = 0;
+    final workspaceCreation = Completer<WorkspaceEntity>();
+    when(() => useCase.call(name: 'Personal work')).thenAnswer((_) {
+      attempts++;
+      if (attempts == 1) {
+        return Future<WorkspaceEntity>.error(StateError('storage unavailable'));
+      }
+
+      return workspaceCreation.future;
+    });
+    try {
+      await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
+      await _pumpUntilFound(tester, find.byKey(_quickStartKey));
+      await _tapVisible(tester, find.byKey(_dayStarterKey));
+      await _tapVisible(tester, find.byKey(_quickStartKey));
+      await _pumpUntilFound(
+        tester,
+        find.text('An unexpected error occurred. Please try again.'),
+      );
+      final emptyWorkspaces = await tester.runAsync(
+        () => fixture.database.workspaceDao.getAllWorkspaces().timeout(
+          const Duration(seconds: 20),
+        ),
+      );
+      if (emptyWorkspaces == null) {
+        fail('Workspace query did not complete');
+      }
+      expect(emptyWorkspaces, isEmpty);
+      expect(find.byKey(_advancedSetupKey), findsOneWidget);
+
+      final workspace = await tester.runAsync(
+        () => WorkspaceRepository(fixture.database)
+            .createWorkspace(const .new(name: 'Personal work', type: .local))
+            .timeout(const Duration(seconds: 20)),
+      );
+      if (workspace == null) {
+        fail('Quick-start retry did not create a workspace');
+      }
+      workspaceCreation.complete(workspace);
+      await _tapVisible(tester, find.byKey(_quickStartKey));
+      await _pumpUntilFound(tester, find.textContaining('new chat:'));
+      expect(attempts, 2);
+      expect(workspace.name, 'Personal work');
+    } finally {
+      await _closeIntroWidget(tester);
+    }
+  });
+
+  testWidgets('quick start disables starter changes while creating workspace', (
+    tester,
+  ) async {
+    final useCase = _CreateWorkspaceUseCase();
+    final fixture = _IntroFixture(createWorkspaceUseCase: useCase);
+    addTearDown(fixture.dispose);
+    final workspaceCreation = Completer<WorkspaceEntity>();
+    when(() => useCase.call(name: 'Personal work'))
+        .thenAnswer((_) => workspaceCreation.future);
+    try {
+      await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
+      await _pumpUntilFound(tester, find.byKey(_quickStartKey));
+      await _tapVisible(tester, find.byKey(_dayStarterKey));
+      await _tapVisible(tester, find.byKey(_quickStartKey));
+      await tester.pump();
+
+      for (final key in [
+        _dayStarterKey,
+        _shoppingStarterKey,
+        _messageStarterKey,
+      ]) {
+        final button = find.descendant(
+          of: find.byKey(key),
+          matching: find.byType(AuraButton),
+        );
+        expect(tester.widget<AuraButton>(button).disabled, isTrue);
+      }
+
+      final localWorkspace = await tester.runAsync(() {
+        return WorkspaceRepository(fixture.database)
+            .createWorkspace(const .new(name: 'Personal work', type: .local))
+            .timeout(const Duration(seconds: 20));
+      });
+      if (localWorkspace == null) {
+        fail('Quick-start workspace creation did not finish');
+      }
+      workspaceCreation.complete(localWorkspace);
+      await _pumpUntilFound(tester, find.textContaining('new chat:'));
+    } finally {
+      await _closeIntroWidget(tester);
+    }
+  });
+
+  for (final locale in [const Locale('en'), const Locale('es')]) {
+    testWidgets('advanced setup stays reachable with disclosures $locale', (
+      tester,
+    ) async {
+      final fixture = _IntroFixture();
+      addTearDown(fixture.dispose);
+      try {
+        await tester.runAsync(
+          () => tester.pumpWidget(fixture.buildApp(startLocale: locale)),
+        );
+        await _pumpUntilFound(tester, find.byKey(_quickStartKey));
+        await _tapVisible(tester, find.byKey(_advancedSetupKey));
+        await _pumpUntilFound(tester, find.byKey(_localRouteKey));
+
+        expect(find.byKey(_cloudRouteKey), findsOneWidget);
+        expect(find.byKey(_connectExistingKey), findsOneWidget);
+        expect(
+          find.textContaining('intro_flow.choice.select_hint'.tr()),
+          findsOneWidget,
+        );
+        expect(
+          find.textContaining(
+            locale.languageCode == 'es' ? 'plan de pago' : 'paid plan',
+          ),
+          findsWidgets,
+        );
+        final workspaces = await tester.runAsync(
+          () => fixture.database.workspaceDao.getAllWorkspaces().timeout(
+            const Duration(seconds: 20),
+          ),
+        );
+        if (workspaces == null) {
+          fail('Workspace query did not complete');
+        }
+        expect(workspaces, isEmpty);
+      } finally {
+        await _closeIntroWidget(tester);
+      }
+    });
+  }
+
   for (final kind in [PointerDeviceKind.touch, PointerDeviceKind.mouse]) {
     for (final reducedMotion in [false, true]) {
       testWidgets('reversible pager kind=$kind reducedMotion=$reducedMotion', (
@@ -49,7 +299,7 @@ void main() {
           () =>
               tester.pumpWidget(fixture.buildApp(reducedMotion: reducedMotion)),
         );
-        await _pumpUntilFound(tester, find.byKey(_welcomeNextKey));
+        await _pumpUntilFound(tester, find.byKey(_advancedSetupKey));
         final semantics = tester.ensureSemantics();
         try {
           final pager = find.byKey(const Key('intro_welcome_pages'));
@@ -81,10 +331,7 @@ void main() {
             tester.getSemantics(dot).flagsCollection.isSelected,
             ui.Tristate.isTrue,
           );
-          await _tapVisible(
-            tester,
-            find.byKey(const Key('intro_welcome_skip_button')),
-          );
+          await _tapVisible(tester, find.byKey(_welcomeSkipKey));
           final _ = await tester.pumpAndSettle();
           expect(find.text('4 of 4'), findsOneWidget);
           await _chooseIntroRoute(tester, 'local');
@@ -95,10 +342,7 @@ void main() {
           await _tapVisible(tester, find.byKey(_backToRouteChooserKey));
           await _tapVisible(tester, find.byKey(const Key('intro_progress_0')));
           final _ = await tester.pumpAndSettle();
-          await _tapVisible(
-            tester,
-            find.byKey(const Key('intro_welcome_skip_button')),
-          );
+          await _tapVisible(tester, find.byKey(_advancedSetupKey));
           await _chooseIntroRoute(tester, 'local');
           expect(find.text('Keep offscreen'), findsOneWidget);
           expect(tester.takeException(), isNull);
@@ -121,24 +365,24 @@ void main() {
       await tester.runAsync(
         () => tester.pumpWidget(fixture.buildApp(reducedMotion: true)),
       );
-      await _pumpUntilFound(tester, find.byKey(_welcomeNextKey));
+      await _pumpUntilFound(tester, find.byKey(_quickStartKey));
 
       await expectLater(
         find.byType(IntroScreen),
         matchesGoldenFile('goldens/intro_welcome.png'),
       );
 
-      await tester.tap(find.byKey(_welcomeNextKey));
+      await tester.tap(find.byKey(const Key('intro_progress_1')));
       final _ = await tester.pumpAndSettle();
       await expectLater(
         find.byType(IntroScreen),
         matchesGoldenFile('goldens/intro_workspace_context.png'),
       );
 
-      for (var page = 0; page < 2; page++) {
-        await tester.tap(find.byKey(_welcomeNextKey));
-        final _ = await tester.pumpAndSettle();
-      }
+      await tester.tap(find.byKey(_welcomeNextKey));
+      final _ = await tester.pumpAndSettle();
+      expect(find.text('''Connect AI when you're ready'''), findsOneWidget);
+      await tester.tap(find.byKey(_welcomeNextKey));
       await _pumpUntilFound(tester, find.byKey(_localRouteKey));
       await expectLater(
         find.byType(IntroScreen),
@@ -296,13 +540,13 @@ void main() {
       await tester.runAsync(
         () => tester.pumpWidget(fixture.buildApp(reducedMotion: reducedMotion)),
       );
-      await _pumpUntilFound(tester, find.byKey(_welcomeNextKey));
-      expect(find.text('Welcome to AuraVibes'), findsOneWidget);
+      await _pumpUntilFound(tester, find.byKey(_quickStartKey));
+      expect(find.text('What would you like help with today?'), findsOneWidget);
       expect(find.text('1 of 4'), findsOneWidget);
       expect(find.byKey(_localRouteKey).hitTestable(), findsNothing);
       expect(find.byKey(_welcomeBackKey), findsNothing);
 
-      await tester.tap(find.byKey(_welcomeNextKey));
+      await tester.tap(find.byKey(const Key('intro_progress_1')));
       await tester.pump();
       final pager = tester.widget<PageView>(
         find.byKey(const Key('intro_welcome_pages')),
@@ -318,7 +562,7 @@ void main() {
       expect(find.text('1 of 4'), findsOneWidget);
 
       if (reducedMotion) {
-        await tester.tap(find.byKey(_welcomeNextKey));
+        final _ = await tester.sendKeyEvent(.arrowRight);
       } else {
         await tester.drag(
           find.byKey(const Key('intro_welcome_pages')),
@@ -330,14 +574,14 @@ void main() {
       await tester.tap(find.byKey(_welcomeNextKey));
       final _ = await tester.pumpAndSettle();
       expect(find.text('3 of 4'), findsOneWidget);
-      expect(find.text('Choose a workspace'), findsOneWidget);
+      expect(find.text('''Connect AI when you're ready'''), findsOneWidget);
       expect(find.byKey(_localRouteKey).hitTestable(), findsNothing);
       await tester.tap(find.byKey(_welcomeNextKey));
       final _ = await tester.pumpAndSettle();
       await _pumpUntilFound(tester, find.byKey(_localRouteKey));
       expect(find.byKey(_cloudRouteKey), findsOneWidget);
       expect(find.byKey(_welcomeNextKey), findsNothing);
-      expect(find.text('Welcome to AuraVibes'), findsNothing);
+      expect(find.text('What would you like help with today?'), findsNothing);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
     });
@@ -351,6 +595,7 @@ void main() {
     final fixture = _IntroFixture(accounts: [_account]);
     addTearDown(fixture.dispose);
     await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
+    await _pumpUntilFound(tester, find.byKey(_quickStartKey));
     await _completeWelcome(tester);
     await _pumpUntilFound(tester, find.byKey(_localRouteKey));
 
@@ -968,10 +1213,21 @@ const _backToCreationKey = Key('workspace_setup_back_to_creation_button');
 const _skipAiKey = Key('intro_skip_ai_button');
 const _welcomeNextKey = Key('intro_welcome_next_button');
 const _welcomeBackKey = Key('intro_welcome_back_button');
+const _quickStartKey = Key('intro_quick_start_button');
+const _advancedSetupKey = Key('intro_advanced_setup_button');
+const _welcomeSkipKey = Key('intro_welcome_skip_button');
+const _dayStarterKey = ValueKey<String>('intro_starter_plan_day');
+const _shoppingStarterKey = ValueKey<String>('intro_starter_shopping_list');
+const _messageStarterKey = ValueKey<String>('intro_starter_personal_message');
 
 Future<void> _pumpFrame(WidgetTester tester) async {
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 100));
+}
+
+Future<void> _closeIntroWidget(WidgetTester tester) async {
+  await tester.pumpWidget(const SizedBox.shrink());
+  await tester.pump(const Duration(milliseconds: 10));
 }
 
 Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
@@ -1010,7 +1266,7 @@ Future<void> _openConnectExisting(WidgetTester tester) async {
 
 Future<void> _chooseIntroRoute(WidgetTester tester, String route) async {
   await _pumpFrame(tester);
-  if (find.byKey(_welcomeNextKey).evaluate().isNotEmpty) {
+  if (find.byKey(_localRouteKey).hitTestable().evaluate().isEmpty) {
     await _completeWelcome(tester);
   }
   final button = find.byKey(route == 'local' ? _localRouteKey : _cloudRouteKey);
@@ -1020,11 +1276,12 @@ Future<void> _chooseIntroRoute(WidgetTester tester, String route) async {
 }
 
 Future<void> _completeWelcome(WidgetTester tester) async {
-  await _pumpUntilFound(tester, find.byKey(_welcomeNextKey));
-  for (var page = 0; page < 3; page++) {
-    await tester.tap(find.byKey(_welcomeNextKey));
+  if (find.byKey(_advancedSetupKey).evaluate().isEmpty) {
+    await _tapVisible(tester, find.byKey(const Key('intro_progress_0')));
     final _ = await tester.pumpAndSettle();
   }
+  await _tapVisible(tester, find.byKey(_advancedSetupKey));
+  await _pumpUntilFound(tester, find.byKey(_localRouteKey));
 }
 
 Future<void> _selectCloudAccount(
@@ -1057,6 +1314,7 @@ class _IntroFixture {
     Future<CloudWorkspaceViewState?> Function()? load,
     Future<List<CloudAccountSession>> Function()? accountsLoad,
     bool management = false,
+    CreateWorkspaceUseCase? createWorkspaceUseCase,
   }) : this._(
          .new(connection: NativeDatabase.memory()),
          accounts,
@@ -1064,6 +1322,7 @@ class _IntroFixture {
          load,
          accountsLoad,
          management,
+         createWorkspaceUseCase,
        );
 
   new _(
@@ -1073,9 +1332,14 @@ class _IntroFixture {
     Future<CloudWorkspaceViewState?> Function()? load,
     Future<List<CloudAccountSession>> Function()? accountsLoad,
     bool management,
+    CreateWorkspaceUseCase? createWorkspaceUseCase,
   ) : container = .new(
         overrides: [
           appDatabaseProvider.overrideWithValue(database),
+          if (createWorkspaceUseCase != null)
+            createWorkspaceUseCaseProvider.overrideWithValue(
+              createWorkspaceUseCase,
+            ),
           chatModelConnectionsProvider.overrideWith(
             (ref, workspaceId) => Stream.value([]),
           ),
@@ -1119,7 +1383,17 @@ class _IntroFixture {
           GoRoute(
             path: '/workspaces/:workspaceId/chat/new',
             builder: (context, state) {
-              return Text('new chat: ${state.pathParameters['workspaceId']}');
+              final draft = state.extra;
+              final location =
+                  'new chat: ${state.pathParameters['workspaceId']}';
+              if (draft is ChatDraft) {
+                return Column(
+                  mainAxisSize: .min,
+                  children: [Text(location), Text('draft: ${draft.text}')],
+                );
+              }
+
+              return Text(location);
             },
           ),
           GoRoute(
@@ -1138,7 +1412,10 @@ class _IntroFixture {
   final ProviderContainer container;
   final GoRouter router;
 
-  Widget buildApp({bool reducedMotion = false}) {
+  Widget buildApp({
+    bool reducedMotion = false,
+    Locale startLocale = const Locale('en'),
+  }) {
     return EasyLocalization(
       key: UniqueKey(),
       child: Builder(
@@ -1155,18 +1432,23 @@ class _IntroFixture {
                 ),
               ),
               locale: context.locale,
-              localizationsDelegates: context.localizationDelegates,
+              localizationsDelegates: [
+                ...GlobalMaterialLocalizations.delegates,
+                sdk_localizations.GlobalMaterialLocalizations.delegate,
+                ...context.localizationDelegates,
+              ],
               supportedLocales: context.supportedLocales,
             ),
           );
         },
       ),
-      supportedLocales: const [Locale('en')],
+      supportedLocales: const [Locale('en'), Locale('es')],
       path: 'assets/i18n',
       fallbackLocale: const Locale('en'),
-      startLocale: const Locale('en'),
+      startLocale: startLocale,
       useOnlyLangCode: true,
       useFallbackTranslations: true,
+      saveLocale: false,
     );
   }
 
@@ -1189,6 +1471,7 @@ const _secondAccount = CloudAccountSession(
 );
 class _Client extends Mock implements Client;
 class _CloudEndpoint extends Mock implements EndpointCloudWorkspace;
+class _CreateWorkspaceUseCase extends Mock implements CreateWorkspaceUseCase;
 CloudWorkspaceSummary _summary() => CloudWorkspaceSummary(
   id: 11,
   name: 'Cloud draft',

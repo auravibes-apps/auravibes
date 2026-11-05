@@ -972,6 +972,14 @@ void main() {
     );
     expect(editableText.controller.text, 'Help me plan my day');
     expect(starter, findsNothing);
+    expect(
+      find.byKey(const ValueKey('chat_empty_starter_shopping_list')),
+      findsNothing,
+    );
+    expect(
+      find.byKey(const ValueKey('chat_empty_starter_personal_message')),
+      findsNothing,
+    );
     expect(find.text('Help me plan my day'), findsOneWidget);
   });
 

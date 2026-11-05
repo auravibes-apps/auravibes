@@ -120,6 +120,7 @@ class const ChatInputWidget({
   required final Widget Function(VoidCallback onPressed) modelCompactControl,
   required final Widget Function(VoidCallback onPressed) agentCompactControl,
   final ValueChanged<bool>? onDraftStatusChanged,
+  final VoidCallback? onDraftLoaded,
   final String? conversationId,
   final bool autofocus = false,
   final ConversationToolAccessMode toolAccessMode =
@@ -316,9 +317,10 @@ void _registerDraftEffects(
   _ChatInputActions actions,
   _ChatInputDraftHooks draft,
 ) {
-  useEffect(() => _loadDraftEffect(actions, input.draftToLoad), [
-    input.draftToLoad,
-  ]);
+  useEffect(
+    () => _loadDraftEffect(actions, input.draftToLoad, input.onDraftLoaded),
+    [input.draftToLoad],
+  );
   useEffect(() => _saveConversationDraft(ref, input, draft), [
     input.workspaceId,
     input.conversationId,
@@ -395,12 +397,18 @@ VoidCallback? _scheduleDraftStatusUpdate(
   return null;
 }
 
-Dispose? _loadDraftEffect(_ChatInputActions actions, ChatDraft? draft) {
+Dispose? _loadDraftEffect(
+  _ChatInputActions actions,
+  ChatDraft? draft,
+  VoidCallback? onDraftLoaded,
+) {
   if (draft == null) return null;
 
   var disposed = false;
   scheduleMicrotask(() {
-    if (!disposed) actions.loadDraft(draft);
+    if (disposed) return;
+    actions.loadDraft(draft);
+    onDraftLoaded?.call();
   });
 
   return () => disposed = true;

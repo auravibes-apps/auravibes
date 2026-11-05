@@ -3,6 +3,16 @@ name: Update Linux UI goldens
 on:
   workflow_dispatch:
     inputs:
+      capture_first_chat_evidence:
+        description: Capture first-chat screens from pinned main and this commit with app fonts
+        type: boolean
+        required: false
+        default: false
+      update_intro_goldens:
+        description: Update only the onboarding intro PNG goldens
+        type: boolean
+        required: false
+        default: false
       scoped_verification_evidence:
         description: Capture scoped verification baseline/evidence and prepare generated artifacts
         type: boolean
@@ -19,7 +29,7 @@ permissions:
 
 jobs:
   update-goldens:
-    if: ${{ inputs.scoped_verification_evidence != true }}
+    if: ${{ inputs.capture_first_chat_evidence != true && inputs.update_intro_goldens != true && inputs.scoped_verification_evidence != true }}
     name: update UI goldens (Linux x64)
     runs-on: ubuntu-26.04
     timeout-minutes: 30
@@ -67,6 +77,220 @@ jobs:
             apps/auravibes_app/test/**/goldens/*.png
             packages/auravibes_ui/test/**/goldens/*.png
             widgetbook/test/goldens/linux/*.png
+          if-no-files-found: error
+          retention-days: 7
+
+  update-intro-goldens:
+    if: ${{ inputs.capture_first_chat_evidence != true && inputs.update_intro_goldens == true && inputs.scoped_verification_evidence != true }}
+    name: update intro goldens (Linux x64)
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Update onboarding intro goldens
+        working-directory: apps/auravibes_app
+        run: |
+          flutter test test/features/intro/screens/intro_screen_test.dart --no-pub \
+            --plain-name='captures compact onboarding goldens across the intro flow stages' \
+            --update-goldens
+
+      - name: Upload generated intro goldens
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: ui-intro-goldens-${{ github.run_id }}-${{ github.run_attempt }}
+          path: apps/auravibes_app/test/features/intro/screens/goldens/intro_*.png
+          if-no-files-found: error
+          retention-days: 7
+
+  capture-first-chat-evidence:
+    if: ${{ inputs.capture_first_chat_evidence == true && inputs.scoped_verification_evidence != true }}
+    name: Capture first-chat UI evidence (Linux x64)
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    env:
+      FIRST_CHAT_BASELINE_SHA: 0f46f924e00680d857f8dcddc5d3c9a5df75c481
+      FIRST_CHAT_FEATURE_SHA: ${{ github.sha }}
+    steps:
+      - name: Checkout exact feature revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-workspace
+
+      - name: Record renderer and source provenance
+        run: |
+          mkdir -p "$RUNNER_TEMP/issue-1527-ui-evidence"
+          flutter --version --machine > "$RUNNER_TEMP/issue-1527-ui-evidence/flutter-version.json"
+          uname -srm > "$RUNNER_TEMP/issue-1527-ui-evidence/host.txt"
+          test "$(git rev-parse HEAD)" = "$FIRST_CHAT_FEATURE_SHA"
+
+      - name: Prepare clean pinned main checkout
+        run: |
+          git clone --no-hardlinks --no-checkout "$GITHUB_WORKSPACE" "$RUNNER_TEMP/issue-1527-baseline"
+          git -C "$RUNNER_TEMP/issue-1527-baseline" checkout --detach "$FIRST_CHAT_BASELINE_SHA"
+          mkdir -p "$RUNNER_TEMP/issue-1527-baseline/.fvm"
+          ln -s "$FLUTTER_ROOT" "$RUNNER_TEMP/issue-1527-baseline/.fvm/flutter_sdk"
+          cmp .fvmrc "$RUNNER_TEMP/issue-1527-baseline/.fvmrc"
+          cd "$RUNNER_TEMP/issue-1527-baseline"
+          melos bootstrap
+          git diff --exit-code
+
+      - name: Capture first-chat and setup-choice baseline
+        working-directory: ${{ runner.temp }}/issue-1527-baseline/apps/auravibes_app
+        run: |
+          flutter test test/widgets/ux_validation_layout_test.dart --no-pub \
+            --plain-name='Intro journey forms and recovery en mobile=true' \
+            --dart-define="UX_CAPTURE_DIR=$RUNNER_TEMP/issue-1527-ui-evidence/before-raw" \
+            --dart-define="UX_SOURCE_FINGERPRINT=$FIRST_CHAT_BASELINE_SHA"
+          git diff --exit-code
+
+      - name: Capture intro guide baseline at default text scale
+        working-directory: ${{ runner.temp }}/issue-1527-baseline/apps/auravibes_app
+        run: |
+          flutter test test/widgets/ux_validation_layout_test.dart --no-pub \
+            --plain-name='production direct route IntroRoute duo_closed light' \
+            --dart-define="UX_CAPTURE_DIR=$RUNNER_TEMP/issue-1527-ui-evidence/before-raw" \
+            --dart-define="UX_SOURCE_FINGERPRINT=$FIRST_CHAT_BASELINE_SHA"
+          git diff --exit-code
+
+      - name: Capture empty conversation baseline
+        working-directory: ${{ runner.temp }}/issue-1527-baseline/apps/auravibes_app
+        run: |
+          flutter test test/widgets/ux_validation_layout_test.dart --no-pub \
+            --plain-name='production direct route ConversationRoute duo_closed light' \
+            --dart-define="UX_CAPTURE_DIR=$RUNNER_TEMP/issue-1527-ui-evidence/before-raw" \
+            --dart-define="UX_SOURCE_FINGERPRINT=$FIRST_CHAT_BASELINE_SHA"
+          git diff --exit-code
+
+      - name: Capture first-chat and setup-choice feature
+        working-directory: apps/auravibes_app
+        run: |
+          test "$(git rev-parse HEAD)" = "$FIRST_CHAT_FEATURE_SHA"
+          flutter test test/widgets/ux_validation_layout_test.dart --no-pub \
+            --plain-name='Intro journey forms and recovery en mobile=true' \
+            --dart-define="UX_CAPTURE_DIR=$RUNNER_TEMP/issue-1527-ui-evidence/after-raw" \
+            --dart-define="UX_SOURCE_FINGERPRINT=$FIRST_CHAT_FEATURE_SHA"
+          git diff --exit-code
+
+      - name: Capture intro guide feature at default text scale
+        working-directory: apps/auravibes_app
+        run: |
+          test "$(git rev-parse HEAD)" = "$FIRST_CHAT_FEATURE_SHA"
+          flutter test test/widgets/ux_validation_layout_test.dart --no-pub \
+            --plain-name='production direct route IntroRoute duo_closed light' \
+            --dart-define="UX_CAPTURE_DIR=$RUNNER_TEMP/issue-1527-ui-evidence/after-raw" \
+            --dart-define="UX_SOURCE_FINGERPRINT=$FIRST_CHAT_FEATURE_SHA"
+          git diff --exit-code
+
+      - name: Capture empty conversation feature
+        working-directory: apps/auravibes_app
+        run: |
+          test "$(git rev-parse HEAD)" = "$FIRST_CHAT_FEATURE_SHA"
+          flutter test test/widgets/ux_validation_layout_test.dart --no-pub \
+            --plain-name='production direct route ConversationRoute duo_closed light' \
+            --dart-define="UX_CAPTURE_DIR=$RUNNER_TEMP/issue-1527-ui-evidence/after-raw" \
+            --dart-define="UX_SOURCE_FINGERPRINT=$FIRST_CHAT_FEATURE_SHA"
+          git diff --exit-code
+
+      - name: Verify and package the six screen captures
+        run: |
+          python3 - <<'PY'
+          import json
+          import shutil
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ['RUNNER_TEMP']) / 'issue-1527-ui-evidence'
+          expected = {
+              ('before-raw', '*IntroRoute-duo_closed-light.png'): 'before-first-chat',
+              ('after-raw', '*IntroRoute-duo_closed-light.png'): 'after-first-chat',
+              ('before-raw', '*Intro-Chooser-en-mobile.png'): 'before-setup-choice',
+              ('after-raw', '*Intro-Chooser-en-mobile.png'): 'after-setup-choice',
+              ('before-raw', '*ConversationRoute-duo_closed-light.png'): 'before-empty-conversation',
+              ('after-raw', '*ConversationRoute-duo_closed-light.png'): 'after-empty-conversation',
+          }
+          captures = []
+          for (directory, pattern), output_name in expected.items():
+              matches = sorted((root / directory).glob(pattern))
+              if len(matches) != 1:
+                  raise SystemExit(f'Expected one {directory}/{pattern}; found {len(matches)}')
+              png = matches[0]
+              sidecar = png.with_suffix('.json')
+              if not sidecar.is_file():
+                  raise SystemExit(f'Missing capture sidecar: {sidecar}')
+              metadata = json.loads(sidecar.read_text())
+              source = os.environ['FIRST_CHAT_BASELINE_SHA'] if directory == 'before-raw' else os.environ['FIRST_CHAT_FEATURE_SHA']
+              if metadata.get('sourceFingerprint') != source:
+                  raise SystemExit(f'Wrong source fingerprint in {sidecar.name}')
+              conversation_capture = 'ConversationRoute-' in metadata.get('name', '')
+              route = metadata.get('route', '')
+              default_scale_guide = metadata.get('name', '').startswith('IntroRoute-')
+              if conversation_capture:
+                  if not route.startswith('/workspaces/') or '/chats/' not in route:
+                      raise SystemExit(f'Unexpected conversation route in {sidecar.name}')
+                  if metadata.get('viewport') != [466.0, 678.0]:
+                      raise SystemExit(f'Unexpected conversation viewport in {sidecar.name}')
+              elif route != '/intro':
+                  raise SystemExit(f'Unexpected intro route in {sidecar.name}')
+              if default_scale_guide and (
+                  metadata.get('viewport') != [466.0, 678.0]
+                  or metadata.get('textScale') != 1.0
+              ):
+                  raise SystemExit(f'Unexpected guide viewport in {sidecar.name}')
+              if not default_scale_guide and not conversation_capture and (
+                  metadata.get('viewport') != [360.0, 640.0]
+                  or metadata.get('textScale') != 1.8
+              ):
+                  raise SystemExit(f'Unexpected large-text chooser viewport in {sidecar.name}')
+              if metadata.get('locale') != 'en':
+                  raise SystemExit(f'Unexpected route or locale in {sidecar.name}')
+              if metadata.get('renderer') != 'Flutter widget-test Skia, linux':
+                  raise SystemExit(f'Unexpected renderer in {sidecar.name}')
+              families = {font.get('family') for font in metadata.get('fonts', [])}
+              if not {'Inter', 'Roboto', 'MaterialIcons'}.issubset(families):
+                  raise SystemExit(f'Missing app fonts in {sidecar.name}: {families}')
+              if 'Ahem' in families:
+                  raise SystemExit(f'Ahem placeholder font in {sidecar.name}')
+              metadata['fixture'] = (
+                  'Persisted local workspace with one empty conversation, no messages, '
+                  'and an empty composer; no models or cloud accounts'
+                  if conversation_capture
+                  else 'Empty in-memory database; no workspace or account; first-run '
+                       'intro guide and advanced setup before workspace creation'
+              )
+              sidecar.write_text(json.dumps(metadata, indent=2) + '\n')
+              shutil.copy2(png, root / f'{output_name}.png')
+              shutil.copy2(sidecar, root / f'{output_name}.json')
+              captures.append({
+                  'image': f'{output_name}.png',
+                  'sidecar': f'{output_name}.json',
+                  'captureName': metadata['name'],
+                  'sourceFingerprint': source,
+              })
+          manifest = {
+              'baselineSha': os.environ['FIRST_CHAT_BASELINE_SHA'],
+              'featureSha': os.environ['FIRST_CHAT_FEATURE_SHA'],
+              'captures': captures,
+          }
+          (root / 'capture-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+          PY
+
+      - name: Upload first-chat UI evidence
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: first-chat-ui-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/issue-1527-ui-evidence/*.png
+            ${{ runner.temp }}/issue-1527-ui-evidence/*.json
+            ${{ runner.temp }}/issue-1527-ui-evidence/*.txt
           if-no-files-found: error
           retention-days: 7
 

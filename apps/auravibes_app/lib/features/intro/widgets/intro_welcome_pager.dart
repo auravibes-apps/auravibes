@@ -1,11 +1,12 @@
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/widgets/empty_conversation_starter_choices.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/gestures.dart';
 import 'package:material_ui/material_ui.dart';
 
-const List<({String title, String body})> _welcomePages = [
-  (title: 'intro_flow.welcome.title', body: 'intro_flow.welcome.body'),
+const List<({String title, String body})> _additionalIntroPages = [
   (
     title: 'intro_flow.workspace_context.title',
     body: 'intro_flow.workspace_context.body',
@@ -26,6 +27,9 @@ class const IntroWelcomePager({
   required final Widget setup,
   required final bool canNavigate,
   required final PageController controller,
+  required final ValueChanged<ChatDraft> onQuickStart,
+  final bool quickStartPending = false,
+  final bool quickStartFailed = false,
   super.key,
 }) extends StatefulWidget {
   @override
@@ -34,6 +38,7 @@ class const IntroWelcomePager({
 
 class _IntroWelcomePagerState extends State<IntroWelcomePager> {
   int _page = 0;
+  ChatDraft? _selectedStarter;
 
   PageController get _controller => widget.controller;
 
@@ -51,6 +56,16 @@ class _IntroWelcomePagerState extends State<IntroWelcomePager> {
         : {},
     child: Focus(child: _IntroWelcomeViewport(state: this), autofocus: true),
   );
+
+  void _selectStarter(ChatDraft draft) =>
+      setState(() => _selectedStarter = draft);
+
+  void _startSelectedStarter() {
+    final draft = _selectedStarter;
+    if (draft == null) return;
+
+    widget.onQuickStart(draft);
+  }
 
   bool _settled(ScrollEndNotification notification) {
     if (notification.depth != 0 || !_controller.hasClients) return false;
@@ -96,10 +111,24 @@ class _IntroWelcomeViewport extends StatelessWidget {
                     ? null
                     : const NeverScrollableScrollPhysics(),
                 children: [
-                  for (var index = 0; index < _welcomePages.length; index++)
+                  _FirstChatGuide(
+                    selectedText: state._selectedStarter?.text,
+                    onSelect: state._selectStarter,
+                    onStart: state._selectedStarter == null
+                        ? null
+                        : state._startSelectedStarter,
+                    onAdvancedSetup: () => state._goToPage(_chooserPage),
+                    pending: state.widget.quickStartPending,
+                    showError: state.widget.quickStartFailed,
+                  ),
+                  for (
+                    var index = 0;
+                    index < _additionalIntroPages.length;
+                    index++
+                  )
                     _IntroWelcomePage(
-                      page: _welcomePages[index],
-                      index: index,
+                      page: _additionalIntroPages[index],
+                      index: index + 1,
                       controller: state._controller,
                       reducedMotion: state._reducedMotion,
                     ),
@@ -128,6 +157,140 @@ class _IntroWelcomeViewport extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => _child;
+}
+
+class const _FirstChatGuide({
+  required final String? selectedText,
+  required final ValueChanged<ChatDraft> onSelect,
+  required final VoidCallback? onStart,
+  required final VoidCallback onAdvancedSetup,
+  required final bool pending,
+  required final bool showError,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => SingleChildScrollView(
+    key: const PageStorageKey<String>('intro_first_chat_guide'),
+    padding: const EdgeInsets.all(24),
+    primary: false,
+    child: AuraColumn(
+      children: [
+        const _FirstChatGuideIntroduction(),
+        _FirstChatGuideActions(
+          selectedText: selectedText,
+          onSelect: onSelect,
+          onStart: onStart,
+          onAdvancedSetup: onAdvancedSetup,
+          pending: pending,
+          showError: showError,
+        ),
+      ],
+      spacing: .md,
+      crossAxisAlignment: .stretch,
+    ),
+  );
+}
+
+class const _FirstChatGuideIntroduction() extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      Semantics(
+        child: const AuraText(
+          child: TextLocale('intro_flow.welcome.title'),
+          style: .heading4,
+        ),
+        header: true,
+      ),
+      const AuraText(child: TextLocale('intro_flow.welcome.body')),
+      const AuraCard(
+        child: AuraText(
+          child: TextLocale('intro_flow.welcome.local_storage'),
+          style: .bodySmall,
+        ),
+        style: .border,
+      ),
+    ],
+    spacing: .md,
+    crossAxisAlignment: .stretch,
+  );
+}
+
+class const _FirstChatGuideActions({
+  required final String? selectedText,
+  required final ValueChanged<ChatDraft> onSelect,
+  required final VoidCallback? onStart,
+  required final VoidCallback onAdvancedSetup,
+  required final bool pending,
+  required final bool showError,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      EmptyConversationStarterChoices(
+        onSelect: onSelect,
+        disabled: pending,
+        selectedText: selectedText,
+        keyPrefix: 'intro_starter',
+      ),
+      if (showError)
+        Semantics(
+          child: const TextLocale('workspace_management.unexpected_error'),
+          liveRegion: true,
+        ),
+      _FirstChatGuideButtons(
+        onStart: onStart,
+        onAdvancedSetup: onAdvancedSetup,
+        pending: pending,
+      ),
+    ],
+    spacing: .md,
+    crossAxisAlignment: .stretch,
+  );
+}
+
+class const _FirstChatGuideButtons({
+  required final VoidCallback? onStart,
+  required final VoidCallback onAdvancedSetup,
+  required final bool pending,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraColumn(
+    children: [
+      _QuickStartButton(onStart: onStart, pending: pending),
+      _AdvancedSetupButton(onAdvancedSetup: onAdvancedSetup, pending: pending),
+    ],
+    spacing: .md,
+    crossAxisAlignment: .stretch,
+  );
+}
+
+class const _QuickStartButton({
+  required final VoidCallback? onStart,
+  required final bool pending,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: () => onStart?.call(),
+    child: const TextLocale('intro_flow.welcome.quick_start'),
+    key: const Key('intro_quick_start_button'),
+    isFullWidth: true,
+    disabled: pending || onStart == null,
+  );
+}
+
+class const _AdvancedSetupButton({
+  required final VoidCallback onAdvancedSetup,
+  required final bool pending,
+}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) => AuraButton(
+    onPressed: onAdvancedSetup,
+    child: const TextLocale('intro_flow.welcome.advanced_setup'),
+    key: const Key('intro_advanced_setup_button'),
+    variant: .outlined,
+    isFullWidth: true,
+    disabled: pending,
+  );
 }
 
 class _IntroWelcomePage extends StatelessWidget {
@@ -316,7 +479,7 @@ class _IntroWelcomeNavigation extends StatelessWidget {
             .copyWith(bottom: _navigationBottomPadding),
         child: Column(
           children: [
-            if (page < _chooserPage)
+            if (page > 0 && page < _chooserPage)
               _IntroWelcomeActions(page: page, onNavigate: onNavigate),
             Row(
               mainAxisAlignment: .center,
@@ -398,12 +561,13 @@ class _IntroWelcomeButtons extends StatelessWidget {
             key: const Key('intro_welcome_next_button'),
             isFullWidth: true,
           ),
-          AuraButton(
-            onPressed: () => onNavigate(_chooserPage),
-            child: const TextLocale('intro_flow.welcome.skip'),
-            key: const Key('intro_welcome_skip_button'),
-            variant: .ghost,
-          ),
+          if (page < _chooserPage - 1)
+            AuraButton(
+              onPressed: () => onNavigate(_chooserPage),
+              child: const TextLocale('intro_flow.welcome.skip'),
+              key: const Key('intro_welcome_skip_button'),
+              variant: .ghost,
+            ),
         ],
       );
   final Widget _child;

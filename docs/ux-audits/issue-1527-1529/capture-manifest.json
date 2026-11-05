@@ -1,0 +1,42 @@
+{
+  "baselineSha": "0f46f924e00680d857f8dcddc5d3c9a5df75c481",
+  "featureSha": "b856f7468dace8763550caa76d5c643fb04c5267",
+  "captures": [
+    {
+      "image": "before-first-chat.png",
+      "sidecar": "before-first-chat.json",
+      "captureName": "IntroRoute-duo_closed-light",
+      "sourceFingerprint": "0f46f924e00680d857f8dcddc5d3c9a5df75c481"
+    },
+    {
+      "image": "after-first-chat.png",
+      "sidecar": "after-first-chat.json",
+      "captureName": "IntroRoute-duo_closed-light",
+      "sourceFingerprint": "b856f7468dace8763550caa76d5c643fb04c5267"
+    },
+    {
+      "image": "before-setup-choice.png",
+      "sidecar": "before-setup-choice.json",
+      "captureName": "Intro-Chooser-en-mobile",
+      "sourceFingerprint": "0f46f924e00680d857f8dcddc5d3c9a5df75c481"
+    },
+    {
+      "image": "after-setup-choice.png",
+      "sidecar": "after-setup-choice.json",
+      "captureName": "Intro-Chooser-en-mobile",
+      "sourceFingerprint": "b856f7468dace8763550caa76d5c643fb04c5267"
+    },
+    {
+      "image": "before-empty-conversation.png",
+      "sidecar": "before-empty-conversation.json",
+      "captureName": "ConversationRoute-duo_closed-light",
+      "sourceFingerprint": "0f46f924e00680d857f8dcddc5d3c9a5df75c481"
+    },
+    {
+      "image": "after-empty-conversation.png",
+      "sidecar": "after-empty-conversation.json",
+      "captureName": "ConversationRoute-duo_closed-light",
+      "sourceFingerprint": "b856f7468dace8763550caa76d5c643fb04c5267"
+    }
+  ]
+}

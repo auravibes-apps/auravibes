@@ -432,7 +432,11 @@ void main() {
           ),
         ],
       );
-      await tester.tap(find.byKey(const Key('intro_welcome_skip_button')));
+      final advancedSetupButton = find.byKey(
+        const Key('intro_advanced_setup_button'),
+      );
+      await tester.ensureVisible(advancedSetupButton);
+      await tester.tap(advancedSetupButton);
       await f.settle(tester);
       await tester.tap(find.byKey(const Key('intro_route_cloud_button')));
       await f.settle(tester);
@@ -633,9 +637,17 @@ void main() {
           ),
         ],
       );
-      await tester.tap(find.byKey(const Key('intro_welcome_skip_button')));
+      final advancedSetupButton = find.byKey(
+        const Key('intro_advanced_setup_button'),
+      );
+      await tester.ensureVisible(advancedSetupButton);
+      await tester.tap(advancedSetupButton);
       await f.settle(tester);
-      await tester.tap(find.byKey(const Key('intro_connect_existing_button')));
+      final connectExistingButton = find.byKey(
+        const Key('intro_connect_existing_button'),
+      );
+      await tester.ensureVisible(connectExistingButton);
+      await tester.tap(connectExistingButton);
       await f.settle(tester);
       await tester.tap(find.text('Session expired. Sign in again.'));
       await f.settle(tester);
@@ -744,7 +756,11 @@ void main() {
       );
       expect(find.byType(IntroScreen), findsOneWidget);
       expect(await f.database.select(f.database.workspaces).get(), isEmpty);
-      await tester.tap(find.byKey(const Key('intro_welcome_skip_button')));
+      final advancedSetupButton = find.byKey(
+        const Key('intro_advanced_setup_button'),
+      );
+      await tester.ensureVisible(advancedSetupButton);
+      await tester.tap(advancedSetupButton);
       await f.settle(tester);
       await tester.tap(find.byKey(const Key('intro_route_local_button')));
       await f.settle(tester);

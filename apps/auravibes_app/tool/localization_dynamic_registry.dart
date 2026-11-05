@@ -2371,7 +2371,7 @@ const localizationDynamicKeyRegistry = <LocalizationDynamicRegistry>[
     family: 'empty-conversation-starter-keys',
     sites: [
       DynamicTranslationSite(
-        file: 'features/chats/widgets/empty_conversation_starters.dart',
+        file: 'features/chats/widgets/empty_conversation_starter_choices.dart',
         method: 'tr',
         keyExpression: 'localizationKey',
       ),

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:auravibes_app/domain/entities/conversation_entity.dart';
 import 'package:auravibes_app/features/agents/screens/agent_detail_screen.dart';
 import 'package:auravibes_app/features/agents/screens/agents_screen.dart';
+import 'package:auravibes_app/features/chats/models/chat_draft.dart';
 import 'package:auravibes_app/features/chats/providers/conversation_providers.dart';
 import 'package:auravibes_app/features/chats/screens/archived_conversations_screen.dart';
 import 'package:auravibes_app/features/chats/screens/chat_conversation_screen.dart';
@@ -507,11 +508,18 @@ class NewChatRoute({
   @override
   FutureOr<bool> onExit(BuildContext context, GoRouterState state) =>
       _canExitDraft(context, state);
+
+  void goWithDraft(BuildContext context, ChatDraft draft) =>
+      context.go(location, extra: draft);
+
   @override
   Widget build(BuildContext context, GoRouterState state) {
+    final initialDraft = state.extra;
+
     return NewChatScreen(
       workspaceId: workspaceId,
       initialModelSelectionId: modelSelectionId,
+      initialDraft: initialDraft is ChatDraft ? initialDraft : null,
     );
   }
 }

@@ -1,7 +1,7 @@
 import 'package:auravibes_app/features/chats/models/chat_draft.dart';
+import 'package:auravibes_app/features/chats/widgets/empty_conversation_starter_choices.dart';
 import 'package:auravibes_app/widgets/text_locale.dart';
 import 'package:auravibes_ui/ui.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/widgets.dart';
 
 typedef EmptyConversationStarterRequest = ({
@@ -13,14 +13,11 @@ typedef EmptyConversationStarterRequest = ({
 
 const _titleKey = 'chats_screens.chat_conversation.empty_starters.title';
 const _helperKey = 'chats_screens.chat_conversation.empty_starters.helper';
-const _planDayKey = 'chats_screens.chat_conversation.empty_starters.plan_day';
-const _shoppingListKey =
-    'chats_screens.chat_conversation.empty_starters.shopping_list';
-const _personalMessageKey =
-    'chats_screens.chat_conversation.empty_starters.personal_message';
 
 class const EmptyConversationStarters({
   required final ValueChanged<ChatDraft> onSelect,
+  final String? selectedText,
+  final String keyPrefix = 'chat_empty_starter',
   super.key,
 }) extends StatelessWidget {
   @override
@@ -28,6 +25,8 @@ class const EmptyConversationStarters({
     builder: (context, constraints) => _EmptyConversationStarterViewport(
       minHeight: constraints.maxHeight,
       onSelect: onSelect,
+      keyPrefix: keyPrefix,
+      selectedText: selectedText,
     ),
   );
 }
@@ -35,6 +34,8 @@ class const EmptyConversationStarters({
 class const _EmptyConversationStarterViewport({
   required final double minHeight,
   required final ValueChanged<ChatDraft> onSelect,
+  required final String keyPrefix,
+  final String? selectedText,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
@@ -43,6 +44,8 @@ class const _EmptyConversationStarterViewport({
     child: _EmptyConversationStarterFrame(
       minHeight: minHeight,
       onSelect: onSelect,
+      keyPrefix: keyPrefix,
+      selectedText: selectedText,
     ),
   );
 }
@@ -50,6 +53,8 @@ class const _EmptyConversationStarterViewport({
 class const _EmptyConversationStarterFrame({
   required final double minHeight,
   required final ValueChanged<ChatDraft> onSelect,
+  required final String keyPrefix,
+  final String? selectedText,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ConstrainedBox(
@@ -57,7 +62,11 @@ class const _EmptyConversationStarterFrame({
     child: Center(
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 480),
-        child: _EmptyConversationStarterContent(onSelect: onSelect),
+        child: _EmptyConversationStarterContent(
+          onSelect: onSelect,
+          keyPrefix: keyPrefix,
+          selectedText: selectedText,
+        ),
       ),
     ),
   );
@@ -65,22 +74,19 @@ class const _EmptyConversationStarterFrame({
 
 class const _EmptyConversationStarterContent({
   required final ValueChanged<ChatDraft> onSelect,
+  required final String keyPrefix,
+  final String? selectedText,
 }) extends StatelessWidget {
-  static const List<({String id, String localizationKey})> _starters = [
-    (id: 'chat_empty_starter_plan_day', localizationKey: _planDayKey),
-    (id: 'chat_empty_starter_shopping_list', localizationKey: _shoppingListKey),
-    (
-      id: 'chat_empty_starter_personal_message',
-      localizationKey: _personalMessageKey,
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) => AuraColumn(
     children: [
       const _EmptyConversationStarterHeading(),
       const AuraSizedBox(height: .xs),
-      _EmptyConversationStarterChoices(starters: _starters, onSelect: onSelect),
+      EmptyConversationStarterChoices(
+        onSelect: onSelect,
+        selectedText: selectedText,
+        keyPrefix: keyPrefix,
+      ),
     ],
     spacing: .sm,
     crossAxisAlignment: .stretch,
@@ -99,42 +105,4 @@ class const _EmptyConversationStarterHeading() extends StatelessWidget {
     crossAxisAlignment: .stretch,
     mainAxisSize: .min,
   );
-}
-
-class const _EmptyConversationStarterChoices({
-  required final List<({String id, String localizationKey})> starters,
-  required final ValueChanged<ChatDraft> onSelect,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) => AuraColumn(
-    children: [
-      for (final starter in starters)
-        _EmptyConversationStarterButton(
-          localizationKey: starter.localizationKey,
-          onSelect: onSelect,
-          key: ValueKey(starter.id),
-        ),
-    ],
-    spacing: .sm,
-    crossAxisAlignment: .stretch,
-    mainAxisSize: .min,
-  );
-}
-
-class const _EmptyConversationStarterButton({
-  required final String localizationKey,
-  required final ValueChanged<ChatDraft> onSelect,
-  super.key,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final text = localizationKey.tr(context: context);
-
-    return AuraButton(
-      onPressed: () => onSelect(.new(text: text)),
-      child: Text(text),
-      variant: .outlined,
-      isFullWidth: true,
-    );
-  }
 }

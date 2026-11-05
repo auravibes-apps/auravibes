@@ -72,24 +72,28 @@
   },
   "intro_flow": {
     "welcome": {
-      "title": "Welcome to AuraVibes",
-      "body": "Bring your chats, tools, skills, and connections together in AuraVibes.",
+      "title": "What would you like help with today?",
+      "body": "Choose an example. It opens as an editable draft; send it when you're ready.",
       "ai_title": "Connect AI when you're ready",
       "ai_body": "Choose the AI provider and model that suit your work. Connecting AI is optional; you can explore first.",
       "page": "{} of {}",
-      "start": "Choose a workspace",
-      "skip": "Skip intro"
+      "start": "Choose setup options",
+      "skip": "Set up a workspace",
+      "local_storage": "The workspace is saved on this device. Keep AuraVibes open. Sending a message may share it with the AI provider you choose.",
+      "workspace_name": "Personal work",
+      "quick_start": "Start on this device",
+      "advanced_setup": "More setup options"
     },
     "choice": {
       "title": "Choose how to start",
-      "body": "Create a local workspace for free, or connect cloud for sharing, sync, and always-on agents. Cloud may require a paid plan later.",
+      "body": "Stored online. Requires internet and an account. Sharing, sync, and agents running while the app is closed may require a paid plan.",
       "local_title": "Create local workspace",
-      "local_body": "Free. Runs while this app is open.",
+      "local_body": "Your workspace is saved on this device. AuraVibes needs to stay open. Sending a chat may share your message with the AI provider you choose.",
       "cloud_create_title": "Create cloud workspace",
-      "cloud_create_body": "Share, sync, and run agents even when this app is closed.",
+      "cloud_create_body": "Stored online. Requires internet and an account. Sharing, sync, and agents running while this app is closed may require a paid plan.",
       "cloud_connect_title": "Connect existing cloud workspace",
-      "cloud_connect_body": "Use a cloud workspace you can already access.",
-      "select_hint": "Choose a workspace to continue."
+      "cloud_connect_body": "Use an online workspace you can access. It needs internet; sharing, sync, and agents running while the app is closed may depend on its plan.",
+      "select_hint": "Local work stays on this device while AuraVibes is open. Cloud work is stored online and needs internet and an account. Sharing, sync, and agents that run while the app is closed may require a paid plan."
     },
     "workspace_context": {
       "title": "Workspaces keep context separate",
