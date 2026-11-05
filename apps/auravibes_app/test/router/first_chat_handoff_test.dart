@@ -257,15 +257,17 @@ Future<void> _pumpFirstChatApp({
   required GoRouter router,
   required List<Object> overrides,
 }) async {
-  await tester.pumpWidget(
-    TestableApp(
-      child: AuraThemeScope(
-        theme: .light,
-        child: Portal(child: Router.withConfig(config: router)),
+  await tester.runAsync(
+    () => tester.pumpWidget(
+      TestableApp(
+        child: AuraThemeScope(
+          theme: .light,
+          child: Portal(child: Router.withConfig(config: router)),
+        ),
+        overrides: overrides,
+        workspaceId: workspaceId,
+        workspaceSession: session,
       ),
-      overrides: overrides,
-      workspaceId: workspaceId,
-      workspaceSession: session,
     ),
   );
   await tester.pump();
