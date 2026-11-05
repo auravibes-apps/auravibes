@@ -113,12 +113,11 @@ void main() {
         findsOneWidget,
       );
       expect(workspace.name, 'Trabajo personal');
-      final conversations = await tester.runAsync(
-        () => (fixture.database.select(fixture.database.conversations)
-              ..where((row) => row.workspaceId.equals(workspace.id)))
-            .get()
-            .timeout(const Duration(seconds: 20)),
-      );
+      final conversations = await tester.runAsync(() {
+        final query = fixture.database.select(fixture.database.conversations)
+          ..where((row) => row.workspaceId.equals(workspace.id));
+        return query.get().timeout(const Duration(seconds: 20));
+      });
       if (conversations == null) {
         fail('Conversation query did not complete');
       }
