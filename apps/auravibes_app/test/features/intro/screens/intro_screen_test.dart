@@ -48,20 +48,18 @@ void main() {
     final useCase = _CreateWorkspaceUseCase();
     final fixture = _IntroFixture(createWorkspaceUseCase: useCase);
     addTearDown(fixture.dispose);
-    final workspaceCreation = Completer<WorkspaceEntity>();
-    when(() => useCase.call(name: 'Trabajo personal')).thenAnswer((_) async {
-      final workspace = await tester.runAsync(
-        () => WorkspaceRepository(fixture.database)
-            .createWorkspace(const .new(name: 'Trabajo personal', type: .local))
-            .timeout(const Duration(seconds: 20)),
-      );
-      if (workspace == null) {
-        fail('Quick-start workspace creation did not finish');
-      }
-      workspaceCreation.complete(workspace);
-
-      return workspace;
-    });
+    final workspace = await tester.runAsync(
+      () => WorkspaceRepository(fixture.database)
+          .createWorkspace(
+            const .new(name: 'Trabajo personal', type: .local),
+          )
+          .timeout(const Duration(seconds: 20)),
+    );
+    if (workspace == null) {
+      fail('Quick-start workspace creation did not finish');
+    }
+    when(() => useCase.call(name: 'Trabajo personal'))
+        .thenAnswer((_) async => workspace);
     final semantics = tester.ensureSemantics();
     try {
       await tester.runAsync(
@@ -97,12 +95,6 @@ void main() {
       );
       await _tapVisible(tester, find.byKey(_quickStartKey));
       await _pumpUntilFound(tester, find.textContaining('new chat:'));
-      final workspace = await tester.runAsync(
-        () => workspaceCreation.future.timeout(const Duration(seconds: 20)),
-      );
-      if (workspace == null) {
-        fail('Quick-start workspace was not created');
-      }
 
       expect(
         find.textContaining(
@@ -165,22 +157,12 @@ void main() {
     final fixture = _IntroFixture(createWorkspaceUseCase: useCase);
     addTearDown(fixture.dispose);
     var attempts = 0;
-    final workspaceCreation = Completer<WorkspaceEntity>();
+    late WorkspaceEntity retryWorkspace;
     when(() => useCase.call(name: 'Personal work')).thenAnswer((_) async {
       attempts++;
       if (attempts == 1) throw StateError('storage unavailable');
 
-      final workspace = await tester.runAsync(
-        () => WorkspaceRepository(fixture.database)
-            .createWorkspace(const .new(name: 'Personal work', type: .local))
-            .timeout(const Duration(seconds: 20)),
-      );
-      if (workspace == null) {
-        fail('Quick-start retry did not create a workspace');
-      }
-      workspaceCreation.complete(workspace);
-
-      return workspace;
+      return retryWorkspace;
     });
     try {
       await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
@@ -201,14 +183,17 @@ void main() {
       expect(emptyWorkspaces, isEmpty);
       expect(find.byKey(_advancedSetupKey), findsOneWidget);
 
-      await _tapVisible(tester, find.byKey(_quickStartKey));
-      await _pumpUntilFound(tester, find.textContaining('new chat:'));
       final workspace = await tester.runAsync(
-        () => workspaceCreation.future.timeout(const Duration(seconds: 20)),
+        () => WorkspaceRepository(fixture.database)
+            .createWorkspace(const .new(name: 'Personal work', type: .local))
+            .timeout(const Duration(seconds: 20)),
       );
       if (workspace == null) {
         fail('Quick-start retry did not create a workspace');
       }
+      retryWorkspace = workspace;
+      await _tapVisible(tester, find.byKey(_quickStartKey));
+      await _pumpUntilFound(tester, find.textContaining('new chat:'));
       expect(attempts, 2);
       expect(workspace.name, 'Personal work');
     } finally {
