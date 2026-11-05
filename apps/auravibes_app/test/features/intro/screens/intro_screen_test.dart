@@ -159,9 +159,7 @@ void main() {
     when(() => useCase.call(name: 'Personal work')).thenAnswer((_) {
       attempts++;
       if (attempts == 1) {
-        return Future<WorkspaceEntity>.error(
-          StateError('storage unavailable'),
-        );
+        return Future<WorkspaceEntity>.error(StateError('storage unavailable'));
       }
 
       return workspaceCreation.future;
