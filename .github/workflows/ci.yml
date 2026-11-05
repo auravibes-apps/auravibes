@@ -250,6 +250,27 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
+      - name: Capture intro test formatter diff
+        if: ${{ always() && github.event_name == 'pull_request' && steps.check-format.outcome == 'failure' }}
+        shell: bash
+        env:
+          FORMAT_OUTPUT_DIRECTORY: ${{ runner.temp }}/intro-test-format-output
+        run: |
+          set -euo pipefail
+          target=apps/auravibes_app/test/features/intro/screens/intro_screen_test.dart
+          mkdir -p "$FORMAT_OUTPUT_DIRECTORY"
+          dart format --line-length 80 --output=show "$target" > "$FORMAT_OUTPUT_DIRECTORY/intro_screen_test.dart"
+          diff -u "$target" "$FORMAT_OUTPUT_DIRECTORY/intro_screen_test.dart" || true
+
+      - name: Upload intro test formatter output
+        if: ${{ always() && github.event_name == 'pull_request' && steps.check-format.outcome == 'failure' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: intro-test-format-output-${{ github.run_id }}
+          path: ${{ runner.temp }}/intro-test-format-output/intro_screen_test.dart
+          if-no-files-found: error
+          retention-days: 1
+
       - name: Check import sorting
         run: dart run tool/check_workspace_import_sorting.dart
       - name: Check workspace benchmark imports
