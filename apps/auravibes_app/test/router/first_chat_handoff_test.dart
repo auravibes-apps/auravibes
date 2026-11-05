@@ -82,9 +82,9 @@ void main() {
       'Help me plan an easy first day',
     );
     expect(
-      await database.conversationDao
-          .watchConversationsByWorkspace(workspace.id)
-          .first,
+      await (database.select(
+        database.conversations,
+      )..where((row) => row.workspaceId.equals(workspace.id))).get(),
       isEmpty,
     );
     expect(tester.takeException(), isNull);
@@ -257,17 +257,15 @@ Future<void> _pumpFirstChatApp({
   required GoRouter router,
   required List<Object> overrides,
 }) async {
-  await tester.runAsync(
-    () => tester.pumpWidget(
-      TestableApp(
-        child: AuraThemeScope(
-          theme: .light,
-          child: Portal(child: Router.withConfig(config: router)),
-        ),
-        overrides: overrides,
-        workspaceId: workspaceId,
-        workspaceSession: session,
+  await tester.pumpWidget(
+    TestableApp(
+      child: AuraThemeScope(
+        theme: .light,
+        child: Portal(child: Router.withConfig(config: router)),
       ),
+      overrides: overrides,
+      workspaceId: workspaceId,
+      workspaceSession: session,
     ),
   );
   await tester.pump();
