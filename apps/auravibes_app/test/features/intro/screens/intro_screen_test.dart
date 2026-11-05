@@ -96,13 +96,13 @@ void main() {
         isFalse,
       );
       await _tapVisible(tester, find.byKey(_quickStartKey));
+      await _pumpUntilFound(tester, find.textContaining('new chat:'));
       final workspace = await tester.runAsync(
         () => workspaceCreation.future.timeout(const Duration(seconds: 20)),
       );
       if (workspace == null) {
         fail('Quick-start workspace was not created');
       }
-      await _pumpUntilFound(tester, find.textContaining('new chat:'));
 
       expect(
         find.textContaining(
@@ -202,13 +202,13 @@ void main() {
       expect(find.byKey(_advancedSetupKey), findsOneWidget);
 
       await _tapVisible(tester, find.byKey(_quickStartKey));
+      await _pumpUntilFound(tester, find.textContaining('new chat:'));
       final workspace = await tester.runAsync(
         () => workspaceCreation.future.timeout(const Duration(seconds: 20)),
       );
       if (workspace == null) {
         fail('Quick-start retry did not create a workspace');
       }
-      await _pumpUntilFound(tester, find.textContaining('new chat:'));
       expect(attempts, 2);
       expect(workspace.name, 'Personal work');
     } finally {
