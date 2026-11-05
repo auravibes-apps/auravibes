@@ -155,12 +155,12 @@ void main() {
     final fixture = _IntroFixture(createWorkspaceUseCase: useCase);
     addTearDown(fixture.dispose);
     var attempts = 0;
-    late WorkspaceEntity retryWorkspace;
+    final workspaceCreation = Completer<WorkspaceEntity>();
     when(() => useCase.call(name: 'Personal work')).thenAnswer((_) async {
       attempts++;
       if (attempts == 1) throw StateError('storage unavailable');
 
-      return retryWorkspace;
+      return workspaceCreation.future;
     });
     try {
       await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
@@ -189,7 +189,7 @@ void main() {
       if (workspace == null) {
         fail('Quick-start retry did not create a workspace');
       }
-      retryWorkspace = workspace;
+      workspaceCreation.complete(workspace);
       await _tapVisible(tester, find.byKey(_quickStartKey));
       await _pumpUntilFound(tester, find.textContaining('new chat:'));
       expect(attempts, 2);
