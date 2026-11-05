@@ -166,6 +166,7 @@ void main() {
     });
     try {
       await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
+      await _pumpUntilFound(tester, find.byKey(_quickStartKey));
       await _tapVisible(tester, find.byKey(_dayStarterKey));
       await _tapVisible(tester, find.byKey(_quickStartKey));
       await _pumpUntilFound(
@@ -212,6 +213,7 @@ void main() {
         .thenAnswer((_) => workspaceCreation.future);
     try {
       await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
+      await _pumpUntilFound(tester, find.byKey(_quickStartKey));
       await _tapVisible(tester, find.byKey(_dayStarterKey));
       await _tapVisible(tester, find.byKey(_quickStartKey));
       await tester.pump();
@@ -253,6 +255,7 @@ void main() {
         await tester.runAsync(
           () => tester.pumpWidget(fixture.buildApp(startLocale: locale)),
         );
+        await _pumpUntilFound(tester, find.byKey(_quickStartKey));
         await _tapVisible(tester, find.byKey(_advancedSetupKey));
         await _pumpUntilFound(tester, find.byKey(_localRouteKey));
 
@@ -592,6 +595,7 @@ void main() {
     final fixture = _IntroFixture(accounts: [_account]);
     addTearDown(fixture.dispose);
     await tester.runAsync(() => tester.pumpWidget(fixture.buildApp()));
+    await _pumpUntilFound(tester, find.byKey(_quickStartKey));
     await _completeWelcome(tester);
     await _pumpUntilFound(tester, find.byKey(_localRouteKey));
 
