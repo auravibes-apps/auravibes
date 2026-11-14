@@ -29,7 +29,7 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 45
     env:
-      BASELINE_SHA: ${{ inputs.baseline || 'f00fc7b9159cc35713db498ad319200a5ed4052e' }}
+      BASELINE_SHA: ${{ github.event.pull_request.base.sha || inputs.baseline || 'f00fc7b9159cc35713db498ad319200a5ed4052e' }}
       CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - name: Checkout immutable candidate
