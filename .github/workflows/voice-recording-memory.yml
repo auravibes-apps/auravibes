@@ -26,7 +26,7 @@ concurrency:
 jobs:
   measure:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 45
     env:
       BASELINE_SHA: ${{ inputs.baseline || 'f00fc7b9159cc35713db498ad319200a5ed4052e' }}
