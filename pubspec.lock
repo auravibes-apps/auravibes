@@ -1123,10 +1123,10 @@ packages:
     dependency: transitive
     description:
       name: haptic_feedback
-      sha256: "36e82acb24dba60c85f046ef4ddc1df1ef4fdc190d8f6fd907a030c896de3ebb"
+      sha256: "45a71951590d594c11d4eabd6bea04ad6cb69811c434b935d0159ecbf2717c3f"
       url: "https://pub.dev"
     source: hosted
-    version: "0.8.0"
+    version: "0.9.0"
   hex:
     dependency: transitive
     description:
